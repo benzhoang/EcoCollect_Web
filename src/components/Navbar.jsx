@@ -49,16 +49,29 @@ const Navbar = () => {
                             Bảng xếp hạng
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
                         </a>
+                        <a
+                            href="/contact"
+                            className="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200 text-sm relative group"
+                        >
+                            Liên hệ
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
+                        </a>
                     </div>
 
                     {/* Auth Buttons - Right (Desktop) */}
                     <div className="hidden md:flex items-center gap-3">
-                        <button className="px-5 py-2 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200 text-sm">
+                        <a
+                            href="/signin"
+                            className="px-5 py-2 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200 text-sm"
+                        >
                             Đăng nhập
-                        </button>
-                        <button className="px-5 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        </a>
+                        <a
+                            href="/signup"
+                            className="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-200 text-sm shadow-sm hover:shadow"
+                        >
                             Đăng ký
-                        </button>
+                        </a>
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -108,13 +121,28 @@ const Navbar = () => {
                         >
                             Bảng xếp hạng
                         </a>
+                        <a
+                            href="/contact"
+                            className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            Liên hệ
+                        </a>
                         <div className="pt-4 space-y-2 border-t border-gray-200">
-                            <button className="w-full px-4 py-2 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200 text-sm">
+                            <a
+                                href="/signin"
+                                className="block w-full px-4 py-2 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200 text-sm text-center"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
                                 Đăng nhập
-                            </button>
-                            <button className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-sm shadow-md">
+                            </a>
+                            <a
+                                href="/signup"
+                                className="block w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-200 text-sm shadow-sm text-center"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
                                 Đăng ký
-                            </button>
+                            </a>
                         </div>
                     </div>
                 )}
