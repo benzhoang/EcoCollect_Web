@@ -54,9 +54,34 @@ const Signin = () => {
 
         // Simulate API call
         setTimeout(() => {
-            setIsLoading(false);
-            // Handle login logic here
-            console.log('Login data:', formData);
+            // Tài khoản giả để login
+            const fakeAccounts = [
+                { username: 'user', password: '123456' },
+                { username: 'admin', password: '123456' }
+            ];
+
+            const account = fakeAccounts.find(
+                acc => acc.username === formData.username && acc.password === formData.password
+            );
+
+            if (account) {
+                // Lưu thông tin đăng nhập vào localStorage
+                const userData = {
+                    username: formData.username,
+                    isLoggedIn: true,
+                    loginTime: new Date().toISOString()
+                };
+                localStorage.setItem('user', JSON.stringify(userData));
+
+                // Chuyển hướng về trang chủ
+                window.location.href = '/';
+            } else {
+                setErrors({
+                    username: 'Tên người dùng hoặc mật khẩu không đúng',
+                    password: 'Tên người dùng hoặc mật khẩu không đúng'
+                });
+                setIsLoading(false);
+            }
         }, 1000);
     };
 
