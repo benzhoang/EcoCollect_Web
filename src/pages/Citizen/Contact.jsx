@@ -5,18 +5,29 @@ const Contact = () => {
         name: '',
         email: '',
         phone: '',
+        type: 'feedback', // 'feedback' hoặc 'complaint'
+        priority: 'normal', // 'low', 'normal', 'high', 'urgent'
+        location: '',
         subject: '',
-        message: ''
+        message: '',
+        attachments: null
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        const { name, value, type, files } = e.target;
+        if (type === 'file') {
+            setFormData(prev => ({
+                ...prev,
+                [name]: files[0] || null
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleSubmit = (e) => {
@@ -24,13 +35,18 @@ const Contact = () => {
         setIsSubmitting(true);
         // Simulate form submission
         setTimeout(() => {
-            alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
+            const messageType = formData.type === 'feedback' ? 'phản hồi' : 'khiếu nại';
+            alert(`Cảm ơn bạn đã gửi ${messageType}! Chúng tôi đã tiếp nhận và sẽ xử lý trong thời gian sớm nhất. Mã số: #${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
             setFormData({
                 name: '',
                 email: '',
                 phone: '',
+                type: 'feedback',
+                priority: 'normal',
+                location: '',
                 subject: '',
-                message: ''
+                message: '',
+                attachments: null
             });
             setIsSubmitting(false);
         }, 1000);
@@ -52,7 +68,7 @@ const Contact = () => {
         {
             id: 2,
             title: 'Điện thoại',
-            value: '1900 1234',
+            value: '012 345 6789',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -95,10 +111,10 @@ const Contact = () => {
                 <div className="container mx-auto px-6 max-w-7xl">
                     <div className="text-center max-w-3xl mx-auto">
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                            Liên hệ với chúng tôi
+                            Phản hồi và Khiếu nại
                         </h1>
                         <p className="text-lg text-green-50 leading-relaxed">
-                            Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn. Hãy gửi tin nhắn cho chúng tôi nếu bạn có bất kỳ câu hỏi nào.
+                            Chúng tôi cam kết lắng nghe và xử lý mọi phản hồi, khiếu nại của bạn một cách nhanh chóng và hiệu quả. Mọi ý kiến đóng góp đều được chúng tôi trân trọng.
                         </p>
                     </div>
                 </div>
@@ -132,39 +148,64 @@ const Contact = () => {
                             </div>
                         </div>
 
-                        {/* Social Media */}
+                        {/* Quy trình xử lý */}
                         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
                             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                                Theo dõi chúng tôi
+                                Quy trình xử lý
                             </h2>
-                            <div className="flex gap-4">
-                                <a
-                                    href="#"
-                                    className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors"
-                                    aria-label="Facebook"
-                                >
-                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="#"
-                                    className="w-12 h-12 bg-pink-100 text-pink-600 rounded-lg flex items-center justify-center hover:bg-pink-200 transition-colors"
-                                    aria-label="Instagram"
-                                >
-                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href="#"
-                                    className="w-12 h-12 bg-blue-100 text-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors"
-                                    aria-label="Twitter"
-                                >
-                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                                    </svg>
-                                </a>
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                                        1
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">Tiếp nhận</h3>
+                                        <p className="text-sm text-gray-600">Chúng tôi tiếp nhận và xác nhận phản hồi/khiếu nại của bạn</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                                        2
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">Xử lý</h3>
+                                        <p className="text-sm text-gray-600">Đội ngũ chuyên trách sẽ xem xét và xử lý vấn đề</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-sm">
+                                        3
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-1">Phản hồi</h3>
+                                        <p className="text-sm text-gray-600">Chúng tôi sẽ thông báo kết quả xử lý qua email hoặc điện thoại</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Thời gian xử lý */}
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg shadow-sm p-8">
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                                Thời gian xử lý
+                            </h2>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-700">Khẩn cấp:</span>
+                                    <span className="font-semibold text-gray-900">24 giờ</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-700">Cao:</span>
+                                    <span className="font-semibold text-gray-900">2-3 ngày</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-700">Bình thường:</span>
+                                    <span className="font-semibold text-gray-900">3-5 ngày</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-700">Thấp:</span>
+                                    <span className="font-semibold text-gray-900">5-7 ngày</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -173,9 +214,47 @@ const Contact = () => {
                     <div className="lg:col-span-2">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
                             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                                Gửi tin nhắn cho chúng tôi
+                                Biểu mẫu phản hồi và khiếu nại
                             </h2>
                             <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Loại phản hồi */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Loại <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.type === 'feedback' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value="feedback"
+                                                checked={formData.type === 'feedback'}
+                                                onChange={handleChange}
+                                                className="mr-3 w-4 h-4 text-green-600 focus:ring-green-500"
+                                            />
+                                            <div>
+                                                <div className="font-semibold text-gray-900">Phản hồi</div>
+                                                <div className="text-sm text-gray-600">Góp ý, đề xuất cải thiện</div>
+                                            </div>
+                                        </label>
+                                        <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.type === 'complaint' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                                            <input
+                                                type="radio"
+                                                name="type"
+                                                value="complaint"
+                                                checked={formData.type === 'complaint'}
+                                                onChange={handleChange}
+                                                className="mr-3 w-4 h-4 text-red-600 focus:ring-red-500"
+                                            />
+                                            <div>
+                                                <div className="font-semibold text-gray-900">Khiếu nại</div>
+                                                <div className="text-sm text-gray-600">Vấn đề cần xử lý</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Thông tin cá nhân */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,7 +291,7 @@ const Contact = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Số điện thoại
+                                            Số điện thoại <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="tel"
@@ -220,30 +299,66 @@ const Contact = () => {
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleChange}
+                                            required
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
                                             placeholder="0123 456 789"
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Chủ đề <span className="text-red-500">*</span>
+                                        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Mức độ ưu tiên <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            id="subject"
-                                            name="subject"
-                                            value={formData.subject}
+                                        <select
+                                            id="priority"
+                                            name="priority"
+                                            value={formData.priority}
                                             onChange={handleChange}
                                             required
                                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                            placeholder="Chủ đề bạn muốn hỏi"
-                                        />
+                                        >
+                                            <option value="low">Thấp</option>
+                                            <option value="normal">Bình thường</option>
+                                            <option value="high">Cao</option>
+                                            <option value="urgent">Khẩn cấp</option>
+                                        </select>
                                     </div>
                                 </div>
 
                                 <div>
+                                    <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Địa điểm xảy ra sự việc {formData.type === 'complaint' && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="location"
+                                        name="location"
+                                        value={formData.location}
+                                        onChange={handleChange}
+                                        required={formData.type === 'complaint'}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="Ví dụ: 123 Đường ABC, Quận XYZ, TP.HCM"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tiêu đề <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="subject"
+                                        name="subject"
+                                        value={formData.subject}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
+                                        placeholder={formData.type === 'complaint' ? 'Tóm tắt vấn đề khiếu nại' : 'Tóm tắt nội dung phản hồi'}
+                                    />
+                                </div>
+
+                                <div>
                                     <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nội dung tin nhắn <span className="text-red-500">*</span>
+                                        Nội dung chi tiết <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         id="message"
@@ -253,16 +368,45 @@ const Contact = () => {
                                         required
                                         rows={6}
                                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-none"
-                                        placeholder="Nhập nội dung tin nhắn của bạn..."
+                                        placeholder={formData.type === 'complaint' ? 'Mô tả chi tiết vấn đề, thời gian, địa điểm và các thông tin liên quan...' : 'Mô tả chi tiết ý kiến phản hồi của bạn...'}
                                     />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="attachments" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Đính kèm tài liệu/hình ảnh (nếu có)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        id="attachments"
+                                        name="attachments"
+                                        onChange={handleChange}
+                                        accept="image/*,.pdf,.doc,.docx"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                    />
+                                    {formData.attachments && (
+                                        <p className="mt-2 text-sm text-gray-600">
+                                            Đã chọn: {formData.attachments.name}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Lưu ý:</strong> Chúng tôi cam kết xử lý mọi phản hồi và khiếu nại trong vòng 3-5 ngày làm việc.
+                                        Với các trường hợp khẩn cấp, chúng tôi sẽ ưu tiên xử lý trong vòng 24 giờ.
+                                    </p>
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className={`w-full md:w-auto px-8 py-3 text-white font-semibold rounded-lg transition-colors shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed ${formData.type === 'complaint'
+                                        ? 'bg-red-600 hover:bg-red-700'
+                                        : 'bg-green-600 hover:bg-green-700'
+                                        }`}
                                 >
-                                    {isSubmitting ? 'Đang gửi...' : 'Gửi tin nhắn'}
+                                    {isSubmitting ? 'Đang gửi...' : formData.type === 'complaint' ? 'Gửi khiếu nại' : 'Gửi phản hồi'}
                                 </button>
                             </form>
                         </div>

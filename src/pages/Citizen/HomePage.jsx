@@ -1,6 +1,40 @@
 import React, { useState, useEffect } from 'react';
 
 const HomePage = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    useEffect(() => {
+        // Kiểm tra trạng thái đăng nhập
+        const checkLoginStatus = () => {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    setIsLoggedIn(user.isLoggedIn === true);
+                } catch (error) {
+                    console.error('Error parsing user data:', error);
+                    setIsLoggedIn(false);
+                }
+            } else {
+                setIsLoggedIn(false);
+            }
+        };
+
+        // Kiểm tra lần đầu
+        checkLoginStatus();
+
+        // Lắng nghe sự kiện storage để cập nhật khi đăng nhập/đăng xuất
+        window.addEventListener('storage', checkLoginStatus);
+
+        // Kiểm tra định kỳ (để xử lý khi localStorage thay đổi trong cùng tab)
+        const interval = setInterval(checkLoginStatus, 1000);
+
+        return () => {
+            window.removeEventListener('storage', checkLoginStatus);
+            clearInterval(interval);
+        };
+    }, []);
+
     // Carousel slides data
     const carouselSlides = [
         {
@@ -267,6 +301,53 @@ const HomePage = () => {
             ),
             color: 'text-purple-600',
             bgColor: 'bg-purple-100'
+        }
+    ];
+
+    const recentReports = [
+        {
+            id: 1,
+            type: 'Rác tái chế',
+            typeColor: 'bg-green-100 text-green-700',
+            status: 'Đã thu gom',
+            statusColor: 'bg-blue-100 text-blue-700',
+            location: '123 Nguyễn Huệ, Q.1',
+            time: '2 giờ trước',
+            points: '+25 điểm',
+            image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop'
+        },
+        {
+            id: 2,
+            type: 'Rác hữu cơ',
+            typeColor: 'bg-green-100 text-green-700',
+            status: 'Đã phân công',
+            statusColor: 'bg-blue-100 text-blue-700',
+            location: '45 Lê Lợi, Q.1',
+            time: '5 giờ trước',
+            points: '+20 điểm',
+            image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop'
+        },
+        {
+            id: 3,
+            type: 'Rác nguy hại',
+            typeColor: 'bg-red-100 text-red-700',
+            status: 'Đã tiếp nhận',
+            statusColor: 'bg-yellow-100 text-yellow-700',
+            location: '78 Trần Hưng Đạo, Q.5',
+            time: '1 ngày trước',
+            points: '+30 điểm',
+            image: 'https://images.unsplash.com/photo-1611909023030-19c0c2a79fb8?w=400&h=300&fit=crop'
+        },
+        {
+            id: 4,
+            type: 'Rác tái chế',
+            typeColor: 'bg-blue-100 text-blue-700',
+            status: 'Chờ xử lý',
+            statusColor: 'bg-green-100 text-green-700',
+            location: '12 Pasteur, Q.3',
+            time: '1 ngày trước',
+            points: 'Chờ duyệt điểm',
+            image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop'
         }
     ];
 
@@ -550,19 +631,63 @@ const HomePage = () => {
                                 </svg>
                             </a>
                         </div>
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
+                        {isLoggedIn ? (
+                            <div className="space-y-4">
+                                {recentReports.map((report) => (
+                                    <div key={report.id} className="bg-green-50 rounded-lg p-4 flex gap-4 hover:shadow-md transition-shadow">
+                                        {/* Image */}
+                                        <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-200 relative">
+                                            <img
+                                                src={report.image}
+                                                alt={report.type}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.typeColor}`}>
+                                                        {report.type}
+                                                    </span>
+                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.statusColor}`}>
+                                                        {report.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-700 font-medium mb-1">
+                                                {report.location}
+                                            </p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs text-gray-500">
+                                                    {report.time}
+                                                </span>
+                                                <span className={`text-sm font-semibold ${report.points.includes('Chờ') ? 'text-gray-600' : 'text-green-600'}`}>
+                                                    {report.points}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <p className="text-gray-600 mb-6 text-base">
-                                Vui lòng đăng nhập để xem báo cáo
-                            </p>
-                            <button className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">
-                                Đăng nhập
-                            </button>
-                        </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <p className="text-gray-600 mb-6 text-base">
+                                    Vui lòng đăng nhập để xem báo cáo
+                                </p>
+                                <a
+                                    href="/signin"
+                                    className="inline-block px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
+                                >
+                                    Đăng nhập
+                                </a>
+                            </div>
+                        )}
                     </div>
 
                     {/* Leaderboard Panel */}
