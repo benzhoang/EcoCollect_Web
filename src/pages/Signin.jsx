@@ -73,8 +73,9 @@ const Signin = () => {
                 };
                 localStorage.setItem('user', JSON.stringify(userData));
 
-                // Chuyển hướng về trang chủ
-                window.location.href = '/';
+                // Chuyển hướng đến trang admin dashboard
+                window.history.pushState({}, '', '/admin/dashboard');
+                window.dispatchEvent(new PopStateEvent('popstate'));
             } else {
                 setErrors({
                     username: 'Tên người dùng hoặc mật khẩu không đúng',

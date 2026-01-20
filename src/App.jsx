@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/Citizen/HomePage';
 import Contact from './pages/Citizen/Contact';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
+import AdminLayout from './layouts/AdminLayout';
+import DashboardPage from './pages/Admin/DashboardPage';
 import './App.css';
 
 function App() {
@@ -51,6 +54,12 @@ function App() {
             <Footer />
           </>
         );
+      case '/admin/dashboard':
+        return (
+          <AdminLayout>
+            <DashboardPage />
+          </AdminLayout>
+        );
       case '/':
       default:
         return (
@@ -64,9 +73,11 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {renderContent()}
-    </div>
+    <BrowserRouter>
+      <div className="App">
+        {renderContent()}
+      </div>
+    </BrowserRouter>
   );
 }
 
