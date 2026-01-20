@@ -56,8 +56,8 @@ const Signin = () => {
         setTimeout(() => {
             // Tài khoản giả để login
             const fakeAccounts = [
-                { username: 'user', password: '123456' },
-                { username: 'admin', password: '123456' }
+                { username: 'user', password: '123456', role: 'user' },
+                { username: 'admin', password: '123456', role: 'admin' }
             ];
 
             const account = fakeAccounts.find(
@@ -68,13 +68,20 @@ const Signin = () => {
                 // Lưu thông tin đăng nhập vào localStorage
                 const userData = {
                     username: formData.username,
+                    role: account.role,
                     isLoggedIn: true,
                     loginTime: new Date().toISOString()
                 };
                 localStorage.setItem('user', JSON.stringify(userData));
 
-                // Chuyển hướng đến trang admin dashboard
-                window.history.pushState({}, '', '/admin/dashboard');
+                // Chuyển hướng dựa trên role
+                if (account.role === 'admin') {
+                    // Admin -> /admin/dashboard
+                    window.history.pushState({}, '', '/admin/dashboard');
+                } else {
+                    // User -> /
+                    window.history.pushState({}, '', '/');
+                }
                 window.dispatchEvent(new PopStateEvent('popstate'));
             } else {
                 setErrors({
