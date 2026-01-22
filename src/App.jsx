@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/Citizen/HomePage';
 import Contact from './pages/Citizen/Contact';
+import Report from './pages/Citizen/Report';
+import ScorePage from './pages/Citizen/ScorePage';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import AdminLayout from './layouts/AdminLayout';
@@ -51,6 +53,22 @@ function App() {
           <>
             <Navbar />
             <Contact />
+            <Footer />
+          </>
+        );
+      case '/report':
+        return (
+          <>
+            <Navbar />
+            <Report />
+            <Footer />
+          </>
+        );
+      case '/score':
+        return (
+          <>
+            <Navbar />
+            <ScorePage />
             <Footer />
           </>
         );
