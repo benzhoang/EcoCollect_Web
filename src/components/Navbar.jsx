@@ -88,7 +88,7 @@ const Navbar = () => {
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-600 group-hover:w-full transition-all duration-300"></span>
                         </a>
                         <a
-                            href="#"
+                            href="/rank"
                             className="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200 text-sm relative group"
                         >
                             Bảng xếp hạng
@@ -210,7 +210,7 @@ const Navbar = () => {
                             Điểm thưởng
                         </a>
                         <a
-                            href="#"
+                            href="/rank"
                             className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                             onClick={() => setIsMenuOpen(false)}
                         >

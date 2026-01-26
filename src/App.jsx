@@ -6,10 +6,13 @@ import HomePage from './pages/Citizen/HomePage';
 import Contact from './pages/Citizen/Contact';
 import Report from './pages/Citizen/Report';
 import ScorePage from './pages/Citizen/ScorePage';
+import RankPage from './pages/Citizen/RankPage';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import AdminLayout from './layouts/AdminLayout';
 import DashboardPage from './pages/Admin/DashboardPage';
+import EnterpriseHomePage from './pages/Enterprise/EnterpriseHomePage';
+import ReportDetail from './pages/Enterprise/ReportDetail';
 import './App.css';
 
 function App() {
@@ -43,6 +46,11 @@ function App() {
   }, []);
 
   const renderContent = () => {
+    // Check if path matches /enterprise/report/:id first
+    if (pathname.startsWith('/enterprise/report/')) {
+      return <ReportDetail />;
+    }
+
     switch (pathname) {
       case '/signin':
         return <Signin />;
@@ -72,12 +80,22 @@ function App() {
             <Footer />
           </>
         );
+      case '/rank':
+        return (
+          <>
+            <Navbar />
+            <RankPage />
+            <Footer />
+          </>
+        );
       case '/admin/dashboard':
         return (
           <AdminLayout>
             <DashboardPage />
           </AdminLayout>
         );
+      case '/enterprise':
+        return <EnterpriseHomePage />;
       case '/':
       default:
         return (

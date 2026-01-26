@@ -57,7 +57,8 @@ const Signin = () => {
             // Tài khoản giả để login
             const fakeAccounts = [
                 { username: 'user', password: '123456', role: 'user' },
-                { username: 'admin', password: '123456', role: 'admin' }
+                { username: 'admin', password: '123456', role: 'admin' },
+                { username: 'enterprise', password: '123456', role: 'enterprise' }
             ];
 
             const account = fakeAccounts.find(
@@ -78,6 +79,9 @@ const Signin = () => {
                 if (account.role === 'admin') {
                     // Admin -> /admin/dashboard
                     window.history.pushState({}, '', '/admin/dashboard');
+                } else if (account.role === 'enterprise') {
+                    // Enterprise -> /enterprise
+                    window.history.pushState({}, '', '/enterprise');
                 } else {
                     // User -> /
                     window.history.pushState({}, '', '/');
