@@ -14,6 +14,11 @@ import DashboardPage from './pages/Admin/DashboardPage';
 import EnterpriseHomePage from './pages/Enterprise/EnterpriseHomePage';
 import ReportDetail from './pages/Enterprise/ReportDetail';
 import './App.css';
+import CitizenListPage from './pages/Admin/CitizenListPage';
+import CollectorListPage from './pages/Admin/CollectorListPage';
+import RecyclingEnterpriseListPage from './pages/Admin/RecyclingEnterpriseListPage';
+import ComplaintListPage from './pages/Admin/ComplaintListPage'; 
+import AccountDetailPage from './pages/Admin/AccountDetailPage';
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -92,6 +97,36 @@ function App() {
         return (
           <AdminLayout>
             <DashboardPage />
+          </AdminLayout>
+        );
+        case '/admin/account/citizens':
+        return (
+          <AdminLayout>
+            <CitizenListPage />
+          </AdminLayout>
+        );
+        case '/admin/account/collectors':
+        return (
+          <AdminLayout>
+            <CollectorListPage/>
+          </AdminLayout>
+        );
+        case '/admin/account/recycling-enterprises':
+        return (
+          <AdminLayout>
+            <RecyclingEnterpriseListPage />
+          </AdminLayout>
+        );
+        case '/admin/complaints':
+        return (
+          <AdminLayout>
+            <ComplaintListPage />
+          </AdminLayout>
+        );
+        case '/admin/account/detail':
+        return (
+          <AdminLayout>
+            <AccountDetailPage />
           </AdminLayout>
         );
       case '/enterprise':

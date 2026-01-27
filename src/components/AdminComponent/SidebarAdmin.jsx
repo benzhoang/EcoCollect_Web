@@ -20,6 +20,11 @@ const SidebarAdmin = ({ isOpen }) => {
   }, [currentPath]);
 
   const isDashboardActive = currentPath === "/admin/dashboard";
+  const isAccountActive = currentPath.startsWith("/admin/account/");
+  const isCitizensActive = currentPath === "/admin/account/citizens";
+  const isCollectorsActive = currentPath === "/admin/account/collectors";
+  const isRecyclingEnterprisesActive = currentPath === "/admin/account/recycling-enterprises";
+  const isComplaintsActive = currentPath === "/admin/complaints";
 
   return (
     <div
@@ -34,13 +39,13 @@ const SidebarAdmin = ({ isOpen }) => {
             to="/admin/dashboard"
             className={`flex items-center p-3 no-underline transition-all duration-300 text-base font-medium rounded-lg ${
               isDashboardActive
-                ? "bg-blue-50 text-blue-600"
-                : "hover:bg-gray-50 text-gray-700 hover:text-blue-600"
+                ? "bg-green-50 text-green-600"
+                : "hover:bg-gray-50 text-gray-700"
             }`}
           >
             <FaGauge
               className={`mr-3 transition-colors duration-300 text-lg ${
-                isDashboardActive ? "text-blue-600" : "text-gray-500"
+                isDashboardActive ? "text-green-600" : "text-gray-700"
               }`}
             />
             <span>Báo cáo</span>
@@ -49,12 +54,24 @@ const SidebarAdmin = ({ isOpen }) => {
         <li>
           <button
             type="button"
-            className={`w-full flex items-center p-3 text-left transition-all duration-300 text-base font-medium rounded-lg hover:bg-gray-50 cursor-pointer text-gray-700 hover:text-blue-600`}
+            onClick={() => {
+              setIsAccountOpen(true);
+              // Sử dụng window.history để tương thích với custom routing trong App.jsx
+              window.history.pushState({}, '', '/admin/account/citizens');
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}  
+            className={`w-full flex items-center p-3 text-left transition-all duration-300 text-base font-medium rounded-lg ${
+              isAccountActive
+                ? "bg-green-50 text-green-600"
+                : "hover:bg-gray-50 text-gray-700"
+            } cursor-pointer`}
           >
             <FaUser
-              className={`mr-3 transition-colors duration-300 text-lg text-gray-500`}
+              className={`mr-3 transition-colors duration-300 text-lg ${
+                isAccountActive ? "text-green-600" : "text-gray-500"
+              }`}
             />
-            <span className="text-gray-700 hover:text-blue-600">
+            <span className={isAccountActive ? "text-green-600" : "text-gray-700"}>
               Quản lý tài khoản
             </span>
             <span
@@ -76,8 +93,11 @@ const SidebarAdmin = ({ isOpen }) => {
           >
             <li>
               <Link
-                to="/admin/account/residents"
-                className={`flex items-center p-2 no-underline rounded-md transition-colors text-gray-700 hover:bg-gray-100
+                to="/admin/account/citizens"
+                className={`flex items-center p-2 no-underline rounded-md transition-colors ${
+                  isCitizensActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 <span>Dân cư</span>
@@ -85,8 +105,11 @@ const SidebarAdmin = ({ isOpen }) => {
             </li>
             <li>
               <Link
-                to="/admin/account/recyclers"
-                className={`flex items-center p-2 no-underline rounded-md transition-colors text-gray-700 hover:bg-gray-100
+                to="/admin/account/collectors"
+                className={`flex items-center p-2 no-underline rounded-md transition-colors ${
+                  isCollectorsActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 <span>Người thu gom</span>
@@ -94,8 +117,11 @@ const SidebarAdmin = ({ isOpen }) => {
             </li>
             <li>
               <Link
-                to="/admin/account/recycling-companies"
-                className={`flex items-center p-2 no-underline rounded-md transition-colors text-gray-700 hover:bg-gray-100
+                to="/admin/account/recycling-enterprises"
+                className={`flex items-center p-2 no-underline rounded-md transition-colors ${
+                  isRecyclingEnterprisesActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 <span>Doanh nghiệp tái chế</span>
@@ -106,14 +132,18 @@ const SidebarAdmin = ({ isOpen }) => {
         <li>
           <Link
             to="/admin/complaints"
-            className={`flex items-center p-3 no-underline transition-all duration-300 text-base font-medium rounded-lg hover:bg-gray-50 text-gray-700 hover:text-blue-600
+            className={`flex items-center p-3 no-underline transition-all duration-300 text-base font-medium rounded-lg ${
+              isComplaintsActive
+                ? "bg-green-50 text-green-600"
+                : "hover:bg-gray-50 text-gray-700"
             }`}
           >
             <FaBullhorn
-              className={`mr-3 transition-colors duration-300 text-lg text-gray-500
+              className={`mr-3 transition-colors duration-300 text-lg ${
+                isComplaintsActive ? "text-green-600" : "text-gray-500"
               }`}
             />
-            <span className="text-gray-700 hover:text-blue-600">
+            <span className={isComplaintsActive ? "text-green-600" : "text-gray-700"}>
              Khiếu nại
             </span>
           </Link>
@@ -121,7 +151,7 @@ const SidebarAdmin = ({ isOpen }) => {
         <li>
           <Link
             to="/signin"
-            className="flex items-center w-full p-3 text-base font-medium text-left text-gray-500 transition-all duration-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:text-red-600"
+            className="flex items-center w-full p-3 text-base font-medium text-left text-red-600 transition-all duration-300 rounded-lg cursor-pointer hover:bg-gray-50"
           >
             <FaSignOutAlt className="mr-3" />
             <span>Đăng xuất</span>
