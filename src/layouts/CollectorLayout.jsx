@@ -1,8 +1,7 @@
-import AdminSidebar from "../components/AdminComponent/AdminSidebar";
-import HeaderAdmin from "../components/AdminComponent/HeaderAdmin";
-import { useState } from "react";
+import React, { useState } from "react";
+import CollectorSidebar from "../components/CollectorComponent/CollectorSidebar";
 
-const AdminLayout = ({ children }) => {
+const CollectorLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
@@ -11,17 +10,17 @@ const AdminLayout = ({ children }) => {
       <div
         className={`${isSidebarOpen ? "w-70" : "w-0"} shrink-0 transition-all duration-300 ease-in-out overflow-hidden h-full`}
       >
-        <AdminSidebar isOpen={isSidebarOpen} />
+        <CollectorSidebar isOpen={isSidebarOpen} />
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-hidden h-full">
-        {/* Header - Only in main content area */}
+        {/* Header - Only in main content area
         <div className="shrink-0">
           <HeaderAdmin
             toggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           />
-        </div>
+        </div> */}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 flex flex-col bg-white">
@@ -32,4 +31,4 @@ const AdminLayout = ({ children }) => {
   );
 };
 
-export default AdminLayout;
+export default CollectorLayout;
