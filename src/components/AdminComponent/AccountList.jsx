@@ -1,59 +1,60 @@
-import React, { useState } from 'react';
-import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
-import ModalConfirm from './ModalConfirm';
+import React, { useState } from "react";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import ModalConfirm from "./ModalConfirm";
+import ModalUpdate from "./ModalUpdate";
 
 const AccountList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAccountEmail, setSelectedAccountEmail] = useState('');
-  
+  const [selectedAccountEmail, setSelectedAccountEmail] = useState("");
+  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
+
   // Dữ liệu mẫu
   const accounts = [
     {
       id: 1,
-      fullName: 'Alice Johnson',
-      email: 'alice.johnson@example.com',
-      phone: '123-456-7890',
-      role: 'Dân cư'
+      fullName: "Alice Johnson",
+      email: "alice.johnson@example.com",
+      phone: "123-456-7890",
+      role: "Dân cư",
     },
     {
       id: 2,
-      fullName: 'Bob Smith',
-      email: 'bob.smith@example.com',
-      phone: '234-567-8901',
-      role: 'Dân cư'
+      fullName: "Bob Smith",
+      email: "bob.smith@example.com",
+      phone: "234-567-8901",
+      role: "Dân cư",
     },
     {
       id: 3,
-      fullName: 'Charlie Brown',
-      email: 'charlie.brown@example.com',
-      phone: '345-678-9012',
-      role: 'Dân cư'
+      fullName: "Charlie Brown",
+      email: "charlie.brown@example.com",
+      phone: "345-678-9012",
+      role: "Dân cư",
     },
     {
       id: 4,
-      fullName: 'Diana Prince',
-      email: 'diana.prince@example.com',
-      phone: '456-789-0123',
-      role: 'Dân cư'
+      fullName: "Diana Prince",
+      email: "diana.prince@example.com",
+      phone: "456-789-0123",
+      role: "Dân cư",
     },
     {
       id: 5,
-      fullName: 'Ethan Hunt',
-      email: 'ethan.hunt@example.com',
-      phone: '567-890-1234',
-      role: 'Dân cư'
-    }
+      fullName: "Ethan Hunt",
+      email: "ethan.hunt@example.com",
+      phone: "567-890-1234",
+      role: "Dân cư",
+    },
   ];
 
   const handleView = () => {
     // Sử dụng window.history để tương thích với custom routing trong App.jsx
-    window.history.pushState({}, '', `/admin/account/detail`);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.history.pushState({}, "", `/admin/account/detail`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
-  const handleEdit = (id) => {
-    console.log('Edit account:', id);
-    // Xử lý logic chỉnh sửa
+  const handleEdit = () => {
+    setIsModalUpdateOpen(true);
   };
 
   const handleDelete = (id, email) => {
@@ -63,10 +64,10 @@ const AccountList = () => {
 
   const handleConfirmDelete = () => {
     // Xử lý logic xóa tài khoản
-    console.log('Delete account:', selectedAccountEmail);
+    console.log("Delete account:", selectedAccountEmail);
     // TODO: Gọi API xóa tài khoản
     setIsModalOpen(false);
-    setSelectedAccountEmail('');
+    setSelectedAccountEmail("");
   };
 
   return (
@@ -122,19 +123,19 @@ const AccountList = () => {
                     <FaEye className="text-blue-600" />
                   </button>
                   <button
-                    onClick={() => handleEdit(account.id)}
+                    onClick={handleEdit}
                     className="p-2 transition-colors border border-gray-300 rounded hover:bg-yellow-50"
-                    title="Edit"
+                    title="Sửa"
                   >
                     <FaEdit className="text-yellow-600" />
                   </button>
-                    <button
-                      onClick={() => handleDelete(account.id, account.email)}
-                      className="p-2 transition-colors border border-gray-300 rounded hover:bg-red-50"
-                      title="Delete"
-                    >
-                      <FaTrash className="text-red-600" />
-                    </button>
+                  <button
+                    onClick={() => handleDelete(account.id, account.email)}
+                    className="p-2 transition-colors border border-gray-300 rounded hover:bg-red-50"
+                    title="Delete"
+                  >
+                    <FaTrash className="text-red-600" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -146,10 +147,15 @@ const AccountList = () => {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setSelectedAccountEmail('');
+          setSelectedAccountEmail("");
         }}
         onConfirm={handleConfirmDelete}
         accountEmail={selectedAccountEmail}
+      />
+
+      <ModalUpdate
+        isOpen={isModalUpdateOpen}
+        onClose={() => setIsModalUpdateOpen(false)}
       />
     </div>
   );
