@@ -5,6 +5,7 @@ const EnterpriseSidebar = ({ isOpen }) => {
         username: 'RecycleCorp Ltd.',
         plan: 'ENTERPRISE PLAN'
     });
+    const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
     useEffect(() => {
         const userDataFromStorage = localStorage.getItem('user');
@@ -21,7 +22,25 @@ const EnterpriseSidebar = ({ isOpen }) => {
                 console.error('Error parsing user data:', error);
             }
         }
-    }, []);
+
+        // Listen for pathname changes
+        const handleLocationChange = () => {
+            setCurrentPath(window.location.pathname);
+        };
+        window.addEventListener('popstate', handleLocationChange);
+
+        // Check pathname periodically (for programmatic navigation)
+        const interval = setInterval(() => {
+            if (window.location.pathname !== currentPath) {
+                setCurrentPath(window.location.pathname);
+            }
+        }, 100);
+
+        return () => {
+            window.removeEventListener('popstate', handleLocationChange);
+            clearInterval(interval);
+        };
+    }, [currentPath]);
 
     const handleLogout = () => {
         localStorage.removeItem('user');
@@ -29,7 +48,7 @@ const EnterpriseSidebar = ({ isOpen }) => {
     };
 
     const menuItems = [
-        { id: 'requests', label: 'Quản lý yêu cầu', icon: 'document', path: '/enterprise', active: true },
+        { id: 'requests', label: 'Quản lý yêu cầu', icon: 'document', path: '/enterprise' },
         { id: 'dispatch', label: 'Điều phối & Theo dõi', icon: 'truck', path: '/enterprise/dispatch' },
         { id: 'rewards', label: 'Cấu hình điểm thưởng', icon: 'gift', path: '/enterprise/rewards' },
         { id: 'reports', label: 'Báo cáo thống kê', icon: 'chart', path: '/enterprise/reports' },
@@ -53,7 +72,8 @@ const EnterpriseSidebar = ({ isOpen }) => {
             case 'truck':
                 return (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 );
             case 'gift':
@@ -94,22 +114,27 @@ const EnterpriseSidebar = ({ isOpen }) => {
             {/* Navigation Menu */}
             <nav className="flex-1 overflow-y-auto py-4">
                 <ul className="space-y-1 px-3">
-                    {menuItems.map((item) => (
-                        <li key={item.id}>
-                            <a
-                                href={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${item.active
-                                    ? 'bg-green-50 text-green-700 font-semibold'
-                                    : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
-                                    }`}
-                            >
-                                <span className={item.active ? 'text-green-600' : 'text-gray-500'}>
-                                    {getIcon(item.icon)}
-                                </span>
-                                <span className="text-sm">{item.label}</span>
-                            </a>
-                        </li>
-                    ))}
+                    {menuItems.map((item) => {
+                        const isActive = currentPath === item.path ||
+                            (item.path === '/enterprise' && currentPath.startsWith('/enterprise/report')) ||
+                            (item.path === '/enterprise/dispatch' && currentPath.startsWith('/enterprise/follow-progress'));
+                        return (
+                            <li key={item.id}>
+                                <a
+                                    href={item.path}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+                                        ? 'bg-green-50 text-green-700 font-semibold'
+                                        : 'text-gray-700 hover:bg-gray-50 hover:text-green-600'
+                                        }`}
+                                >
+                                    <span className={isActive ? 'text-green-600' : 'text-gray-500'}>
+                                        {getIcon(item.icon)}
+                                    </span>
+                                    <span className="text-sm">{item.label}</span>
+                                </a>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
 

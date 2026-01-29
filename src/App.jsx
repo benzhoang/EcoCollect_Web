@@ -13,6 +13,9 @@ import AdminLayout from './layouts/AdminLayout';
 import DashboardPage from './pages/Admin/DashboardPage';
 import EnterpriseHomePage from './pages/Enterprise/EnterpriseHomePage';
 import ReportDetail from './pages/Enterprise/ReportDetail';
+import ConfigPoint from './pages/Enterprise/ConfigPoint';
+import CoordinationFollow from './pages/Enterprise/CoordinationFollow';
+import FollowProgress from './pages/Enterprise/FollowProgress';
 import './App.css';
 import CitizenListPage from './pages/Admin/CitizenListPage';
 import CollectorListPage from './pages/Admin/CollectorListPage';
@@ -54,6 +57,10 @@ function App() {
     // Check if path matches /enterprise/report/:id first
     if (pathname.startsWith('/enterprise/report/')) {
       return <ReportDetail />;
+    }
+    // Check if path matches /enterprise/follow-progress/:id
+    if (pathname.startsWith('/enterprise/follow-progress/')) {
+      return <FollowProgress />;
     }
 
     switch (pathname) {
@@ -131,6 +138,12 @@ function App() {
         );
       case '/enterprise':
         return <EnterpriseHomePage />;
+      case '/enterprise/dispatch':
+        return <CoordinationFollow />;
+      case '/enterprise/follow-progress':
+        return <FollowProgress />;
+      case '/enterprise/rewards':
+        return <ConfigPoint />;
       case '/':
       default:
         return (
