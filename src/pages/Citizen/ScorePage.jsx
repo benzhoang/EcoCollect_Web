@@ -151,9 +151,12 @@ const ScorePage = () => {
                                     </svg>
                                     Đổi quà ngay
                                 </button>
-                                <button className="flex-1 bg-green-900 bg-opacity-50 text-white font-semibold py-3 px-4 rounded-lg hover:bg-opacity-70 transition-all duration-200">
+                                <a 
+                                    href="/point-guide"
+                                    className="flex-1 bg-green-900 bg-opacity-50 text-white font-semibold py-3 px-4 rounded-lg hover:bg-opacity-70 transition-all duration-200 text-center"
+                                >
                                     Xem cách tích điểm
-                                </button>
+                                </a>
                             </div>
                         </div>
 
