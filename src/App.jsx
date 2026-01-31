@@ -5,8 +5,10 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/Citizen/HomePage";
 import Contact from "./pages/Citizen/Contact";
 import Report from "./pages/Citizen/Report";
+import CreateReport from "./pages/Citizen/CreateReport";
 import ScorePage from "./pages/Citizen/ScorePage";
 import RankPage from "./pages/Citizen/RankPage";
+import PointGuild from "./pages/Citizen/PointGuild";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
 import AdminLayout from "./layouts/AdminLayout";
@@ -16,6 +18,8 @@ import ReportDetail from "./pages/Enterprise/ReportDetail";
 import ConfigPoint from "./pages/Enterprise/ConfigPoint";
 import CoordinationFollow from "./pages/Enterprise/CoordinationFollow";
 import FollowProgress from "./pages/Enterprise/FollowProgress";
+import EnterpriseReport from "./pages/Enterprise/EnterpriseReport";
+import EnterpriseSetting from "./pages/Enterprise/EnterpriseSetting";
 import "./App.css";
 import CitizenListPage from "./pages/Admin/CitizenListPage";
 import CollectorListPage from "./pages/Admin/CollectorListPage";
@@ -87,6 +91,14 @@ function App() {
             <Footer />
           </>
         );
+      case "/report/create":
+        return (
+          <>
+            <Navbar />
+            <CreateReport />
+            <Footer />
+          </>
+        );
       case "/score":
         return (
           <>
@@ -100,6 +112,14 @@ function App() {
           <>
             <Navbar />
             <RankPage />
+            <Footer />
+          </>
+        );
+      case "/point-guide":
+        return (
+          <>
+            <Navbar />
+            <PointGuild />
             <Footer />
           </>
         );
@@ -159,6 +179,10 @@ function App() {
         return <FollowProgress />;
       case "/enterprise/rewards":
         return <ConfigPoint />;
+      case "/enterprise/reports":
+        return <EnterpriseReport />;
+      case "/enterprise/settings":
+        return <EnterpriseSetting />;
       case "/":
       default:
         return (
