@@ -16,7 +16,7 @@ const CollectorSidebar = ({ isOpen }) => {
       id: "requests",
       label: "Yêu cầu",
       icon: "requests",
-      path: "/collector",
+      path: "/collector/request-list",
       active: true,
     },
     {

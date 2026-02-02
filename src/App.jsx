@@ -29,6 +29,7 @@ import AccountDetailPage from "./pages/Admin/AccountDetailPage";
 import ComplaintDetailPage from "./pages/Admin/ComplaintDetailPage";
 import RequestListPage from "./pages/Collector/RequestListPage";
 import CollectorLayout from "./layouts/CollectorLayout";
+import HistoryPage from "./pages/Collector/HistoryPage";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -169,6 +170,12 @@ function App() {
         return (
           <CollectorLayout>
             <RequestListPage />
+          </CollectorLayout>
+        );
+      case "/collector/history":
+        return (
+          <CollectorLayout>
+            <HistoryPage />
           </CollectorLayout>
         );
       case "/enterprise":
