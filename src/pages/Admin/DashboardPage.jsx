@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   Chart,
   CategoryScale,
@@ -10,7 +10,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+} from "chart.js";
 
 // Register Chart.js components
 Chart.register(
@@ -43,24 +43,40 @@ const DashboardPage = () => {
       if (existingChart) {
         existingChart.destroy();
       }
-      
+
       // Also destroy our ref instance if it exists
       if (barChartInstance.current) {
         barChartInstance.current.destroy();
         barChartInstance.current = null;
       }
 
-      const ctx = barCanvas.getContext('2d');
+      const ctx = barCanvas.getContext("2d");
       barChartInstance.current = new Chart(ctx, {
-        type: 'bar',
+        type: "bar",
         data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
           datasets: [
             {
-              label: 'Revenue',
-              data: [45000000, 52000000, 48000000, 61000000, 55000000, 67000000, 90000000, 72000000, 68000000, 75000000, 80000000, 85000000],
-              backgroundColor: 'rgba(99, 102, 241, 0.8)',
-              borderColor: 'rgba(99, 102, 241, 1)',
+              label: "Revenue",
+              data: [
+                45000000, 52000000, 48000000, 61000000, 55000000, 67000000,
+                90000000, 72000000, 68000000, 75000000, 80000000, 85000000,
+              ],
+              backgroundColor: "rgba(99, 102, 241, 0.8)",
+              borderColor: "rgba(99, 102, 241, 1)",
               borderWidth: 1,
               borderRadius: 8,
             },
@@ -72,8 +88,8 @@ const DashboardPage = () => {
           plugins: {
             legend: {
               display: true,
-              position: 'top',
-              align: 'center',
+              position: "top",
+              align: "center",
               labels: {
                 usePointStyle: true,
                 padding: 15,
@@ -83,24 +99,28 @@ const DashboardPage = () => {
               },
             },
             tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
               padding: 12,
               titleFont: {
                 size: 14,
-                weight: 'bold',
+                weight: "bold",
               },
               bodyFont: {
                 size: 13,
               },
               callbacks: {
-                title: function(context) {
+                title: function (context) {
                   return context[0].label;
                 },
-                label: function(context) {
-                  return context.dataset.label + ': ' + new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                  }).format(context.parsed.y);
+                label: function (context) {
+                  return (
+                    context.dataset.label +
+                    ": " +
+                    new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(context.parsed.y)
+                  );
                 },
               },
             },
@@ -110,12 +130,12 @@ const DashboardPage = () => {
               beginAtZero: true,
               max: 90000000,
               grid: {
-                color: 'rgba(0, 0, 0, 0.1)',
+                color: "rgba(0, 0, 0, 0.1)",
               },
               ticks: {
                 stepSize: 18000000,
-                callback: function(value) {
-                  return new Intl.NumberFormat('vi-VN').format(value);
+                callback: function (value) {
+                  return new Intl.NumberFormat("vi-VN").format(value);
                 },
                 font: {
                   size: 11,
@@ -125,13 +145,13 @@ const DashboardPage = () => {
                 display: true,
                 font: {
                   size: 12,
-                  weight: 'bold',
+                  weight: "bold",
                 },
               },
             },
             x: {
               grid: {
-                color: 'rgba(0, 0, 0, 0.1)',
+                color: "rgba(0, 0, 0, 0.1)",
               },
               ticks: {
                 font: {
@@ -140,10 +160,10 @@ const DashboardPage = () => {
               },
               title: {
                 display: true,
-                text: 'Month',
+                text: "Month",
                 font: {
                   size: 12,
-                  weight: 'bold',
+                  weight: "bold",
                 },
               },
             },
@@ -159,26 +179,26 @@ const DashboardPage = () => {
       if (existingChart) {
         existingChart.destroy();
       }
-      
+
       // Also destroy our ref instance if it exists
       if (pieChartInstance.current) {
         pieChartInstance.current.destroy();
         pieChartInstance.current = null;
       }
 
-      const ctx = pieCanvas.getContext('2d');
+      const ctx = pieCanvas.getContext("2d");
       pieChartInstance.current = new Chart(ctx, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4'],
+          labels: ["Category 1", "Category 2", "Category 3", "Category 4"],
           datasets: [
             {
               data: [160, 101, 120, 728],
               backgroundColor: [
-                'rgba(236, 72, 153, 0.8)',
-                'rgba(244, 114, 182, 0.8)',
-                'rgba(251, 146, 207, 0.8)',
-                'rgba(252, 165, 165, 0.8)',
+                "rgba(236, 72, 153, 0.8)",
+                "rgba(244, 114, 182, 0.8)",
+                "rgba(251, 146, 207, 0.8)",
+                "rgba(252, 165, 165, 0.8)",
               ],
             },
           ],
@@ -189,12 +209,12 @@ const DashboardPage = () => {
           plugins: {
             legend: {
               display: true,
-              position: 'bottom',
+              position: "bottom",
             },
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
+                label: function (context) {
+                  const label = context.label || "";
                   const value = context.parsed || 0;
                   return `${label}: ${value}`;
                 },
@@ -215,7 +235,7 @@ const DashboardPage = () => {
         pieChartInstance.current.destroy();
         pieChartInstance.current = null;
       }
-      
+
       // Additional cleanup for any charts on canvas
       if (barCanvas) {
         const existingChart = Chart.getChart(barCanvas);
@@ -237,9 +257,11 @@ const DashboardPage = () => {
       {/* Summary Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Tổng số báo cáo */}
-        <div className="p-6 bg-gray-100 rounded-lg shadow-sm">
+        <div className="p-6 bg-white rounded-lg shadow-sm">
           <div className="flex flex-col">
-            <h3 className="mb-1 text-sm font-medium text-gray-600">Tổng số báo cáo</h3>
+            <h3 className="mb-1 text-sm font-medium text-gray-600">
+              Tổng số báo cáo
+            </h3>
             <p className="mb-2 text-xs text-gray-500">/tháng</p>
             <div className="flex items-baseline">
               <span className="text-3xl font-bold text-gray-800">20</span>
@@ -249,9 +271,11 @@ const DashboardPage = () => {
         </div>
 
         {/* Card 2: Tỷ lệ hoàn thành */}
-        <div className="p-6 bg-gray-100 rounded-lg shadow-sm">
+        <div className="p-6 bg-white rounded-lg shadow-sm">
           <div className="flex flex-col">
-            <h3 className="mb-1 text-sm font-medium text-gray-600">Tỷ lệ hoàn thành</h3>
+            <h3 className="mb-1 text-sm font-medium text-gray-600">
+              Tỷ lệ hoàn thành
+            </h3>
             <p className="mb-2 text-xs text-gray-500">/tháng</p>
             <div className="flex items-baseline">
               <span className="text-3xl font-bold text-gray-800">90</span>
@@ -261,9 +285,11 @@ const DashboardPage = () => {
         </div>
 
         {/* Card 3: Số người thu gom */}
-        <div className="p-6 bg-gray-100 rounded-lg shadow-sm">
+        <div className="p-6 bg-white rounded-lg shadow-sm">
           <div className="flex flex-col">
-            <h3 className="mb-1 text-sm font-medium text-gray-600">Số người thu gom</h3>
+            <h3 className="mb-1 text-sm font-medium text-gray-600">
+              Số người thu gom
+            </h3>
             <p className="mb-2 text-xs text-gray-500">/tháng</p>
             <div className="flex items-baseline">
               <span className="text-3xl font-bold text-gray-800">1.000</span>
@@ -273,9 +299,11 @@ const DashboardPage = () => {
         </div>
 
         {/* Card 4: Số lượng yêu cầu */}
-        <div className="p-6 bg-gray-100 rounded-lg shadow-sm">
+        <div className="p-6 bg-white rounded-lg shadow-sm">
           <div className="flex flex-col">
-            <h3 className="mb-1 text-sm font-medium text-gray-600">Số lượng yêu cầu</h3>
+            <h3 className="mb-1 text-sm font-medium text-gray-600">
+              Số lượng yêu cầu
+            </h3>
             <p className="mb-2 text-xs text-gray-500">/tháng</p>
             <div className="flex items-baseline">
               <span className="text-3xl font-bold text-gray-800">10</span>

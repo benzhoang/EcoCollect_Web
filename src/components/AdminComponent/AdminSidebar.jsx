@@ -12,7 +12,7 @@ const AdminSidebar = ({ isOpen }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isAccountOpen, setIsAccountOpen] = useState(
-    currentPath.startsWith("/admin/account/"),
+    currentPath.startsWith("/admin/account/")
   );
 
   useEffect(() => {
@@ -114,7 +114,7 @@ const AdminSidebar = ({ isOpen }) => {
             <button
               type="button"
               onClick={handleAccountClick}
-              className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 text-left ${
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 text-left cursor-pointer ${
                 isAccountActive
                   ? "bg-green-50 text-green-700 font-semibold"
                   : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
@@ -133,7 +133,9 @@ const AdminSidebar = ({ isOpen }) => {
               />
             </button>
             <ul
-              className={`${isAccountOpen ? "block" : "hidden"} mt-1 ml-4 space-y-1 pl-4`}
+              className={`${
+                isAccountOpen ? "block" : "hidden"
+              } mt-1 ml-4 space-y-1 pl-4`}
             >
               <li>
                 <Link
@@ -211,7 +213,7 @@ const AdminSidebar = ({ isOpen }) => {
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center w-full gap-2 px-4 py-2 text-sm text-red-600 transition-colors rounded-lg hover:bg-red-50"
+          className="flex items-center w-full gap-2 px-4 py-2 text-sm text-gray-700 transition-colors rounded-lg hover:bg-gray-50"
         >
           {getIcon("logout")}
           <span>Đăng xuất</span>
