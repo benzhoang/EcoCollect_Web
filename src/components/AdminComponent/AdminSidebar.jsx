@@ -34,7 +34,7 @@ const AdminSidebar = ({ isOpen }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    window.location.href = "/signin";
+    window.location.href = "/";
   };
 
   const handleAccountClick = (e) => {
