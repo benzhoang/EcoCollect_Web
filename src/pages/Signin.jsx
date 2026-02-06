@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import { login, saveTokens, saveUser } from "../service/api";
 
 const Signin = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -27,10 +28,10 @@ const Signin = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = "Vui lòng nhập tên người dùng";
-    } else if (formData.username.trim().length < 3) {
-      newErrors.username = "Tên người dùng phải có ít nhất 3 ký tự";
+    if (!formData.email.trim()) {
+      newErrors.email = "Vui lòng nhập email";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = "Email không hợp lệ";
     }
 
     if (!formData.password) {
@@ -52,55 +53,155 @@ const Signin = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Tài khoản giả để login
-      const fakeAccounts = [
-        { username: "user", password: "123456", role: "user" },
-        { username: "admin", password: "123456", role: "admin" },
-        { username: "enterprise", password: "123456", role: "enterprise" },
-        { username: "collector", password: "123456", role: "collector" },
-      ];
+    try {
+      // Gọi API login
+      const response = await login(formData.email, formData.password);
 
-      const account = fakeAccounts.find(
-        (acc) =>
-          acc.username === formData.username &&
-          acc.password === formData.password,
-      );
+      // Response có cấu trúc { data: { tokens, user } } hoặc { tokens, user } trực tiếp
+      const responseData = response.data || response;
+      const tokens = responseData.tokens;
+      const user = responseData.user;
 
-      if (account) {
-        // Lưu thông tin đăng nhập vào localStorage
+      // Lưu tokens vào localStorage
+      if (tokens) {
+        saveTokens(tokens);
+      }
+
+      // Lưu thông tin user vào localStorage
+      if (user) {
         const userData = {
-          username: formData.username,
-          role: account.role,
+          ...user,
           isLoggedIn: true,
           loginTime: new Date().toISOString(),
         };
-        localStorage.setItem("user", JSON.stringify(userData));
+        saveUser(userData);
 
-        // Chuyển hướng dựa trên role
-        if (account.role === "admin") {
-          // Admin -> /admin/dashboard
-          window.history.pushState({}, "", "/admin/dashboard");
-        } else if (account.role === "enterprise") {
-          // Enterprise -> /enterprise
-          window.history.pushState({}, "", "/enterprise");
-        } else if (account.role === "collector") {
-          // Collector -> /collector/request-list
-          window.history.pushState({}, "", "/collector/request-list");
-        } else {
-          // User -> /
-          window.history.pushState({}, "", "/");
+        // Xác định role từ roles array hoặc userType
+        const roles = user.roles || [];
+        const userType = user.userType?.toUpperCase();
+
+        // Hàm helper để xác định role chính
+        const getPrimaryRole = () => {
+          // Ưu tiên kiểm tra roles array trước
+          if (Array.isArray(roles) && roles.length > 0) {
+            // Tìm role trong mảng roles (có thể là string hoặc object)
+            for (const role of roles) {
+              const roleStr = typeof role === 'string' ? role : role?.name || role?.authority || '';
+              const normalizedRole = roleStr.toUpperCase();
+
+              // Kiểm tra exact match trước
+              if (normalizedRole === 'ROLE_ADMIN') {
+                return 'ADMIN';
+              }
+              if (normalizedRole === 'ROLE_ENTERPRISE_MANAGER' || normalizedRole === 'ROLE_ENTERPRISE') {
+                return 'ENTERPRISE';
+              }
+              if (normalizedRole === 'ROLE_COLLECTOR') {
+                return 'COLLECTOR';
+              }
+              if (normalizedRole === 'ROLE_CITIZEN') {
+                return 'CITIZEN';
+              }
+
+              // Sau đó kiểm tra includes (fallback)
+              if (normalizedRole.includes('ADMIN')) {
+                return 'ADMIN';
+              }
+              if (normalizedRole.includes('ENTERPRISE')) {
+                return 'ENTERPRISE';
+              }
+              if (normalizedRole.includes('COLLECTOR')) {
+                return 'COLLECTOR';
+              }
+              if (normalizedRole.includes('CITIZEN')) {
+                return 'CITIZEN';
+              }
+            }
+          }
+
+          // Nếu không tìm thấy trong roles, kiểm tra userType
+          if (userType) {
+            // Kiểm tra exact match trước
+            if (userType === 'ADMIN') {
+              return 'ADMIN';
+            }
+            if (userType === 'ENTERPRISE_MANAGER' || userType === 'ENTERPRISE') {
+              return 'ENTERPRISE';
+            }
+            if (userType === 'COLLECTOR') {
+              return 'COLLECTOR';
+            }
+            if (userType === 'CITIZEN') {
+              return 'CITIZEN';
+            }
+
+            // Sau đó kiểm tra includes (fallback)
+            if (userType.includes('ADMIN')) {
+              return 'ADMIN';
+            }
+            if (userType.includes('ENTERPRISE')) {
+              return 'ENTERPRISE';
+            }
+            if (userType.includes('COLLECTOR')) {
+              return 'COLLECTOR';
+            }
+            if (userType.includes('CITIZEN')) {
+              return 'CITIZEN';
+            }
+          }
+
+          // Mặc định là CITIZEN
+          console.warn('Không xác định được role, sử dụng mặc định CITIZEN. Roles:', roles, 'UserType:', userType);
+          return 'CITIZEN';
+        };
+
+        const primaryRole = getPrimaryRole();
+        console.log('User data:', { roles, userType, primaryRole });
+
+        // Xác định đường dẫn dựa trên role
+        let redirectPath = "/";
+        switch (primaryRole) {
+          case 'ADMIN':
+            redirectPath = "/admin/dashboard";
+            break;
+          case 'ENTERPRISE':
+            redirectPath = "/enterprise";
+            break;
+          case 'COLLECTOR':
+            redirectPath = "/collector/request-list";
+            break;
+          case 'CITIZEN':
+          default:
+            redirectPath = "/";
+            break;
         }
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      } else {
-        setErrors({
-          username: "Tên người dùng hoặc mật khẩu không đúng",
-          password: "Tên người dùng hoặc mật khẩu không đúng",
-        });
-        setIsLoading(false);
+
+        console.log('Redirecting to:', redirectPath, 'for role:', primaryRole);
+
+        // Chuyển hướng - sử dụng window.location.href để đảm bảo App.jsx re-render
+        // App.jsx sẽ tự động detect thay đổi pathname và re-render
+        window.location.href = redirectPath;
       }
-    }, 1000);
+    } catch (error) {
+      // Xử lý lỗi và hiển thị thông báo phù hợp
+      const errorMessage = error.message || "Email hoặc mật khẩu không đúng";
+
+      // Nếu là lỗi kết nối, chỉ hiển thị ở một field
+      if (errorMessage.includes("kết nối") || errorMessage.includes("server")) {
+        setErrors({
+          email: errorMessage,
+          password: "",
+        });
+      } else {
+        // Lỗi xác thực, hiển thị ở cả hai field
+        setErrors({
+          email: errorMessage,
+          password: errorMessage,
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoBack = () => {
@@ -179,31 +280,30 @@ const Signin = () => {
           {/* Signin Form */}
           <div className="p-8 bg-white border border-gray-200 rounded-lg shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Username Field */}
+              {/* Email Field */}
               <div>
                 <label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="block mb-2 text-sm font-medium text-gray-700"
                 >
-                  Tên người dùng
+                  Email
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  value={formData.username}
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={formData.email}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                    errors.username
-                      ? "border-red-300 bg-red-50"
-                      : "border-gray-300 bg-white"
-                  }`}
-                  placeholder="Nhập tên người dùng"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.email
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 bg-white"
+                    }`}
+                  placeholder="Nhập email của bạn"
                 />
-                {errors.username && (
+                {errors.email && (
                   <p className="mt-1.5 text-sm text-red-600">
-                    {errors.username}
+                    {errors.email}
                   </p>
                 )}
               </div>
@@ -224,11 +324,10 @@ const Signin = () => {
                     autoComplete="current-password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                      errors.password
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-300 bg-white"
-                    }`}
+                    className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.password
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-300 bg-white"
+                      }`}
                     placeholder="Nhập mật khẩu"
                   />
                   <button

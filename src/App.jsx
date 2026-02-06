@@ -8,6 +8,7 @@ import Report from "./pages/Citizen/Report";
 import CreateReport from "./pages/Citizen/CreateReport";
 import ScorePage from "./pages/Citizen/ScorePage";
 import RankPage from "./pages/Citizen/RankPage";
+import Trade from "./pages/Citizen/Trade";
 import PointGuild from "./pages/Citizen/PointGuild";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
@@ -105,6 +106,14 @@ function App() {
           <>
             <Navbar />
             <ScorePage />
+            <Footer />
+          </>
+        );
+      case "/trade":
+        return (
+          <>
+            <Navbar />
+            <Trade />
             <Footer />
           </>
         );

@@ -145,12 +145,15 @@ const ScorePage = () => {
                                 <div className="text-xl font-medium opacity-90">EcoPoints</div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <button className="flex-1 bg-white text-green-700 font-semibold py-3 px-4 rounded-lg hover:bg-green-50 transition-all duration-200 flex items-center justify-center gap-2">
+                                <a 
+                                    href="/trade"
+                                    className="flex-1 bg-white text-green-700 font-semibold py-3 px-4 rounded-lg hover:bg-green-50 transition-all duration-200 flex items-center justify-center gap-2 text-center"
+                                >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                                     </svg>
                                     Đổi quà ngay
-                                </button>
+                                </a>
                                 <a 
                                     href="/point-guide"
                                     className="flex-1 bg-green-900 bg-opacity-50 text-white font-semibold py-3 px-4 rounded-lg hover:bg-opacity-70 transition-all duration-200 text-center"
@@ -272,12 +275,15 @@ const ScorePage = () => {
                                     );
                                 })}
                             </div>
-                            <button className="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-all duration-200 flex items-center justify-center gap-2">
+                            <a 
+                                href="/trade"
+                                className="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-all duration-200 flex items-center justify-center gap-2 text-center"
+                            >
                                 Khám phá tất cả quà tặng
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
