@@ -3,15 +3,12 @@ import AdminSidebar from "../components/AdminComponent/AdminSidebar";
 const AdminLayout = ({ children }) => {
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar - Full Height */}
-      <div className="w-70 shrink-0 transition-all duration-300 ease-in-out overflow-hidden h-full">
-        <AdminSidebar isOpen={true} />
-      </div>
+      <AdminSidebar isOpen={true} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-hidden h-full">
+      <div className="flex flex-col flex-1 h-full overflow-hidden transition-all duration-300 ease-in-out">
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 flex flex-col">
+        <div className="flex flex-col flex-1 p-5 overflow-x-hidden overflow-y-auto">
           <div className="flex-1 w-full h-full">{children}</div>
         </div>
       </div>

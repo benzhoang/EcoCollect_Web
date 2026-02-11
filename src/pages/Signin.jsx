@@ -54,6 +54,10 @@ const Signin = () => {
     }
 
     setIsLoading(true);
+    const loadingTimeoutId = setTimeout(() => {
+      setIsLoading(false);
+      toast.error("Đăng nhập quá thời gian. Vui lòng thử lại.", { duration: 5000 });
+    }, 30000);
 
     try {
       // Giữ loading tối thiểu 10s (để user thấy progress), đồng thời vẫn gọi API song song
@@ -186,6 +190,7 @@ const Signin = () => {
         console.log('Redirecting to:', redirectPath, 'for role:', primaryRole);
 
         // Tắt loading trước rồi mới hiện toast
+        clearTimeout(loadingTimeoutId);
         setIsLoading(false);
 
         // Hiển thị thông báo thành công
@@ -203,6 +208,7 @@ const Signin = () => {
       const errorMessage = error.message || "Email hoặc mật khẩu không đúng";
 
       // Tắt loading trước rồi mới hiện toast
+      clearTimeout(loadingTimeoutId);
       setIsLoading(false);
 
       // Hiển thị lỗi bằng toast
