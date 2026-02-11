@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
+import logoImage from "../../assets/Screenshot_2026-01-17_220348-removebg-preview.png";
 
 const CollectorSidebar = ({ isOpen }) => {
-  const userData = {
-    username: "Nguyễn Văn A",
-    plan: "COLLECTOR",
-  };
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const userData = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : { fullName: "Người thu gom", userType: "COLLECTOR" };
+    } catch {
+      return { fullName: "Người thu gom", userType: "COLLECTOR" };
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -17,14 +26,12 @@ const CollectorSidebar = ({ isOpen }) => {
       label: "Yêu cầu",
       icon: "requests",
       path: "/collector/request-list",
-      active: true,
     },
     {
       id: "history",
       label: "Lịch sử",
       icon: "history",
       path: "/collector/history",
-      active: false,
     },
   ];
 
@@ -92,45 +99,39 @@ const CollectorSidebar = ({ isOpen }) => {
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <svg
-            className="w-6 h-6 text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <span className="text-xl font-bold text-green-600">EcoCollect</span>
+          <img
+            src={logoImage}
+            alt="EcoCollect Logo"
+            className="h-10 w-auto object-contain"
+          />
         </div>
       </div>
 
       {/* Navigation Menu */}
       <nav className="flex-1 py-4 overflow-y-auto">
-        <ul className="px-3 space-y-1">
-          {menuItems.map((item) => (
-            <li key={item.id}>
-              <a
-                href={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                  item.active
-                    ? "bg-green-50 text-green-700 font-semibold"
-                    : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
-                }`}
-              >
-                <span
-                  className={item.active ? "text-green-600" : "text-gray-500"}
+        <ul className="px-3 space-y-1 list-none">
+          {menuItems.map((item) => {
+            const isActive = currentPath === item.path;
+            return (
+              <li key={item.id}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 no-underline ${
+                    isActive
+                      ? "bg-green-50 text-green-700 font-semibold"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
+                  }`}
                 >
-                  {getIcon(item.icon)}
-                </span>
-                <span className="text-sm">{item.label}</span>
-              </a>
-            </li>
-          ))}
+                  <span
+                    className={isActive ? "text-green-600" : "text-gray-500"}
+                  >
+                    {getIcon(item.icon)}
+                  </span>
+                  <span className="text-sm">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
@@ -138,13 +139,13 @@ const CollectorSidebar = ({ isOpen }) => {
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex items-center justify-center w-10 h-10 font-semibold text-white bg-green-600 rounded-full">
-            {userData.username.charAt(0).toUpperCase()}
+            {(userData.fullName || "C").charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-gray-900 truncate">
-              {userData.username}
+              {userData.fullName || "Người thu gom"}
             </div>
-            <div className="text-xs text-gray-500">{userData.plan}</div>
+            <div className="text-xs text-gray-500">{userData.userType || "COLLECTOR"}</div>
           </div>
         </div>
         <button

@@ -332,384 +332,406 @@ const ComplaintDetailPage = () => {
   }
 
   return (
-    <div className="flex flex-col w-full h-full gap-6 p-6">
-      <button
-        className="flex items-center self-start gap-2 text-gray-700 transition-colors hover:text-gray-900"
-        onClick={handleBack}
-      >
-        <FaArrowLeft />
-        <span>Quay lại</span>
-      </button>
+    <div className="flex flex-col w-full h-full gap-6">
+      {/* Page Header */}
+      <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            className="flex items-center gap-2 text-gray-700 transition-colors hover:text-gray-900"
+            onClick={handleBack}
+          >
+            <FaArrowLeft />
+            <span>Quay lại</span>
+          </button>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          {/* Summary */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="mb-1 text-xl font-bold text-gray-900">
-                  {selected.id}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {SOURCES[selected.source]} · {COMPLAINT_TYPES[selected.type]}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${STATUS_MAP[selected.status]?.color || "bg-gray-100 text-gray-800"}`}
-                  >
-                    {STATUS_MAP[selected.status]?.label || selected.status}
-                  </span>
-                  {selected.reportId && (
-                    <span className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
-                      {selected.reportId}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                <span className="font-medium text-gray-700">Tạo lúc:</span>{" "}
-                {formatDate(selected.createdAt)}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase">
-                  Người khiếu nại
-                </p>
-                <p className="font-medium text-gray-900">
-                  {selected.complainantName}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {selected.complainantContact}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase">
-                  Bên bị khiếu nại
-                </p>
-                <p className="font-medium text-gray-900">
-                  {selected.respondentName}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {selected.respondentRole === "collector"
-                    ? "Người thu gom"
-                    : selected.respondentRole === "enterprise"
-                      ? "Doanh nghiệp"
-                      : "Hệ thống"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <FaFileAlt className="text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Mô tả khiếu nại
-              </h3>
-            </div>
-            <p className="text-gray-700 whitespace-pre-wrap">
-              {selected.description}
+          <div className="ml-5">
+            <h1 className="text-2xl font-bold text-black">
+              Chi tiết khiếu nại
+            </h1>
+            <p className="text-sm text-gray-600">
+              Xem và xử lý chi tiết khiếu nại, tranh chấp từ người dùng.
             </p>
           </div>
+        </div>
+      </header>
 
-          {/* Images */}
-          {selected.images && selected.images.length > 0 && (
+      <div className="flex flex-col flex-1 gap-6 p-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            {/* Summary */}
+            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="mb-1 text-xl font-bold text-gray-900">
+                    {selected.id}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {SOURCES[selected.source]} ·{" "}
+                    {COMPLAINT_TYPES[selected.type]}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${
+                        STATUS_MAP[selected.status]?.color ||
+                        "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {STATUS_MAP[selected.status]?.label || selected.status}
+                    </span>
+                    {selected.reportId && (
+                      <span className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
+                        {selected.reportId}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500">
+                  <span className="font-medium text-gray-700">Tạo lúc:</span>{" "}
+                  {formatDate(selected.createdAt)}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase">
+                    Người khiếu nại
+                  </p>
+                  <p className="font-medium text-gray-900">
+                    {selected.complainantName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {selected.complainantContact}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase">
+                    Bên bị khiếu nại
+                  </p>
+                  <p className="font-medium text-gray-900">
+                    {selected.respondentName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {selected.respondentRole === "collector"
+                      ? "Người thu gom"
+                      : selected.respondentRole === "enterprise"
+                        ? "Doanh nghiệp"
+                        : "Hệ thống"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
             <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="flex items-center gap-2 mb-3">
-                <FaImages className="text-gray-600" />
+                <FaFileAlt className="text-gray-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Hình ảnh đính kèm
+                  Mô tả khiếu nại
                 </h3>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {selected.images.map((src, i) => (
-                  <a
-                    key={i}
-                    href={src}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden border border-gray-200 rounded-lg"
-                  >
-                    <img
-                      src={src}
-                      alt={`Khiếu nại ${i + 1}`}
-                      className="object-cover w-40 h-28"
-                    />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* GPS */}
-          {selected.gps && (
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <FaMapMarkerAlt className="text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Vị trí</h3>
-              </div>
-              <p className="text-gray-700">{selected.gps.address}</p>
-              <p className="mt-1 text-sm text-gray-500">
-                GPS: {selected.gps.lat}, {selected.gps.lng}
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {selected.description}
               </p>
             </div>
-          )}
 
-          {/* Verification & Decision - only when not resolved */}
-          {!isResolved && (
-            <>
+            {/* Images */}
+            {selected.images && selected.images.length > 0 && (
               <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <FaCheckCircle className="text-green-600" />
+                  <FaImages className="text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Xác minh
+                    Hình ảnh đính kèm
                   </h3>
                 </div>
-                <p className="mb-4 text-sm text-gray-600">
-                  Ghi chú xác minh (đối chiếu ảnh, thời gian, GPS, dữ liệu hệ
-                  thống). Yêu cầu bổ sung bằng chứng nếu cần.
-                </p>
-                <textarea
-                  value={verifyNote}
-                  onChange={(e) => setVerifyNote(e.target.value)}
-                  placeholder="Ghi chú xác minh..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <div className="mt-3">
-                  <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
-                    Yêu cầu bổ sung bằng chứng (tùy chọn)
-                  </label>
-                  <textarea
-                    value={requestEvidence}
-                    onChange={(e) => setRequestEvidence(e.target.value)}
-                    placeholder="Mô tả yêu cầu..."
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
+                <div className="flex flex-wrap gap-3">
+                  {selected.images.map((src, i) => (
+                    <a
+                      key={i}
+                      href={src}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden border border-gray-200 rounded-lg"
+                    >
+                      <img
+                        src={src}
+                        alt={`Khiếu nại ${i + 1}`}
+                        className="object-cover w-40 h-28"
+                      />
+                    </a>
+                  ))}
                 </div>
               </div>
+            )}
 
+            {/* GPS */}
+            {selected.gps && (
               <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <FaUserShield className="text-green-600" />
+                <div className="flex items-center gap-2 mb-3">
+                  <FaMapMarkerAlt className="text-gray-600" />
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Quyết định xử lý
+                    Vị trí
                   </h3>
                 </div>
+                <p className="text-gray-700">{selected.gps.address}</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  GPS: {selected.gps.lat}, {selected.gps.lng}
+                </p>
+              </div>
+            )}
 
-                <div className="space-y-3 mb-4">
-                  {[
-                    {
-                      value: "accepted",
-                      label: "Chấp nhận khiếu nại và yêu cầu thu gom lại",
-                      icon: FaCheckCircle,
-                    },
-                    {
-                      value: "rejected",
-                      label: "Từ chối khiếu nại (đúng quy định)",
-                      icon: FaTimesCircle,
-                    },
-                    {
-                      value: "adjusted",
-                      label: "Điều chỉnh điểm thưởng thủ công cho Citizen",
-                      icon: FaCoins,
-                    },
-                    {
-                      value: "warning",
-                      label:
-                        "Gắn cảnh báo / xử lý Collector hoặc Enterprise (vi phạm lặp lại)",
-                      icon: FaExclamationTriangle,
-                    },
-                  ].map(({ value, label, icon }) => {
-                    const IconComponent = icon;
-                    return (
-                      <label
-                        key={value}
-                        className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                          decision === value
-                            ? "border-green-500 bg-green-50"
-                            : "border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="decision"
-                          value={value}
-                          checked={decision === value}
-                          onChange={(e) => setDecision(e.target.value)}
-                          className="text-green-600 focus:ring-green-500"
-                        />
-                        <IconComponent
-                          className={
-                            decision === value
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        />
-                        <span className="text-sm font-medium text-gray-900">
-                          {label}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-
-                {decision === "adjusted" && (
-                  <div className="p-4 mb-4 bg-gray-50 rounded-lg">
-                    <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
-                      Điểm điều chỉnh (+/-)
-                    </label>
-                    <input
-                      type="number"
-                      value={adjustPoints}
-                      onChange={(e) => setAdjustPoints(e.target.value)}
-                      placeholder="Ví dụ: 10 hoặc -5"
-                      className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
+            {/* Verification & Decision - only when not resolved */}
+            {!isResolved && (
+              <>
+                <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FaCheckCircle className="text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Xác minh
+                    </h3>
                   </div>
-                )}
-
-                {decision === "warning" && (
-                  <div className="p-4 mb-4 space-y-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
-                        Lý do cảnh báo
-                      </label>
-                      <input
-                        type="text"
-                        value={warningReason}
-                        onChange={(e) => setWarningReason(e.target.value)}
-                        placeholder="Nhập lý do..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
-                        Thời hạn cảnh báo (ngày)
-                      </label>
-                      <input
-                        type="number"
-                        value={warningDuration}
-                        onChange={(e) => setWarningDuration(e.target.value)}
-                        min="1"
-                        className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {decision === "rejected" && (
-                  <div className="p-4 mb-4 bg-gray-50 rounded-lg">
-                    <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
-                      Lý do từ chối
+                  <p className="mb-4 text-sm text-gray-600">
+                    Ghi chú xác minh (đối chiếu ảnh, thời gian, GPS, dữ liệu hệ
+                    thống). Yêu cầu bổ sung bằng chứng nếu cần.
+                  </p>
+                  <textarea
+                    value={verifyNote}
+                    onChange={(e) => setVerifyNote(e.target.value)}
+                    placeholder="Ghi chú xác minh..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <div className="mt-3">
+                    <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
+                      Yêu cầu bổ sung bằng chứng (tùy chọn)
                     </label>
                     <textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      placeholder="Giải thích vì sao từ chối (đúng quy định)..."
-                      rows={3}
+                      value={requestEvidence}
+                      onChange={(e) => setRequestEvidence(e.target.value)}
+                      placeholder="Mô tả yêu cầu..."
+                      rows={2}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
-                )}
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSubmitDecision}
-                    disabled={
-                      !decision ||
-                      (decision === "rejected" && !rejectReason.trim()) ||
-                      (decision === "adjusted" &&
-                        (adjustPoints === "" ||
-                          Number.isNaN(Number(adjustPoints)))) ||
-                      (decision === "warning" && !warningReason.trim())
-                    }
-                    className="flex-1 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Xác nhận quyết định
-                  </button>
-                  <button
-                    onClick={handleBack}
-                    className="flex-1 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-md hover:bg-gray-300"
-                  >
-                    Hủy
-                  </button>
                 </div>
-              </div>
-            </>
-          )}
 
-          {isResolved && (
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 text-green-600">
-                <FaCheckCircle />
-                <h3 className="text-lg font-semibold">
-                  Khiếu nại đã được xử lý
-                </h3>
-              </div>
-              <p className="mt-2 text-gray-600">
-                Trạng thái: {STATUS_MAP[selected.status]?.label}. Không thể thay
-                đổi quyết định.
-              </p>
-            </div>
-          )}
-        </div>
+                <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FaUserShield className="text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Quyết định xử lý
+                    </h3>
+                  </div>
 
-        <div className="lg:col-span-1">
-          {/* Status history */}
-          <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <FaHistory className="text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Lịch sử trạng thái
-                </h3>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {selected.statusHistory.map((h, i) => (
-                <div key={i} className="relative pl-6">
-                  {i < selected.statusHistory.length - 1 && (
-                    <div className="absolute left-2 top-6 bottom-0 w-0.5 bg-gray-200" />
+                  <div className="space-y-3 mb-4">
+                    {[
+                      {
+                        value: "accepted",
+                        label: "Chấp nhận khiếu nại và yêu cầu thu gom lại",
+                        icon: FaCheckCircle,
+                      },
+                      {
+                        value: "rejected",
+                        label: "Từ chối khiếu nại (đúng quy định)",
+                        icon: FaTimesCircle,
+                      },
+                      {
+                        value: "adjusted",
+                        label: "Điều chỉnh điểm thưởng thủ công cho Citizen",
+                        icon: FaCoins,
+                      },
+                      {
+                        value: "warning",
+                        label:
+                          "Gắn cảnh báo / xử lý Collector hoặc Enterprise (vi phạm lặp lại)",
+                        icon: FaExclamationTriangle,
+                      },
+                    ].map(({ value, label, icon }) => {
+                      const IconComponent = icon;
+                      return (
+                        <label
+                          key={value}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                            decision === value
+                              ? "border-green-500 bg-green-50"
+                              : "border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="decision"
+                            value={value}
+                            checked={decision === value}
+                            onChange={(e) => setDecision(e.target.value)}
+                            className="text-green-600 focus:ring-green-500"
+                          />
+                          <IconComponent
+                            className={
+                              decision === value
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          />
+                          <span className="text-sm font-medium text-gray-900">
+                            {label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {decision === "adjusted" && (
+                    <div className="p-4 mb-4 bg-gray-50 rounded-lg">
+                      <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
+                        Điểm điều chỉnh (+/-)
+                      </label>
+                      <input
+                        type="number"
+                        value={adjustPoints}
+                        onChange={(e) => setAdjustPoints(e.target.value)}
+                        placeholder="Ví dụ: 10 hoặc -5"
+                        className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
                   )}
-                  <div className="absolute top-0 left-0 flex items-center justify-center w-4 h-4 bg-green-500 rounded-full" />
-                  <p className="font-medium text-gray-900">
-                    {STATUS_MAP[h.status]?.label || h.status}
-                  </p>
-                  <p className="text-xs text-gray-500">{formatDate(h.at)}</p>
-                  {h.note && (
-                    <p className="mt-1 text-sm text-gray-600">{h.note}</p>
+
+                  {decision === "warning" && (
+                    <div className="p-4 mb-4 space-y-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
+                          Lý do cảnh báo
+                        </label>
+                        <input
+                          type="text"
+                          value={warningReason}
+                          onChange={(e) => setWarningReason(e.target.value)}
+                          placeholder="Nhập lý do..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-xs font-semibold text-gray-700 uppercase">
+                          Thời hạn cảnh báo (ngày)
+                        </label>
+                        <input
+                          type="number"
+                          value={warningDuration}
+                          onChange={(e) => setWarningDuration(e.target.value)}
+                          min="1"
+                          className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
                   )}
-                  {h.admin && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      Admin: {h.admin}
-                    </p>
+
+                  {decision === "rejected" && (
+                    <div className="p-4 mb-4 bg-gray-50 rounded-lg">
+                      <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
+                        Lý do từ chối
+                      </label>
+                      <textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Giải thích vì sao từ chối (đúng quy định)..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
                   )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleSubmitDecision}
+                      disabled={
+                        !decision ||
+                        (decision === "rejected" && !rejectReason.trim()) ||
+                        (decision === "adjusted" &&
+                          (adjustPoints === "" ||
+                            Number.isNaN(Number(adjustPoints)))) ||
+                        (decision === "warning" && !warningReason.trim())
+                      }
+                      className="flex-1 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Xác nhận quyết định
+                    </button>
+                    <button
+                      onClick={handleBack}
+                      className="flex-1 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-200 rounded-md hover:bg-gray-300"
+                    >
+                      Hủy
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
+
+            {isResolved && (
+              <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 text-green-600">
+                  <FaCheckCircle />
+                  <h3 className="text-lg font-semibold">
+                    Khiếu nại đã được xử lý
+                  </h3>
+                </div>
+                <p className="mt-2 text-gray-600">
+                  Trạng thái: {STATUS_MAP[selected.status]?.label}. Không thể
+                  thay đổi quyết định.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Logs */}
-          <div className="p-6 mt-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <FaFileAlt className="text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Log liên quan
-              </h3>
-            </div>
-            <div className="space-y-3">
-              {selected.logs.map((log, i) => (
-                <div key={i} className="flex justify-between gap-2 text-sm">
-                  <span className="text-gray-700">{log.action}</span>
-                  <span className="text-gray-500 whitespace-nowrap">
-                    {formatDate(log.at)}
-                  </span>
+          <div className="lg:col-span-1">
+            {/* Status history */}
+            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FaHistory className="text-gray-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Lịch sử trạng thái
+                  </h3>
                 </div>
-              ))}
+              </div>
+              <div className="space-y-4">
+                {selected.statusHistory.map((h, i) => (
+                  <div key={i} className="relative pl-6">
+                    {i < selected.statusHistory.length - 1 && (
+                      <div className="absolute left-2 top-6 bottom-0 w-0.5 bg-gray-200" />
+                    )}
+                    <div className="absolute top-0 left-0 flex items-center justify-center w-4 h-4 bg-green-500 rounded-full" />
+                    <p className="font-medium text-gray-900">
+                      {STATUS_MAP[h.status]?.label || h.status}
+                    </p>
+                    <p className="text-xs text-gray-500">{formatDate(h.at)}</p>
+                    {h.note && (
+                      <p className="mt-1 text-sm text-gray-600">{h.note}</p>
+                    )}
+                    {h.admin && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Admin: {h.admin}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Logs */}
+            <div className="p-6 mt-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <FaFileAlt className="text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Log liên quan
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {selected.logs.map((log, i) => (
+                  <div key={i} className="flex justify-between gap-2 text-sm">
+                    <span className="text-gray-700">{log.action}</span>
+                    <span className="text-gray-500 whitespace-nowrap">
+                      {formatDate(log.at)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { FaSearch, FaEye, FaBullhorn, FaBell } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
+import ComplaintList from "../../components/AdminComponent/ComplaintList";
 
 const COMPLAINT_TYPES = {
   wrong_waste: "Thu gom không đúng loại rác",
@@ -239,17 +240,6 @@ const MOCK_COMPLAINTS = [
   },
 ];
 
-const formatDate = (iso) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 const ComplaintListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSource, setFilterSource] = useState("");
@@ -281,168 +271,86 @@ const ComplaintListPage = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full gap-6 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <FaBullhorn className="text-xl text-green-600" />
-          <h1 className="text-xl font-bold text-gray-900">
+    <div className="flex flex-col w-full h-full gap-6">
+      {/* Page Header */}
+      <header className="flex items-center justify-between w-full px-6 py-4 bg-white border-b border-gray-200">
+        <div>
+          <h1 className="text-2xl font-bold text-black">
             Khiếu nại & tranh chấp
           </h1>
+          <p className="text-sm text-gray-600">
+            Quản lý và xử lý các khiếu nại, tranh chấp từ người dùng.
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <FaBell className="text-amber-500" />
-          <span>
-            Hệ thống gửi thông báo khi có khiếu nại mới (dashboard / thông báo
-            nội bộ)
-          </span>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Tìm theo nguồn, người khiếu nại..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full py-2 pl-4 pr-10 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-lg min-w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          <FaSearch className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
         </div>
-      </div>
+      </header>
 
-      <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-        {/* Filters & Search */}
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <FaSearch className="absolute text-gray-500 -translate-y-1/2 left-3 top-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm theo mã KN, người khiếu nại, bên bị KN, mã báo cáo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full py-2 pl-10 pr-4 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
+      <div className="flex flex-col gap-6 p-6">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3">
+          <div>
+            <label className="sr-only">Nguồn</label>
+            <select
+              value={filterSource}
+              onChange={(e) => setFilterSource(e.target.value)}
+              className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">Tất cả nguồn</option>
+              {Object.entries(SOURCES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <div>
-              <label className="sr-only">Nguồn</label>
-              <select
-                value={filterSource}
-                onChange={(e) => setFilterSource(e.target.value)}
-                className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Tất cả nguồn</option>
-                {Object.entries(SOURCES).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="sr-only">Loại khiếu nại</label>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Tất cả loại</option>
-                {Object.entries(COMPLAINT_TYPES).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="sr-only">Trạng thái</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Tất cả trạng thái</option>
-                {Object.entries(STATUS_MAP).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="sr-only">Loại khiếu nại</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">Tất cả loại</option>
+              {Object.entries(COMPLAINT_TYPES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="sr-only">Trạng thái</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">Tất cả trạng thái</option>
+              {Object.entries(STATUS_MAP).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  STT
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Mã KN
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Nguồn
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Loại khiếu nại
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Người khiếu nại
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Ngày tạo
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {complaints.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    Không có khiếu nại nào phù hợp.
-                  </td>
-                </tr>
-              ) : (
-                complaints.map((c, i) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900">{i + 1}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {c.id}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {SOURCES[c.source]}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {COMPLAINT_TYPES[c.type]}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {c.complainantName}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${STATUS_MAP[c.status]?.color || "bg-gray-100 text-gray-800"}`}
-                      >
-                        {STATUS_MAP[c.status]?.label || c.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(c.createdAt)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleOpenDetail(c.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-green-700 transition-colors bg-green-50 rounded-md hover:bg-green-100"
-                      >
-                        <FaEye /> Xem chi tiết
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ComplaintList
+          complaints={complaints}
+          onViewDetail={handleOpenDetail}
+          complaintTypes={COMPLAINT_TYPES}
+          sources={SOURCES}
+          statusMap={STATUS_MAP}
+        />
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ Chart.register(
   PieController,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 const DashboardPage = () => {
@@ -254,6 +254,18 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
+      {/* Page Header */}
+      <header className="w-full px-6 py-4 bg-white border-b border-gray-200">
+        <div>
+          <h1 className="text-2xl font-bold text-black">
+            Bảng báo cáo tổng quan
+          </h1>
+          <p className="text-sm text-gray-600">
+            Theo dõi hiệu suất thu gom và quản lý các báo cáo mới nhất.
+          </p>
+        </div>
+      </header>
+
       {/* Summary Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Tổng số báo cáo */}
@@ -316,16 +328,16 @@ const DashboardPage = () => {
       {/* Charts Section */}
       <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Bar Chart */}
-        <div className="p-6 bg-white rounded-lg shadow-sm">
-          <div className="h-full min-h-100">
-            <canvas ref={barChartRef}></canvas>
+        <div className="p-6 bg-white rounded-lg shadow-sm min-h-[420px]">
+          <div className="h-full">
+            <canvas ref={barChartRef} className="w-full h-full"></canvas>
           </div>
         </div>
 
         {/* Pie Chart */}
-        <div className="p-6 bg-white rounded-lg shadow-sm">
-          <div className="h-full min-h-100">
-            <canvas ref={pieChartRef}></canvas>
+        <div className="p-6 bg-white rounded-lg shadow-sm min-h-[420px]">
+          <div className="h-full">
+            <canvas ref={pieChartRef} className="w-full h-full"></canvas>
           </div>
         </div>
       </div>

@@ -46,31 +46,12 @@ const Loading = ({ text = "Đang xử lý...", subtext = "Vui lòng đợi trong
                             <div className="text-base font-semibold text-slate-900">{text}</div>
                             <div className="mt-1 text-sm text-slate-600">{subtext}</div>
 
-                            {/* Progress (indeterminate) */}
-                            <div className="mt-4" aria-hidden="true">
-                                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                                    <div className="loading-bar h-full w-1/3 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500" />
-                                </div>
-                            </div>
-
                             <div className="sr-only" role="status" aria-live="polite">
                                 Đang xử lý, vui lòng chờ.
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Local CSS for indeterminate bar (no Tailwind config required) */}
-                <style>{`
-          @keyframes loadingBarMove {
-            0% { transform: translateX(-120%); }
-            50% { transform: translateX(60%); }
-            100% { transform: translateX(220%); }
-          }
-          .loading-bar {
-            animation: loadingBarMove 1.2s ease-in-out infinite;
-          }
-        `}</style>
             </div>
         </div>
     );

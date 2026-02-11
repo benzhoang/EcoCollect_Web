@@ -32,6 +32,9 @@ import ComplaintDetailPage from "./pages/Admin/ComplaintDetailPage";
 import RequestListPage from "./pages/Collector/RequestListPage";
 import CollectorLayout from "./layouts/CollectorLayout";
 import HistoryPage from "./pages/Collector/HistoryPage";
+import CollectionConfirmationPage from "./pages/Collector/CollectionConfirmationPage";
+import CreateIncidentReportPage from "./pages/Collector/CreateIncidentReportPage";
+import RequestDetailPage from "./pages/Collector/RequestDetailPage";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -71,6 +74,18 @@ function App() {
     // Check if path matches /enterprise/follow-progress/:id
     if (pathname.startsWith("/enterprise/follow-progress/")) {
       return <FollowProgress />;
+    }
+
+    // Chi tiết yêu cầu thu gom: /collector/request-list/:id
+    if (
+      pathname.startsWith("/collector/request-list/") &&
+      pathname !== "/collector/request-list"
+    ) {
+      return (
+        <CollectorLayout>
+          <RequestDetailPage />
+        </CollectorLayout>
+      );
     }
 
     switch (pathname) {
@@ -188,6 +203,18 @@ function App() {
             <HistoryPage />
           </CollectorLayout>
         );
+      case "/collector/collection-confirm":
+        return (
+          <CollectorLayout>
+            <CollectionConfirmationPage />
+          </CollectorLayout>
+        );
+      case "/collector/incident-report":
+        return (
+          <CollectorLayout>
+            <CreateIncidentReportPage />
+          </CollectorLayout>
+        );
       case "/enterprise":
         return <EnterpriseHomePage />;
       case "/enterprise/dispatch":
@@ -220,21 +247,21 @@ function App() {
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#fff',
-              color: '#363636',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              background: "#fff",
+              color: "#363636",
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
             },
             success: {
               iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+                primary: "#10b981",
+                secondary: "#fff",
               },
             },
             error: {
               iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+                primary: "#ef4444",
+                secondary: "#fff",
               },
             },
           }}

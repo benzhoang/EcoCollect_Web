@@ -71,77 +71,94 @@ const AccountList = () => {
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="min-w-full bg-white border-collapse rounded-lg">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              STT
-            </th>
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              Họ và tên
-            </th>
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              Email
-            </th>
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              Số điện thoại
-            </th>
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              Vai trò
-            </th>
-            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-700 uppercase border-b">
-              Action
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {accounts.map((account, index) => (
-            <tr key={account.id}>
-              <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                {index + 1}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                {account.fullName}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                {account.email}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                {account.phone}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                {account.role}
-              </td>
-              <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleView(account.id)}
-                    className="p-2 transition-colors border border-gray-300 rounded hover:bg-blue-50"
-                    title="View"
-                  >
-                    <FaEye className="text-blue-600" />
-                  </button>
-                  <button
-                    onClick={handleEdit}
-                    className="p-2 transition-colors border border-gray-300 rounded hover:bg-yellow-50"
-                    title="Sửa"
-                  >
-                    <FaEdit className="text-yellow-600" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(account.id, account.email)}
-                    className="p-2 transition-colors border border-gray-300 rounded hover:bg-red-50"
-                    title="Delete"
-                  >
-                    <FaTrash className="text-red-600" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <>
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-gray-200 bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  STT
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  HỌ VÀ TÊN
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  EMAIL
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  SỐ ĐIỆN THOẠI
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  VAI TRÒ
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase w-40">
+                  THAO TÁC
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {accounts.map((account, index) => (
+                <tr
+                  key={account.id}
+                  className="transition-colors hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      {account.fullName}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-700">
+                      {account.email}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-700">
+                      {account.phone}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-700">
+                      {account.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleView(account.id)}
+                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-blue-50 shrink-0"
+                        title="Xem chi tiết"
+                      >
+                        <FaEye className="text-blue-600 text-sm" />
+                      </button>
+                      <button
+                        onClick={handleEdit}
+                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-yellow-50 shrink-0"
+                        title="Sửa"
+                      >
+                        <FaEdit className="text-yellow-600 text-sm" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(account.id, account.email)}
+                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-red-50 shrink-0"
+                        title="Xóa"
+                      >
+                        <FaTrash className="text-red-600 text-sm" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <ModalConfirm
         isOpen={isModalOpen}
@@ -157,7 +174,7 @@ const AccountList = () => {
         isOpen={isModalUpdateOpen}
         onClose={() => setIsModalUpdateOpen(false)}
       />
-    </div>
+    </>
   );
 };
 

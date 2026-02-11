@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
+import logoImage from "../../assets/Screenshot_2026-01-17_220348-removebg-preview.png";
 import {
   FaChartBar,
   FaUsers,
@@ -14,6 +15,14 @@ const AdminSidebar = ({ isOpen }) => {
   const [isAccountOpen, setIsAccountOpen] = useState(
     currentPath.startsWith("/admin/account/")
   );
+  const userData = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : { fullName: "Admin", userType: "ADMIN" };
+    } catch {
+      return { fullName: "Admin", userType: "ADMIN" };
+    }
+  }, []);
 
   useEffect(() => {
     setIsAccountOpen(currentPath.startsWith("/admin/account/"));
@@ -26,11 +35,6 @@ const AdminSidebar = ({ isOpen }) => {
   const isRecyclingEnterprisesActive =
     currentPath === "/admin/account/recycling-enterprises";
   const isComplaintsActive = currentPath === "/admin/complaints";
-
-  const userData = {
-    username: "Admin",
-    plan: "ADMIN",
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -70,20 +74,11 @@ const AdminSidebar = ({ isOpen }) => {
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <svg
-            className="w-6 h-6 text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <span className="text-xl font-bold text-green-600">EcoCollect</span>
+          <img
+            src={logoImage}
+            alt="EcoCollect Logo"
+            className="h-10 w-auto object-contain"
+          />
         </div>
       </div>
 
@@ -202,13 +197,13 @@ const AdminSidebar = ({ isOpen }) => {
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex items-center justify-center w-10 h-10 font-semibold text-white bg-green-600 rounded-full">
-            {userData.username.charAt(0)}
+            {(userData.fullName || "A").charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-gray-900 truncate">
-              {userData.username}
+              {userData.fullName || "Admin"}
             </div>
-            <div className="text-xs text-gray-500">{userData.plan}</div>
+            <div className="text-xs text-gray-500">{userData.userType || "ADMIN"}</div>
           </div>
         </div>
         <button
