@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
 import { login, saveTokens, saveUser } from "../service/api";
+import Loading from "../components/Loading";
 
 const Signin = () => {
   const [formData, setFormData] = useState({
@@ -54,8 +56,13 @@ const Signin = () => {
     setIsLoading(true);
 
     try {
-      // Gọi API login
-      const response = await login(formData.email, formData.password);
+      // Giữ loading tối thiểu 10s (để user thấy progress), đồng thời vẫn gọi API song song
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const [response] = await Promise.all([
+        login(formData.email, formData.password),
+        // delay(3000),
+      ]);
 
       // Response có cấu trúc { data: { tokens, user } } hoặc { tokens, user } trực tiếp
       const responseData = response.data || response;
@@ -178,29 +185,33 @@ const Signin = () => {
 
         console.log('Redirecting to:', redirectPath, 'for role:', primaryRole);
 
-        // Chuyển hướng - sử dụng window.location.href để đảm bảo App.jsx re-render
-        // App.jsx sẽ tự động detect thay đổi pathname và re-render
-        window.location.href = redirectPath;
+        // Tắt loading trước rồi mới hiện toast
+        setIsLoading(false);
+
+        // Hiển thị thông báo thành công
+        toast.success('Đăng nhập thành công!', {
+          duration: 2000,
+        });
+
+        // Chuyển hướng sau một chút để người dùng thấy toast
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 500);
       }
     } catch (error) {
-      // Xử lý lỗi và hiển thị thông báo phù hợp
+      // Xử lý lỗi và hiển thị thông báo bằng toast
       const errorMessage = error.message || "Email hoặc mật khẩu không đúng";
 
-      // Nếu là lỗi kết nối, chỉ hiển thị ở một field
-      if (errorMessage.includes("kết nối") || errorMessage.includes("server")) {
-        setErrors({
-          email: errorMessage,
-          password: "",
-        });
-      } else {
-        // Lỗi xác thực, hiển thị ở cả hai field
-        setErrors({
-          email: errorMessage,
-          password: errorMessage,
-        });
-      }
-    } finally {
+      // Tắt loading trước rồi mới hiện toast
       setIsLoading(false);
+
+      // Hiển thị lỗi bằng toast
+      toast.error(errorMessage, {
+        duration: 5000,
+      });
+
+      // Xóa các lỗi validation cũ để chỉ hiển thị toast
+      setErrors({});
     }
   };
 
@@ -216,6 +227,7 @@ const Signin = () => {
 
   return (
     <div className="relative flex flex-col min-h-screen overflow-hidden">
+      {isLoading && <Loading text="Đang đăng nhập..." />}
       {/* Base Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-100 via-emerald-100 via-teal-100 to-green-200"></div>
 
