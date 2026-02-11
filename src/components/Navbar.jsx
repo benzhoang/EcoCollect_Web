@@ -16,7 +16,9 @@ const Navbar = () => {
                 const user = JSON.parse(userData);
                 if (user.isLoggedIn) {
                     setIsLoggedIn(true);
-                    setUsername(user.username);
+                    // Lấy username từ fullName, email hoặc username
+                    const displayName = user.fullName || user.email || user.username || 'User';
+                    setUsername(displayName);
                 }
             } catch (error) {
                 console.error('Error parsing user data:', error);
@@ -112,7 +114,7 @@ const Navbar = () => {
                                     className="flex items-center gap-2 px-4 py-2 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-200 text-sm"
                                 >
                                     <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                        {username.charAt(0).toUpperCase()}
+                                        {username && username.length > 0 ? username.charAt(0).toUpperCase() : 'U'}
                                     </div>
                                     <span>{username}</span>
                                     <svg className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +229,7 @@ const Navbar = () => {
                             <div className="pt-4 space-y-2 border-t border-gray-200">
                                 <div className="flex items-center gap-3 px-4 py-2">
                                     <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                        {username.charAt(0).toUpperCase()}
+                                        {username && username.length > 0 ? username.charAt(0).toUpperCase() : 'U'}
                                     </div>
                                     <span className="text-gray-700 font-semibold">{username}</span>
                                 </div>

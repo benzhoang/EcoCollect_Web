@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { register } from '../service/api';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
-        username: '',
         email: '',
+        phone: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        fullName: '',
+        areaId: ''
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -37,28 +41,38 @@ const Signup = () => {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.username.trim()) {
-            newErrors.username = 'Vui lòng nhập tên người dùng';
-        } else if (formData.username.trim().length < 3) {
-            newErrors.username = 'Tên người dùng phải có ít nhất 3 ký tự';
+        if (!formData.fullName.trim()) {
+            newErrors.fullName = 'Vui lòng nhập họ và tên';
+        } else if (formData.fullName.trim().length < 2) {
+            newErrors.fullName = 'Họ và tên phải có ít nhất 2 ký tự';
         }
 
-        if (!formData.email.trim()) {
-            newErrors.email = 'Vui lòng nhập email';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Email không hợp lệ';
+        if (!formData.email.trim() && !formData.phone.trim()) {
+            newErrors.email = 'Vui lòng nhập email hoặc số điện thoại';
+            newErrors.phone = 'Vui lòng nhập email hoặc số điện thoại';
+        } else {
+            if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                newErrors.email = 'Email không hợp lệ';
+            }
+            if (formData.phone.trim() && !/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
+                newErrors.phone = 'Số điện thoại không hợp lệ (10-11 số)';
+            }
         }
 
         if (!formData.password) {
             newErrors.password = 'Vui lòng nhập mật khẩu';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
         }
 
         if (!formData.confirmPassword) {
             newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
         } else if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+        }
+
+        if (!formData.areaId.trim()) {
+            newErrors.areaId = 'Vui lòng nhập hoặc chọn khu vực';
         }
 
         setErrors(newErrors);
@@ -74,12 +88,37 @@ const Signup = () => {
 
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            // Chuẩn bị dữ liệu gửi lên API
+            const registerData = {
+                email: formData.email.trim() || undefined,
+                phone: formData.phone.trim() || undefined,
+                password: formData.password,
+                fullName: formData.fullName.trim(),
+                areaId: formData.areaId.trim()
+            };
+
+            // Gọi API đăng ký
+            const response = await register(registerData);
+
+            // Xử lý thành công
+            console.log('Đăng ký thành công:', response);
+            toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+
+            // Chuyển hướng đến trang đăng nhập sau 1.5 giây
+            setTimeout(() => {
+                window.location.href = '/signin';
+            }, 1500);
+        } catch (error) {
+            console.error('Lỗi đăng ký:', error);
+            // Hiển thị message lỗi rõ ràng bằng tiếng Việt
+            const errorMessage = error.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+            toast.error(errorMessage, {
+                duration: 5000,
+            });
+        } finally {
             setIsLoading(false);
-            // Handle signup logic here
-            console.log('Signup data:', formData);
-        }, 1000);
+        }
     };
 
     const handleGoBack = () => {
@@ -145,24 +184,24 @@ const Signup = () => {
                     {/* Signup Form */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Username Field */}
+                            {/* Full Name Field */}
                             <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tên người dùng
+                                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Họ và tên <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    id="username"
-                                    name="username"
+                                    id="fullName"
+                                    name="fullName"
                                     type="text"
-                                    autoComplete="username"
-                                    value={formData.username}
+                                    autoComplete="name"
+                                    value={formData.fullName}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.username ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.fullName ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
                                         }`}
-                                    placeholder="Nhập tên người dùng"
+                                    placeholder="Nhập họ và tên"
                                 />
-                                {errors.username && (
-                                    <p className="mt-1.5 text-sm text-red-600">{errors.username}</p>
+                                {errors.fullName && (
+                                    <p className="mt-1.5 text-sm text-red-600">{errors.fullName}</p>
                                 )}
                             </div>
 
@@ -184,6 +223,48 @@ const Signup = () => {
                                 />
                                 {errors.email && (
                                     <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
+                                )}
+                            </div>
+
+                            {/* Phone Field */}
+                            <div>
+                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Số điện thoại
+                                </label>
+                                <input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    autoComplete="tel"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                                        }`}
+                                    placeholder="0123456789"
+                                />
+                                {errors.phone && (
+                                    <p className="mt-1.5 text-sm text-red-600">{errors.phone}</p>
+                                )}
+                                <p className="mt-1 text-xs text-gray-500">Vui lòng nhập email hoặc số điện thoại</p>
+                            </div>
+
+                            {/* Area ID Field */}
+                            <div>
+                                <label htmlFor="areaId" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Khu vực <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="areaId"
+                                    name="areaId"
+                                    type="text"
+                                    value={formData.areaId}
+                                    onChange={handleChange}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.areaId ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                                        }`}
+                                    placeholder="Nhập ID khu vực"
+                                />
+                                {errors.areaId && (
+                                    <p className="mt-1.5 text-sm text-red-600">{errors.areaId}</p>
                                 )}
                             </div>
 
@@ -225,6 +306,9 @@ const Signup = () => {
                                 {errors.password && (
                                     <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>
                                 )}
+                                {!errors.password && (
+                                    <p className="mt-1.5 text-xs text-gray-500">Mật khẩu phải từ 8 ký tự trở lên</p>
+                                )}
                             </div>
 
                             {/* Confirm Password Field */}
@@ -264,6 +348,9 @@ const Signup = () => {
                                 </div>
                                 {errors.confirmPassword && (
                                     <p className="mt-1.5 text-sm text-red-600">{errors.confirmPassword}</p>
+                                )}
+                                {!errors.confirmPassword && (
+                                    <p className="mt-1.5 text-xs text-gray-500">Mật khẩu phải từ 8 ký tự trở lên</p>
                                 )}
                             </div>
 
