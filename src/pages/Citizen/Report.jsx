@@ -263,9 +263,10 @@ const Report = () => {
                 {/* Reports List */}
                 <div className="space-y-4">
                     {searchedReports.map((report) => (
-                        <div
+                        <a
                             key={report.id}
-                            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                            href={`/report/${report.id}`}
+                            className="block bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                         >
                             <div className="flex items-start gap-4">
                                 {/* Image */}
@@ -308,7 +309,7 @@ const Report = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     ))}
                 </div>
 
