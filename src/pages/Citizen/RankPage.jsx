@@ -90,7 +90,7 @@ const RankPage = () => {
     const progressPercentage = ((userData.totalPoints / (userData.totalPoints + userData.pointsToTop10)) * 100).toFixed(0);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-green-50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
                 {/* Header Section */}
                 <div className="mb-8">

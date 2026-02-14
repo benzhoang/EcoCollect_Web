@@ -7,10 +7,13 @@ import HomePage from "./pages/Citizen/HomePage";
 import Contact from "./pages/Citizen/Contact";
 import Report from "./pages/Citizen/Report";
 import CreateReport from "./pages/Citizen/CreateReport";
+import CitizenReportDetail from "./pages/Citizen/ReportDetail";
 import ScorePage from "./pages/Citizen/ScorePage";
 import RankPage from "./pages/Citizen/RankPage";
 import Trade from "./pages/Citizen/Trade";
 import PointGuild from "./pages/Citizen/PointGuild";
+import Profile from "./pages/Citizen/Profile";
+import Setting from "./pages/Citizen/Setting";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
 import AdminLayout from "./layouts/AdminLayout";
@@ -67,6 +70,16 @@ function App() {
   }, []);
 
   const renderContent = () => {
+    // Check if path matches /report/:id (Citizen report detail)
+    if (pathname.startsWith("/report/") && pathname !== "/report" && pathname !== "/report/create") {
+      return (
+        <>
+          <Navbar />
+          <CitizenReportDetail />
+          <Footer />
+        </>
+      );
+    }
     // Check if path matches /enterprise/report/:id first
     if (pathname.startsWith("/enterprise/report/")) {
       return <ReportDetail />;
@@ -146,6 +159,22 @@ function App() {
           <>
             <Navbar />
             <PointGuild />
+            <Footer />
+          </>
+        );
+      case "/profile":
+        return (
+          <>
+            <Navbar />
+            <Profile />
+            <Footer />
+          </>
+        );
+      case "/setting":
+        return (
+          <>
+            <Navbar />
+            <Setting />
             <Footer />
           </>
         );

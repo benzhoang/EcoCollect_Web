@@ -124,20 +124,18 @@ const Navbar = () => {
                                 {isUserMenuOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                                         <a
-                                            href="#"
+                                            href="/profile"
                                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                            onClick={(e) => {
-                                                e.preventDefault();
+                                            onClick={() => {
                                                 setIsUserMenuOpen(false);
                                             }}
                                         >
                                             Hồ sơ
                                         </a>
                                         <a
-                                            href="#"
+                                            href="/setting"
                                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                            onClick={(e) => {
-                                                e.preventDefault();
+                                            onClick={() => {
                                                 setIsUserMenuOpen(false);
                                             }}
                                         >
@@ -234,14 +232,14 @@ const Navbar = () => {
                                     <span className="text-gray-700 font-semibold">{username}</span>
                                 </div>
                                 <a
-                                    href="#"
+                                    href="/profile"
                                     className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     Hồ sơ
                                 </a>
                                 <a
-                                    href="#"
+                                    href="/setting"
                                     className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
