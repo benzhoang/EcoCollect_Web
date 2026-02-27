@@ -6,50 +6,119 @@ const CreateReport = () => {
     const [description, setDescription] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [imageMode, setImageMode] = useState('upload'); // 'upload' | 'url'
+    const [imageUrl, setImageUrl] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
+    const [estimatedWeightKg, setEstimatedWeightKg] = useState('');
     const fileInputRef = useRef(null);
 
     const wasteTypes = [
         {
-            id: 'recyclable',
-            name: 'Rác tái chế',
-            description: 'Nhựa, giấy, kim loại, thủy tinh',
+            id: 'paper',
+            name: 'Rác giấy',
+            description: 'Giấy in, báo, bìa carton, túi giấy',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 4h8l4 4v12H8a2 2 0 01-2-2V6a2 2 0 012-2z"
+                    />
+                </svg>
+            )
+        },
+        {
+            id: 'plastic',
+            name: 'Rác nhựa',
+            description: 'Chai nhựa, túi nilon, hộp nhựa',
+            icon: (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 2h4l1 4v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V6l1-4z"
+                    />
                 </svg>
             )
         },
         {
             id: 'organic',
             name: 'Rác hữu cơ',
-            description: 'Thực phẩm, lá cây, rác sinh học',
+            description: 'Thực phẩm thừa, lá cây, rác sinh học',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
                 </svg>
             )
         },
         {
             id: 'hazardous',
             name: 'Rác nguy hại',
-            description: 'Pin, hóa chất, điện từ',
+            description: 'Pin, hóa chất, rác điện tử, y tế',
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-            )
-        },
-        {
-            id: 'general',
-            name: 'Rác thông thường',
-            description: 'Rác sinh hoạt không tái chế',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                 </svg>
             )
         }
     ];
+
+    const clearImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            // reset file input so re-selecting the same file triggers onChange
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const validateImageUrl = (value) => {
+        const raw = (value || '').trim();
+        if (!raw) return { ok: false, message: 'Vui lòng nhập URL ảnh.' };
+        try {
+            const u = new URL(raw);
+            if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+                return { ok: false, message: 'URL ảnh phải bắt đầu bằng http:// hoặc https://.' };
+            }
+            return { ok: true };
+        } catch {
+            return { ok: false, message: 'URL ảnh không hợp lệ.' };
+        }
+    };
+
+    const isValidLatitude = (value) => {
+        const v = String(value ?? '').trim();
+        if (!v) return false;
+        const n = Number(v);
+        return Number.isFinite(n) && n >= -90 && n <= 90;
+    };
+
+    const isValidLongitude = (value) => {
+        const v = String(value ?? '').trim();
+        if (!v) return false;
+        const n = Number(v);
+        return Number.isFinite(n) && n >= -180 && n <= 180;
+    };
+
+    const isValidEstimatedWeightKg = (value) => {
+        const v = String(value ?? '').trim();
+        if (!v) return false;
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0;
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -58,6 +127,8 @@ const CreateReport = () => {
                 alert('File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
                 return;
             }
+            setImageMode('upload');
+            setImageUrl('');
             setSelectedImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -71,8 +142,9 @@ const CreateReport = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    // Có thể sử dụng API để reverse geocoding
-                    // Tạm thời giữ nguyên địa chỉ mặc định
+                    const { latitude: lat, longitude: lng } = position.coords || {};
+                    if (typeof lat === 'number') setLatitude(String(lat));
+                    if (typeof lng === 'number') setLongitude(String(lng));
                     alert('Đã lấy vị trí hiện tại!');
                 },
                 (error) => {
@@ -86,11 +158,42 @@ const CreateReport = () => {
 
     const handleSubmit = () => {
         // Xử lý submit form
+        const hasImage = imageMode === 'upload' ? !!selectedImage : validateImageUrl(imageUrl).ok;
+        if (!hasImage) {
+            alert(imageMode === 'upload' ? 'Vui lòng tải lên hình ảnh rác.' : 'Vui lòng nhập URL ảnh hợp lệ.');
+            return;
+        }
+        if (!selectedWasteType) {
+            alert('Vui lòng chọn loại rác.');
+            return;
+        }
+        if (!location || location.trim() === '') {
+            alert('Vui lòng nhập vị trí.');
+            return;
+        }
+        if (!isValidLatitude(latitude)) {
+            alert('Vui lòng nhập vĩ độ hợp lệ (-90 đến 90).');
+            return;
+        }
+        if (!isValidLongitude(longitude)) {
+            alert('Vui lòng nhập kinh độ hợp lệ (-180 đến 180).');
+            return;
+        }
+        if (!isValidEstimatedWeightKg(estimatedWeightKg)) {
+            alert('Vui lòng nhập khối lượng ước tính (kg) hợp lệ (> 0).');
+            return;
+        }
+
         console.log({
             wasteType: selectedWasteType,
             location,
             description,
-            image: selectedImage
+            imageMode,
+            imageFile: selectedImage,
+            imageUrl: imageMode === 'url' ? imageUrl.trim() : null,
+            latitude: Number(latitude),
+            longitude: Number(longitude),
+            estimatedWeightKg: Number(estimatedWeightKg)
         });
         // Điều hướng về trang báo cáo sau khi submit
         window.location.href = '/report';
@@ -101,10 +204,13 @@ const CreateReport = () => {
     };
 
     // Tính toán tiến độ
+    const hasValidImage = imageMode === 'upload' ? !!selectedImage : validateImageUrl(imageUrl).ok;
     const progressSteps = [
-        { key: 'image', completed: !!selectedImage, label: 'Hình ảnh' },
+        { key: 'image', completed: hasValidImage, label: 'Hình ảnh' },
         { key: 'wasteType', completed: !!selectedWasteType, label: 'Loại rác' },
-        { key: 'location', completed: !!location && location.trim() !== '', label: 'Vị trí' }
+        { key: 'location', completed: !!location && location.trim() !== '', label: 'Vị trí' },
+        { key: 'coordinates', completed: isValidLatitude(latitude) && isValidLongitude(longitude), label: 'Tọa độ' },
+        { key: 'weight', completed: isValidEstimatedWeightKg(estimatedWeightKg), label: 'Khối lượng' }
     ];
     const completedSteps = progressSteps.filter(step => step.completed).length;
     const progressPercentage = (completedSteps / progressSteps.length) * 100;
@@ -122,7 +228,7 @@ const CreateReport = () => {
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-gray-700">Tiến độ hoàn thành</span>
                                     <span className="text-sm font-semibold text-blue-600">
-                                        {completedSteps}/3 bước
+                                        {completedSteps}/{progressSteps.length} bước
                                     </span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -147,17 +253,74 @@ const CreateReport = () => {
                                         <label className="block text-sm font-semibold text-gray-900">
                                             Hình ảnh rác <span className="text-red-500">*</span>
                                         </label>
-                                        {selectedImage && (
+                                        {hasValidImage && (
                                             <span className="text-xs text-blue-600 font-medium flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-full">
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                 </svg>
-                                                Đã tải lên
+                                                Đã chọn
                                             </span>
                                         )}
                                     </div>
+
+                                    {/* Image mode toggle */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setImageMode('upload');
+                                                setImageUrl('');
+                                                clearImage();
+                                            }}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${imageMode === 'upload'
+                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            Tải file
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setImageMode('url');
+                                                clearImage();
+                                            }}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${imageMode === 'url'
+                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            Nhập URL
+                                        </button>
+                                    </div>
+
+                                    {imageMode === 'url' && (
+                                        <div className="space-y-2">
+                                            <div className="relative">
+                                                <input
+                                                    type="url"
+                                                    value={imageUrl}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value;
+                                                        setImageUrl(v);
+                                                        const r = validateImageUrl(v);
+                                                        if (r.ok) setImagePreview(v.trim());
+                                                        else setImagePreview(null);
+                                                    }}
+                                                    placeholder="https://example.com/anh.jpg"
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                                Hỗ trợ URL ảnh dạng http/https. (Ví dụ: https://.../image.jpg)
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div
-                                        onClick={() => fileInputRef.current?.click()}
+                                        onClick={() => {
+                                            if (imageMode === 'upload') fileInputRef.current?.click();
+                                        }}
                                         className={`relative border-2 border-dashed rounded-lg p-6 md:p-8 text-center cursor-pointer transition-all duration-200 ${imagePreview
                                             ? 'border-blue-300 bg-blue-50'
                                             : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
@@ -175,8 +338,8 @@ const CreateReport = () => {
                                                         type="button"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setSelectedImage(null);
-                                                            setImagePreview(null);
+                                                            if (imageMode === 'url') setImageUrl('');
+                                                            clearImage();
                                                         }}
                                                         className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
                                                     >
@@ -186,7 +349,7 @@ const CreateReport = () => {
                                                     </button>
                                                 </div>
                                                 <p className="text-sm text-gray-600 font-medium">
-                                                    Nhấn để thay đổi ảnh
+                                                    {imageMode === 'upload' ? 'Nhấn để thay đổi ảnh' : 'Xem trước ảnh từ URL'}
                                                 </p>
                                             </div>
                                         ) : (
@@ -200,10 +363,13 @@ const CreateReport = () => {
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900 mb-1">
-                                                        Tải lên hình ảnh rác thải
+                                                        {imageMode === 'upload' ? 'Tải lên hình ảnh rác thải' : 'Nhập URL để xem trước hình ảnh'}
                                                     </p>
                                                     <p className="text-xs text-gray-500">
-                                                        Kéo thả hoặc nhấn để chọn file (PNG, JPG tối đa 10MB)
+                                                        {imageMode === 'upload'
+                                                            ? 'Kéo thả hoặc nhấn để chọn file (PNG, JPG tối đa 10MB)'
+                                                            : 'Dán URL ảnh vào ô bên trên'
+                                                        }
                                                     </p>
                                                 </div>
                                             </div>
@@ -214,6 +380,7 @@ const CreateReport = () => {
                                             accept="image/png,image/jpeg,image/jpg"
                                             onChange={handleImageChange}
                                             className="hidden"
+                                            disabled={imageMode !== 'upload'}
                                         />
                                     </div>
                                 </div>
@@ -312,6 +479,59 @@ const CreateReport = () => {
                                     </div>
                                 </div>
 
+                                {/* Tọa độ + Khối lượng */}
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-semibold text-gray-900">
+                                        Tọa độ <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-gray-700">
+                                                Vĩ độ (Latitude)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                inputMode="decimal"
+                                                value={latitude}
+                                                onChange={(e) => setLatitude(e.target.value)}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                                placeholder="Ví dụ: 10.8231"
+                                            />
+                                            <p className="text-xs text-gray-500">Giới hạn: -90 đến 90</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="block text-xs font-medium text-gray-700">
+                                                Kinh độ (Longitude)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                inputMode="decimal"
+                                                value={longitude}
+                                                onChange={(e) => setLongitude(e.target.value)}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                                placeholder="Ví dụ: 106.6297"
+                                            />
+                                            <p className="text-xs text-gray-500">Giới hạn: -180 đến 180</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-900">
+                                        Khối lượng ước tính (kg) <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        inputMode="decimal"
+                                        min="0"
+                                        step="0.1"
+                                        value={estimatedWeightKg}
+                                        onChange={(e) => setEstimatedWeightKg(e.target.value)}
+                                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                        placeholder="Ví dụ: 2.5"
+                                    />
+                                </div>
+
                                 {/* Mô tả */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-gray-900">
@@ -348,8 +568,8 @@ const CreateReport = () => {
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    disabled={completedSteps < 3}
-                                    className={`w-full px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${completedSteps >= 3
+                                    disabled={completedSteps < progressSteps.length}
+                                    className={`w-full px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${completedSteps >= progressSteps.length
                                         ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         }`}
