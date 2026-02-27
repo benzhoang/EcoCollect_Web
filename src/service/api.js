@@ -29,9 +29,9 @@ const getFieldNameInVietnamese = (field) => {
  */
 const translateErrorMessage = (message) => {
     if (!message) return "Đăng ký thất bại. Vui lòng thử lại.";
-    
+
     const lowerMessage = message.toLowerCase();
-    
+
     // Các message lỗi phổ biến
     const errorTranslations = {
         'validation failed': 'Thông tin không hợp lệ',
@@ -58,20 +58,20 @@ const translateErrorMessage = (message) => {
         'not found': 'Không tìm thấy',
         'conflict': 'Dữ liệu đã tồn tại'
     };
-    
+
     // Tìm translation phù hợp
     for (const [key, translation] of Object.entries(errorTranslations)) {
         if (lowerMessage.includes(key)) {
             return translation;
         }
     }
-    
+
     // Nếu không tìm thấy translation, trả về message gốc hoặc message mặc định
     // Nếu message là tiếng Anh và không có trong danh sách, thêm prefix
     if (/^[a-zA-Z\s]+$/.test(message) && message.length < 100) {
         return message; // Giữ nguyên nếu là tiếng Anh ngắn
     }
-    
+
     return message || "Đăng ký thất bại. Vui lòng thử lại.";
 };
 
@@ -178,7 +178,7 @@ export const register = async (userData) => {
             let errorMessage = "Đăng ký thất bại";
             try {
                 const errorData = await response.json();
-                
+
                 // Xử lý các loại lỗi khác nhau
                 if (errorData.message) {
                     errorMessage = errorData.message;
@@ -200,10 +200,10 @@ export const register = async (userData) => {
                         });
                     errorMessage = validationMessages.join('. ');
                 }
-                
+
                 // Chuyển đổi các message phổ biến sang tiếng Việt
                 errorMessage = translateErrorMessage(errorMessage);
-                
+
             } catch (e) {
                 // Nếu không parse được JSON, sử dụng status text
                 const statusText = response.statusText || "Đăng ký thất bại";
@@ -239,4 +239,186 @@ export const logout = () => {
     localStorage.removeItem("tokenType");
     localStorage.removeItem("expiresInSeconds");
     localStorage.removeItem("user");
+};
+
+/**
+ * Lấy bảng xếp hạng theo khu vực
+ * @param {string} areaId - ID của khu vực
+ * @param {number} days - Số ngày (mặc định: 30)
+ * @param {number} limit - Giới hạn số lượng (mặc định: 50)
+ * @returns {Promise} Response từ API
+ */
+export const getLeaderboardByArea = async (areaId, days = 30, limit = 50) => {
+    try {
+        const token = getAccessToken();
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const queryParams = new URLSearchParams();
+        if (days !== undefined && days !== null) {
+            queryParams.append("days", days.toString());
+        }
+        if (limit !== undefined && limit !== null) {
+            queryParams.append("limit", limit.toString());
+        }
+
+        const url = `${API_BASE_URL}/areas/${areaId}/leaderboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể lấy bảng xếp hạng";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi lấy bảng xếp hạng. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy cây khu vực TP.HCM (dùng cho dropdown chọn địa chỉ)
+ * @returns {Promise} Response từ API
+ */
+export const getAreaTree = async () => {
+    try {
+        const token = getAccessToken();
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const url = `${API_BASE_URL}/areas/tree`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể lấy danh sách khu vực";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy danh sách báo cáo của công dân hiện tại
+ * @param {number} page - Chỉ số trang (zero-based)
+ * @param {number} size - Kích thước trang
+ * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"]
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenReports = async (page = 0, size = 20, sort = ["createdAt,desc"]) => {
+    try {
+        const token = getAccessToken();
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const queryParams = new URLSearchParams();
+        if (page !== undefined && page !== null) {
+            queryParams.append("page", page.toString());
+        }
+        if (size !== undefined && size !== null) {
+            queryParams.append("size", size.toString());
+        }
+        if (Array.isArray(sort)) {
+            sort.forEach((s) => {
+                if (s) {
+                    queryParams.append("sort", s);
+                }
+            });
+        }
+
+        const url = `${API_BASE_URL}/citizen/reports${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể lấy danh sách báo cáo";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+    }
 };
