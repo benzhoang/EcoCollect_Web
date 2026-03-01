@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import { createCitizenReport, getAreaTree } from '../../service/api';
 
 const CreateReport = () => {
     const [selectedWasteType, setSelectedWasteType] = useState(null);
@@ -11,11 +13,17 @@ const CreateReport = () => {
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
     const [estimatedWeightKg, setEstimatedWeightKg] = useState('');
+    const [areaId, setAreaId] = useState(null);
+    const [areaTree, setAreaTree] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef(null);
 
     const wasteTypes = [
         {
+            // code: PAPER
             id: 'paper',
+            // Sử dụng UUID thật trong bảng waste_categories cho PAPER
+            categoryId: '44444444-4444-4444-4444-444444444444',
             name: 'Rác giấy',
             description: 'Giấy in, báo, bìa carton, túi giấy',
             icon: (
@@ -30,7 +38,10 @@ const CreateReport = () => {
             )
         },
         {
+            // code: PLASTIC
             id: 'plastic',
+            // Sử dụng UUID thật trong bảng waste_categories cho PLASTIC
+            categoryId: '55555555-5555-5555-5555-555555555555',
             name: 'Rác nhựa',
             description: 'Chai nhựa, túi nilon, hộp nhựa',
             icon: (
@@ -45,7 +56,10 @@ const CreateReport = () => {
             )
         },
         {
+            // code: ORGANIC
             id: 'organic',
+            // Sử dụng UUID thật trong bảng waste_categories cho ORGANIC
+            categoryId: '66666666-6666-6666-6666-666666666666',
             name: 'Rác hữu cơ',
             description: 'Thực phẩm thừa, lá cây, rác sinh học',
             icon: (
@@ -60,7 +74,10 @@ const CreateReport = () => {
             )
         },
         {
+            // code: HAZARDOUS
             id: 'hazardous',
+            // Sử dụng UUID thật trong bảng waste_categories cho HAZARDOUS
+            categoryId: '77777777-7777-7777-7777-777777777777',
             name: 'Rác nguy hại',
             description: 'Pin, hóa chất, rác điện tử, y tế',
             icon: (
@@ -75,6 +92,62 @@ const CreateReport = () => {
             )
         }
     ];
+
+    useEffect(() => {
+        const loadAreaTree = async () => {
+            try {
+                const response = await getAreaTree();
+                if (response && response.data) {
+                    setAreaTree(response.data);
+                }
+            } catch (error) {
+                console.error('Không thể tải danh sách khu vực:', error);
+            }
+        };
+        loadAreaTree();
+    }, []);
+
+    const findAreaIdByAddress = (addressText) => {
+        if (!addressText || !areaTree) return null;
+
+        const addressLower = addressText.toLowerCase().trim();
+
+        const searchArea = (areas, bestMatch = null) => {
+            if (!areas || !Array.isArray(areas)) return bestMatch;
+
+            for (const area of areas) {
+                if (area.name) {
+                    const areaNameLower = area.name.toLowerCase();
+                    if (addressLower.includes(areaNameLower) || areaNameLower.includes(addressLower)) {
+                        if (area.children && area.children.length > 0) {
+                            const childMatch = searchArea(area.children, area.id);
+                            if (childMatch) return childMatch;
+                        }
+                        if (area.id) {
+                            bestMatch = area.id;
+                        }
+                    }
+                }
+                if (area.children && area.children.length > 0) {
+                    const childMatch = searchArea(area.children, bestMatch);
+                    if (childMatch) bestMatch = childMatch;
+                }
+            }
+            return bestMatch;
+        };
+
+        const result = searchArea(Array.isArray(areaTree) ? areaTree : [areaTree]);
+        return result;
+    };
+
+    useEffect(() => {
+        if (location && location.trim() !== '') {
+            const matchedAreaId = findAreaIdByAddress(location);
+            setAreaId(matchedAreaId);
+        } else {
+            setAreaId(null);
+        }
+    }, [location, areaTree]);
 
     const clearImage = () => {
         setSelectedImage(null);
@@ -124,7 +197,9 @@ const CreateReport = () => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 10 * 1024 * 1024) {
-                alert('File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
+                toast.error('File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.', {
+                    duration: 4000,
+                });
                 return;
             }
             setImageMode('upload');
@@ -145,58 +220,140 @@ const CreateReport = () => {
                     const { latitude: lat, longitude: lng } = position.coords || {};
                     if (typeof lat === 'number') setLatitude(String(lat));
                     if (typeof lng === 'number') setLongitude(String(lng));
-                    alert('Đã lấy vị trí hiện tại!');
+                    toast.success('Đã lấy vị trí hiện tại!', {
+                        duration: 2000,
+                    });
                 },
                 (error) => {
-                    alert('Không thể lấy vị trí. Vui lòng nhập thủ công.');
+                    console.error('Lỗi lấy vị trí hiện tại:', error);
+                    toast.error('Không thể lấy vị trí. Vui lòng nhập thủ công.', {
+                        duration: 4000,
+                    });
                 }
             );
         } else {
-            alert('Trình duyệt không hỗ trợ lấy vị trí.');
+            toast.error('Trình duyệt không hỗ trợ lấy vị trí.', {
+                duration: 4000,
+            });
         }
     };
 
-    const handleSubmit = () => {
+    // 将文件转换为 base64 数据 URL
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleSubmit = async () => {
         // Xử lý submit form
         const hasImage = imageMode === 'upload' ? !!selectedImage : validateImageUrl(imageUrl).ok;
         if (!hasImage) {
-            alert(imageMode === 'upload' ? 'Vui lòng tải lên hình ảnh rác.' : 'Vui lòng nhập URL ảnh hợp lệ.');
+            toast.error(imageMode === 'upload' ? 'Vui lòng tải lên hình ảnh rác.' : 'Vui lòng nhập URL ảnh hợp lệ.', {
+                duration: 4000,
+            });
             return;
         }
         if (!selectedWasteType) {
-            alert('Vui lòng chọn loại rác.');
+            toast.error('Vui lòng chọn loại rác.', {
+                duration: 4000,
+            });
             return;
         }
         if (!location || location.trim() === '') {
-            alert('Vui lòng nhập vị trí.');
+            toast.error('Vui lòng nhập vị trí.', {
+                duration: 4000,
+            });
+            return;
+        }
+        if (!areaId) {
+            toast.error('Không thể xác định khu vực từ địa chỉ. Vui lòng kiểm tra lại địa chỉ.', {
+                duration: 4000,
+            });
             return;
         }
         if (!isValidLatitude(latitude)) {
-            alert('Vui lòng nhập vĩ độ hợp lệ (-90 đến 90).');
+            toast.error('Vui lòng nhập vĩ độ hợp lệ (-90 đến 90).', {
+                duration: 4000,
+            });
             return;
         }
         if (!isValidLongitude(longitude)) {
-            alert('Vui lòng nhập kinh độ hợp lệ (-180 đến 180).');
+            toast.error('Vui lòng nhập kinh độ hợp lệ (-180 đến 180).', {
+                duration: 4000,
+            });
             return;
         }
         if (!isValidEstimatedWeightKg(estimatedWeightKg)) {
-            alert('Vui lòng nhập khối lượng ước tính (kg) hợp lệ (> 0).');
+            toast.error('Vui lòng nhập khối lượng ước tính (kg) hợp lệ (> 0).', {
+                duration: 4000,
+            });
             return;
         }
 
-        console.log({
-            wasteType: selectedWasteType,
-            location,
-            description,
-            imageMode,
-            imageFile: selectedImage,
-            imageUrl: imageMode === 'url' ? imageUrl.trim() : null,
-            latitude: Number(latitude),
-            longitude: Number(longitude),
-            estimatedWeightKg: Number(estimatedWeightKg)
-        });
-        // Điều hướng về trang báo cáo sau khi submit
-        window.location.href = '/report';
+        setIsSubmitting(true);
+
+        try {
+            // 获取选中的 waste type 的 categoryId
+            const selectedType = wasteTypes.find(type => type.name === selectedWasteType);
+            if (!selectedType || !selectedType.categoryId) {
+                throw new Error('Không tìm thấy loại rác được chọn.');
+            }
+
+            // 处理图片 URLs
+            let imageUrls = [];
+            if (imageMode === 'url') {
+                const url = imageUrl.trim();
+                if (url) {
+                    imageUrls = [url];
+                }
+            } else if (selectedImage) {
+                // 如果是上传的文件，转换为 base64 数据 URL
+                const base64Url = await fileToBase64(selectedImage);
+                imageUrls = [base64Url];
+            }
+
+            if (imageUrls.length === 0) {
+                throw new Error('Vui lòng cung cấp ít nhất một hình ảnh.');
+            }
+
+            // 准备 API 请求数据
+            const reportData = {
+                areaId: areaId,
+                wasteCategoryId: selectedType.categoryId,
+                description: description.trim() || '',
+                estimatedWeightKg: Number(estimatedWeightKg),
+                latitude: Number(latitude),
+                longitude: Number(longitude),
+                addressText: location.trim(),
+                imageUrls: imageUrls
+            };
+
+            // 调用 API 创建报告
+            const response = await createCitizenReport(reportData);
+
+            if (response && response.success) {
+                toast.success('Tạo báo cáo thành công!', {
+                    duration: 2000,
+                });
+                // Điều hướng về trang báo cáo sau khi submit (chờ 0.8s để user thấy toast)
+                setTimeout(() => {
+                    window.location.href = '/report';
+                }, 800);
+            } else {
+                throw new Error(response?.message || 'Không thể tạo báo cáo.');
+            }
+        } catch (error) {
+            console.error('Lỗi khi tạo báo cáo:', error);
+            toast.error(error.message || 'Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.', {
+                duration: 5000,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCancel = () => {
@@ -568,19 +725,36 @@ const CreateReport = () => {
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    disabled={completedSteps < progressSteps.length}
-                                    className={`w-full px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${completedSteps >= progressSteps.length
+                                    disabled={completedSteps < progressSteps.length || isSubmitting || !areaId}
+                                    className={`w-full px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${completedSteps >= progressSteps.length && areaId && !isSubmitting
                                         ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow'
                                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         }`}
                                 >
                                     <span className="flex items-center gap-2 justify-center">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Gửi báo cáo
+                                        {isSubmitting ? (
+                                            <>
+                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Đang gửi...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Gửi báo cáo
+                                            </>
+                                        )}
                                     </span>
                                 </button>
+                                {!areaId && location && location.trim() !== '' && (
+                                    <p className="text-xs text-amber-600 mt-2">
+                                        ⚠️ Không thể xác định khu vực từ địa chỉ. Vui lòng kiểm tra lại địa chỉ hoặc nhập địa chỉ cụ thể hơn.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

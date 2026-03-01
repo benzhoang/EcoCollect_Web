@@ -422,3 +422,55 @@ export const getCitizenReports = async (page = 0, size = 20, sort = ["createdAt,
         throw new Error("Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
     }
 };
+
+/**
+ * Tạo báo cáo rác thải mới
+ * @param {Object} reportData - Object chứa areaId, wasteCategoryId, description, estimatedWeightKg, latitude, longitude, addressText, imageUrls
+ * @returns {Promise} Response từ API
+ */
+export const createCitizenReport = async (reportData) => {
+    try {
+        const token = getAccessToken();
+        if (!token) {
+            throw new Error("Vui lòng đăng nhập để tạo báo cáo.");
+        }
+
+        const headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        };
+
+        const response = await fetch(`${API_BASE_URL}/citizen/reports`, {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(reportData),
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể tạo báo cáo";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
+    }
+};
