@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
+import { Client } from "@stomp/stompjs";
 import ComplaintList from "../../components/AdminComponent/ComplaintList";
+
+window.global = window;
 
 const COMPLAINT_TYPES = {
   wrong_waste: "Thu gom không đúng loại rác",
@@ -246,6 +249,34 @@ const ComplaintListPage = () => {
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+useEffect(() => {
+
+    const stompClient = new Client({
+      brokerURL: "ws://localhost:8080/ws",
+      reconnectDelay: 5000,
+      debug: (str) => console.log("STOMP:", str),
+    });
+
+    stompClient.onConnect = () => {
+      console.log("✅ Connected");
+
+      stompClient.subscribe("/topic/admin-notifications", (message) => {
+        console.log("📩 Received:", message.body);
+      });
+    };
+
+    stompClient.onStompError = (frame) => {
+      console.error("Broker error:", frame.headers["message"]);
+    };
+
+    stompClient.activate();
+
+    return () => {
+      stompClient.deactivate();
+    };
+
+  }, []);
+
   const complaints = useMemo(() => {
     let list = [...MOCK_COMPLAINTS];
     if (searchTerm.trim()) {
@@ -343,7 +374,6 @@ const ComplaintListPage = () => {
             </select>
           </div>
         </div>
-
         <ComplaintList
           complaints={complaints}
           onViewDetail={handleOpenDetail}
