@@ -24,6 +24,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/enterprise/reports': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })
