@@ -5,6 +5,24 @@ const API_BASE_URL = import.meta.env.DEV
     ? ""
     : "http://localhost:8080";
 
+import axios from "axios";
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+
+// Interceptor: gắn token vào mọi request nếu có
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 /**
  * Chuyển đổi tên trường sang tiếng Việt
  * @param {string} field - Tên trường tiếng Anh
@@ -76,6 +94,31 @@ const translateErrorMessage = (message) => {
 };
 
 /**
+ * Xử lý lỗi từ axios (network hoặc response)
+ * @param {Error} error - Lỗi từ axios
+ * @param {string} defaultMessage - Message mặc định
+ * @returns {never}
+ */
+const handleApiError = (error, defaultMessage) => {
+    if (axios.isAxiosError(error)) {
+        if (error.response) {
+            const data = error.response.data;
+            let message = defaultMessage;
+            if (data?.message) message = data.message;
+            else if (data?.error) message = data.error;
+            else if (error.response.statusText) message = error.response.statusText;
+            throw new Error(message);
+        }
+        // Xử lý các lỗi network và CORS
+        if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
+            throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+        }
+    }
+    if (error.message) throw error;
+    throw new Error(defaultMessage);
+};
+
+/**
  * Gọi API login
  * @param {string} identifier - Email hoặc username
  * @param {string} password - Mật khẩu
@@ -83,44 +126,13 @@ const translateErrorMessage = (message) => {
  */
 export const login = async (identifier, password) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                identifier,
-                password,
-            }),
+        const { data } = await api.post("/auth/login", {
+            identifier,
+            password,
         });
-
-        if (!response.ok) {
-            let errorMessage = "Đăng nhập thất bại";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                // Nếu không parse được JSON, sử dụng status text
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.");
+        handleApiError(error, "Đăng nhập thất bại");
     }
 };
 
@@ -166,66 +178,43 @@ export const getAccessToken = () => {
  */
 export const register = async (userData) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(userData),
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Đăng ký thất bại";
-            try {
-                const errorData = await response.json();
-
-                // Xử lý các loại lỗi khác nhau
-                if (errorData.message) {
-                    errorMessage = errorData.message;
-                } else if (errorData.error) {
-                    errorMessage = errorData.error;
-                } else if (Array.isArray(errorData.errors)) {
-                    // Xử lý validation errors dạng array
-                    const errorMessages = errorData.errors.map(err => {
-                        if (typeof err === 'string') return err;
-                        return err.message || err.msg || JSON.stringify(err);
-                    });
-                    errorMessage = errorMessages.join('. ');
-                } else if (errorData.validationErrors) {
-                    // Xử lý validation errors dạng object
-                    const validationMessages = Object.entries(errorData.validationErrors)
-                        .map(([field, message]) => {
-                            const fieldName = getFieldNameInVietnamese(field);
-                            return `${fieldName}: ${message}`;
-                        });
-                    errorMessage = validationMessages.join('. ');
-                }
-
-                // Chuyển đổi các message phổ biến sang tiếng Việt
-                errorMessage = translateErrorMessage(errorMessage);
-
-            } catch (e) {
-                // Nếu không parse được JSON, sử dụng status text
-                const statusText = response.statusText || "Đăng ký thất bại";
-                errorMessage = translateErrorMessage(statusText);
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.post("/auth/register", userData);
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+        if (axios.isAxiosError(error) && error.response) {
+            const res = error.response;
+            const errorData = res.data;
+            let errorMessage = "Đăng ký thất bại";
+
+            if (errorData?.message) {
+                errorMessage = errorData.message;
+            } else if (errorData?.error) {
+                errorMessage = errorData.error;
+            } else if (Array.isArray(errorData?.errors)) {
+                const errorMessages = errorData.errors.map(err => {
+                    if (typeof err === "string") return err;
+                    return err.message || err.msg || JSON.stringify(err);
+                });
+                errorMessage = errorMessages.join(". ");
+            } else if (errorData?.validationErrors) {
+                const validationMessages = Object.entries(errorData.validationErrors)
+                    .map(([field, message]) => {
+                        const fieldName = getFieldNameInVietnamese(field);
+                        return `${fieldName}: ${message}`;
+                    });
+                errorMessage = validationMessages.join(". ");
+            } else if (res.statusText) {
+                errorMessage = res.statusText;
             }
+
+            errorMessage = translateErrorMessage(errorMessage);
+            throw new Error(errorMessage);
         }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
+        // Xử lý các lỗi network và CORS
+        if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
+            throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
         }
-        // Nếu không có message, tạo message mặc định
+        if (error.message) throw error;
         throw new Error("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
     }
 };
@@ -250,56 +239,14 @@ export const logout = () => {
  */
 export const getLeaderboardByArea = async (areaId, days = 30, limit = 50) => {
     try {
-        const token = getAccessToken();
-        const headers = {
-            "Content-Type": "application/json",
-        };
+        const params = {};
+        if (days !== undefined && days !== null) params.days = days;
+        if (limit !== undefined && limit !== null) params.limit = limit;
 
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const queryParams = new URLSearchParams();
-        if (days !== undefined && days !== null) {
-            queryParams.append("days", days.toString());
-        }
-        if (limit !== undefined && limit !== null) {
-            queryParams.append("limit", limit.toString());
-        }
-
-        const url = `${API_BASE_URL}/areas/${areaId}/leaderboard${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: headers,
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể lấy bảng xếp hạng";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.get(`/areas/${areaId}/leaderboard`, { params });
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi lấy bảng xếp hạng. Vui lòng thử lại.");
+        handleApiError(error, "Đã xảy ra lỗi khi lấy bảng xếp hạng. Vui lòng thử lại.");
     }
 };
 
@@ -309,48 +256,52 @@ export const getLeaderboardByArea = async (areaId, days = 30, limit = 50) => {
  */
 export const getAreaTree = async () => {
     try {
-        const token = getAccessToken();
-        const headers = {
-            "Content-Type": "application/json",
-        };
-
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const url = `${API_BASE_URL}/areas/tree`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: headers,
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể lấy danh sách khu vực";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.get("/areas/tree");
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy danh sách khu vực đang hoạt động (List active areas)
+ * @returns {Promise} Response từ API (200 OK)
+ */
+export const getAreas = async () => {
+    try {
+        const { data } = await api.get("/areas");
+        return data;
+    } catch (error) {
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Tạo khu vực mới (Create area) - Admin
+ * @param {Object} body - Request body
+ * @param {string} body.parentId - ID khu vực cha
+ * @param {string} body.name - Tên khu vực
+ * @returns {Promise} Response từ API
+ */
+export const createArea = async (body) => {
+    try {
+        const { data } = await api.post("/admin/areas", body);
+        return data;
+    } catch (error) {
+        handleApiError(error, "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy danh sách danh mục loại rác (List waste categories)
+ * @returns {Promise} Response từ API
+ */
+export const getWasteCategories = async () => {
+    try {
+        const { data } = await api.get("/waste-categories");
+        return data;
+    } catch (error) {
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách danh mục loại rác. Vui lòng thử lại.");
     }
 };
 
@@ -363,63 +314,14 @@ export const getAreaTree = async () => {
  */
 export const getCitizenReports = async (page = 0, size = 20, sort = ["createdAt,desc"]) => {
     try {
-        const token = getAccessToken();
-        const headers = {
-            "Content-Type": "application/json",
-        };
-
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
+        const params = { page, size };
+        if (Array.isArray(sort) && sort.length) {
+            params.sort = sort;
         }
-
-        const queryParams = new URLSearchParams();
-        if (page !== undefined && page !== null) {
-            queryParams.append("page", page.toString());
-        }
-        if (size !== undefined && size !== null) {
-            queryParams.append("size", size.toString());
-        }
-        if (Array.isArray(sort)) {
-            sort.forEach((s) => {
-                if (s) {
-                    queryParams.append("sort", s);
-                }
-            });
-        }
-
-        const url = `${API_BASE_URL}/citizen/reports${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: headers,
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể lấy danh sách báo cáo";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.get("/citizen/reports", { params });
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
     }
 };
 
@@ -434,43 +336,9 @@ export const createCitizenReport = async (reportData) => {
         if (!token) {
             throw new Error("Vui lòng đăng nhập để tạo báo cáo.");
         }
-
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        };
-
-        const response = await fetch(`${API_BASE_URL}/citizen/reports`, {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify(reportData),
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể tạo báo cáo";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.post("/citizen/reports", reportData);
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
+        handleApiError(error, "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
     }
 };

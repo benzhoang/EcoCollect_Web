@@ -1,34 +1,37 @@
-import React, { useState } from 'react'
-import { FaChevronDown, FaTimes } from 'react-icons/fa'
+import React, { useState } from "react";
+import { FaChevronDown, FaTimes } from "react-icons/fa";
 
-const ModalCreate = ({ isOpen, onClose }) => {
+const UpdateAccountModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    dateOfBirth: '',
-    role: '',
-    phone: '',
-    area: ''
-  })
+    fullName: "",
+    email: "",
+    dateOfBirth: "",
+    role: "",
+    phone: "",
+    area: "",
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    // Xử lý tạo tài khoản
-    onClose?.()
-  }
+    e.preventDefault();
+    // Xử lý cập nhật tài khoản
+    onClose?.();
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
       <div
         className="relative w-full max-w-2xl p-8 mx-4 bg-white rounded-lg shadow-xl"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -38,7 +41,7 @@ const ModalCreate = ({ isOpen, onClose }) => {
           <FaTimes className="text-2xl" />
         </button>
         <h2 className="mb-8 text-xl font-medium text-center text-gray-700">
-          Tạo tài khoản mới
+          Cập nhật tài khoản
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -146,13 +149,13 @@ const ModalCreate = ({ isOpen, onClose }) => {
               type="submit"
               className="px-12 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors"
             >
-              Tạo
+              Cập nhật
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ModalCreate
+export default UpdateAccountModal;

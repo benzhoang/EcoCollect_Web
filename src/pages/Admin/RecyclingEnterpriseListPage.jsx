@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import AccountList from "../../components/AdminComponent/AccountList";
-import ModalCreate from "../../components/AdminComponent/ModalCreate";
+import CreateAccountModal from "../../components/AdminComponent/Modal/CreateAccountModal";
 import { FaPlus, FaSearch } from "react-icons/fa";
 
 const RecyclingEnterpriseListPage = () => {
@@ -56,7 +56,10 @@ const RecyclingEnterpriseListPage = () => {
 
       <AccountList />
 
-      <ModalCreate isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreateAccountModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaChevronDown, FaTimes } from "react-icons/fa";
 
-const ModalUpdate = ({ isOpen, onClose }) => {
+const CreateAccountModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -18,7 +18,7 @@ const ModalUpdate = ({ isOpen, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Xử lý cập nhật tài khoản
+    // Xử lý tạo tài khoản
     onClose?.();
   };
 
@@ -41,7 +41,7 @@ const ModalUpdate = ({ isOpen, onClose }) => {
           <FaTimes className="text-2xl" />
         </button>
         <h2 className="mb-8 text-xl font-medium text-center text-gray-700">
-          Cập nhật tài khoản
+          Tạo tài khoản mới
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -149,7 +149,7 @@ const ModalUpdate = ({ isOpen, onClose }) => {
               type="submit"
               className="px-12 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors"
             >
-              Cập nhật
+              Tạo
             </button>
           </div>
         </form>
@@ -158,4 +158,4 @@ const ModalUpdate = ({ isOpen, onClose }) => {
   );
 };
 
-export default ModalUpdate;
+export default CreateAccountModal;

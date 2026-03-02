@@ -38,6 +38,8 @@ import HistoryPage from "./pages/Collector/HistoryPage";
 import CollectionConfirmationPage from "./pages/Collector/CollectionConfirmationPage";
 import CreateIncidentReportPage from "./pages/Collector/CreateIncidentReportPage";
 import RequestDetailPage from "./pages/Collector/RequestDetailPage";
+import AreaListPage from "./pages/Admin/AreaListPage";
+import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -71,7 +73,11 @@ function App() {
 
   const renderContent = () => {
     // Check if path matches /report/:id (Citizen report detail)
-    if (pathname.startsWith("/report/") && pathname !== "/report" && pathname !== "/report/create") {
+    if (
+      pathname.startsWith("/report/") &&
+      pathname !== "/report" &&
+      pathname !== "/report/create"
+    ) {
       return (
         <>
           <Navbar />
@@ -218,6 +224,18 @@ function App() {
         return (
           <AdminLayout>
             <AccountDetailPage />
+          </AdminLayout>
+        );
+      case "/admin/config/waste-categories":
+        return (
+          <AdminLayout>
+            <WasteCategoryListPage />
+          </AdminLayout>
+        );
+      case "/admin/config/areas":
+        return (
+          <AdminLayout>
+            <AreaListPage />
           </AdminLayout>
         );
       case "/collector/request-list":

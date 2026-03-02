@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import ModalConfirm from "./ModalConfirm";
-import ModalUpdate from "./ModalUpdate";
+import ModalConfirm from "./Modal/ModalConfirm";
+import UpdateAccountModal from "./Modal/UpdateAccountModal";
 
 const AccountList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,7 +170,7 @@ const AccountList = () => {
         accountEmail={selectedAccountEmail}
       />
 
-      <ModalUpdate
+      <UpdateAccountModal
         isOpen={isModalUpdateOpen}
         onClose={() => setIsModalUpdateOpen(false)}
       />
