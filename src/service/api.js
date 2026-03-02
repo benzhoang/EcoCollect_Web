@@ -342,3 +342,131 @@ export const createCitizenReport = async (reportData) => {
         handleApiError(error, "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
     }
 };
+/**
+ * Lấy chi tiết một báo cáo của công dân theo ID
+ * @param {string} id - ID của báo cáo
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenReportById = async (id) => {
+    try {
+        const token = getAccessToken();
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const url = `${API_BASE_URL}/citizen/reports/${id}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể lấy chi tiết báo cáo";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi lấy chi tiết báo cáo. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy danh sách báo cáo trong hộp thư của doanh nghiệp (pending/filtered reports in dispatch inbox)
+ * @param {string} areaId - ID của khu vực (optional)
+ * @param {string} status - Trạng thái báo cáo (optional)
+ * @param {number} page - Chỉ số trang (zero-based, mặc định: 0)
+ * @param {number} size - Kích thước trang (mặc định: 20)
+ * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"] (optional)
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseReportsInbox = async (areaId = null, status = null, page = 0, size = 20, sort = null) => {
+    try {
+        const token = getAccessToken();
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const queryParams = new URLSearchParams();
+        if (areaId) {
+            queryParams.append("areald", areaId); // API sử dụng "areald" thay vì "areaId"
+        }
+        if (status) {
+            queryParams.append("status", status);
+        }
+        if (page !== undefined && page !== null) {
+            queryParams.append("page", page.toString());
+        }
+        if (size !== undefined && size !== null) {
+            queryParams.append("size", size.toString());
+        }
+        if (Array.isArray(sort)) {
+            sort.forEach((s) => {
+                if (s) {
+                    queryParams.append("sort", s);
+                }
+            });
+        }
+
+        const url = `${API_BASE_URL}/enterprise/reports/inbox${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            let errorMessage = "Không thể lấy danh sách báo cáo";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = response.statusText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Xử lý các lỗi network và CORS
+        if (error.name === "TypeError" && error.message.includes("fetch")) {
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
+            }
+        }
+        // Nếu error đã có message, giữ nguyên
+        if (error.message) {
+            throw error;
+        }
+        // Nếu không có message, tạo message mặc định
+        throw new Error("Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+    }
+};
