@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import AccountList from "../../components/AdminComponent/AccountList";
-import CreateAccountModal from "../../components/AdminComponent/Modal/CreateAccountModal";
+import WasteCategoryList from "../../components/AdminComponent/WasteCategoryList";
+import CreateWasteCategoryModal from "../../components/AdminComponent/Modal/CreateWasteCategoryModal";
 import { FaPlus, FaSearch } from "react-icons/fa";
 
-const CollectorListPage = () => {
+const WasteCategoryListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,17 +22,17 @@ const CollectorListPage = () => {
       <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-black">
-            Danh sách người thu gom
+            Danh sách danh mục loại rác
           </h1>
           <p className="text-sm text-gray-600">
-            Quản lý và theo dõi thông tin nhân viên thu gom rác.
+            Quản lý và theo dõi các loại rác thải thu gom.
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm kiếm tên, email..."
+              placeholder="Tìm kiếm tên loại rác..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-4 pr-10 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-lg min-w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -49,14 +49,14 @@ const CollectorListPage = () => {
             className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 shrink-0"
           >
             <FaPlus className="text-white" />
-            <span>Tạo tài khoản mới</span>
+            <span>Thêm danh mục</span>
           </button>
         </div>
       </header>
 
-      <AccountList />
+      <WasteCategoryList />
 
-      <CreateAccountModal
+      <CreateWasteCategoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
@@ -64,4 +64,4 @@ const CollectorListPage = () => {
   );
 };
 
-export default CollectorListPage;
+export default WasteCategoryListPage;

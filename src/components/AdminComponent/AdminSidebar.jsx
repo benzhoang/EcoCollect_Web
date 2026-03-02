@@ -7,6 +7,7 @@ import {
   FaBullhorn,
   FaSignOutAlt,
   FaChevronDown,
+  FaCog,
 } from "react-icons/fa";
 
 const AdminSidebar = ({ isOpen }) => {
@@ -14,6 +15,9 @@ const AdminSidebar = ({ isOpen }) => {
   const currentPath = location.pathname;
   const [isAccountOpen, setIsAccountOpen] = useState(
     currentPath.startsWith("/admin/account/")
+  );
+  const [isConfigOpen, setIsConfigOpen] = useState(
+    currentPath.startsWith("/admin/config/")
   );
   const userData = useMemo(() => {
     try {
@@ -26,6 +30,7 @@ const AdminSidebar = ({ isOpen }) => {
 
   useEffect(() => {
     setIsAccountOpen(currentPath.startsWith("/admin/account/"));
+    setIsConfigOpen(currentPath.startsWith("/admin/config/"));
   }, [currentPath]);
 
   const isDashboardActive = currentPath === "/admin/dashboard";
@@ -34,6 +39,9 @@ const AdminSidebar = ({ isOpen }) => {
   const isCollectorsActive = currentPath === "/admin/account/collectors";
   const isRecyclingEnterprisesActive =
     currentPath === "/admin/account/recycling-enterprises";
+  const isConfigActive = currentPath.startsWith("/admin/config/");
+  const isWasteCategoryActive = currentPath === "/admin/config/waste-categories";
+  const isAreaActive = currentPath === "/admin/config/areas";
   const isComplaintsActive = currentPath === "/admin/complaints";
 
   const handleLogout = () => {
@@ -50,6 +58,15 @@ const AdminSidebar = ({ isOpen }) => {
     }
   };
 
+  const handleConfigClick = (e) => {
+    e?.preventDefault?.();
+    setIsConfigOpen((v) => !v);
+    if (!isConfigActive) {
+      window.history.pushState({}, "", "/admin/config/waste-categories");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  };
+
   const getIcon = (iconType) => {
     switch (iconType) {
       case "dashboard":
@@ -58,6 +75,8 @@ const AdminSidebar = ({ isOpen }) => {
         return <FaUsers className="w-5 h-5" />;
       case "complaints":
         return <FaBullhorn className="w-5 h-5" />;
+      case "config":
+        return <FaCog className="w-5 h-5" />;
       case "logout":
         return <FaSignOutAlt className="w-4 h-4" />;
       default:
@@ -166,6 +185,60 @@ const AdminSidebar = ({ isOpen }) => {
                   }`}
                 >
                   Doanh nghiệp tái chế
+                </Link>
+              </li>
+            </ul>
+          </li>
+
+          <li>
+            <button
+              type="button"
+              onClick={handleConfigClick}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 text-left cursor-pointer ${
+                isConfigActive
+                  ? "bg-green-50 text-green-700 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50 hover:text-green-600"
+              }`}
+            >
+              <span
+                className={isConfigActive ? "text-green-600" : "text-gray-500"}
+              >
+                {getIcon("config")}
+              </span>
+              <span className="flex-1 text-sm">Quản lý cấu hình</span>
+              <FaChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  isConfigOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            <ul
+              className={`${
+                isConfigOpen ? "block" : "hidden"
+              } mt-1 ml-4 space-y-1 pl-4`}
+            >
+              <li>
+                <Link
+                  to="/admin/config/waste-categories"
+                  className={`block px-3 py-2 rounded-lg transition-colors no-underline text-sm ${
+                    isWasteCategoryActive
+                      ? "bg-green-50 text-green-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-green-600"
+                  }`}
+                >
+                  Danh mục loại rác
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/admin/config/areas"
+                  className={`block px-3 py-2 rounded-lg transition-colors no-underline text-sm ${
+                    isAreaActive
+                      ? "bg-green-50 text-green-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-green-600"
+                  }`}
+                >
+                  Khu vực
                 </Link>
               </li>
             </ul>
