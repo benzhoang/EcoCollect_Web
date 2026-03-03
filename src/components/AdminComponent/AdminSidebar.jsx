@@ -9,20 +9,23 @@ import {
   FaChevronDown,
   FaCog,
 } from "react-icons/fa";
+import { logout } from "../../service/api";
 
 const AdminSidebar = ({ isOpen }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isAccountOpen, setIsAccountOpen] = useState(
-    currentPath.startsWith("/admin/account/")
+    currentPath.startsWith("/admin/account/"),
   );
   const [isConfigOpen, setIsConfigOpen] = useState(
-    currentPath.startsWith("/admin/config/")
+    currentPath.startsWith("/admin/config/"),
   );
   const userData = useMemo(() => {
     try {
       const stored = localStorage.getItem("user");
-      return stored ? JSON.parse(stored) : { fullName: "Admin", userType: "ADMIN" };
+      return stored
+        ? JSON.parse(stored)
+        : { fullName: "Admin", userType: "ADMIN" };
     } catch {
       return { fullName: "Admin", userType: "ADMIN" };
     }
@@ -40,12 +43,13 @@ const AdminSidebar = ({ isOpen }) => {
   const isRecyclingEnterprisesActive =
     currentPath === "/admin/account/recycling-enterprises";
   const isConfigActive = currentPath.startsWith("/admin/config/");
-  const isWasteCategoryActive = currentPath === "/admin/config/waste-categories";
+  const isWasteCategoryActive =
+    currentPath === "/admin/config/waste-categories";
   const isAreaActive = currentPath === "/admin/config/areas";
   const isComplaintsActive = currentPath === "/admin/complaints";
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    logout();
     window.location.href = "/";
   };
 
@@ -276,7 +280,9 @@ const AdminSidebar = ({ isOpen }) => {
             <div className="text-sm font-semibold text-gray-900 truncate">
               {userData.fullName || "Admin"}
             </div>
-            <div className="text-xs text-gray-500">{userData.userType || "ADMIN"}</div>
+            <div className="text-xs text-gray-500">
+              {userData.userType || "ADMIN"}
+            </div>
           </div>
         </div>
         <button

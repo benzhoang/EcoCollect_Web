@@ -1,26 +1,24 @@
 // Sử dụng proxy trong development để tránh lỗi CORS
 // Trong development: sử dụng relative path (sẽ được proxy bởi Vite)
 // Trong production: sử dụng full URL
-const API_BASE_URL = import.meta.env.DEV
-    ? ""
-    : "http://localhost:8080";
+const API_BASE_URL = import.meta.env.DEV ? "" : "http://localhost:8080";
 
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 // Interceptor: gắn token vào mọi request nếu có
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 /**
@@ -29,15 +27,15 @@ api.interceptors.request.use((config) => {
  * @returns {string} Tên trường tiếng Việt
  */
 const getFieldNameInVietnamese = (field) => {
-    const fieldMap = {
-        'email': 'Email',
-        'phone': 'Số điện thoại',
-        'password': 'Mật khẩu',
-        'fullName': 'Họ và tên',
-        'areaId': 'Khu vực',
-        'username': 'Tên người dùng'
-    };
-    return fieldMap[field] || field;
+  const fieldMap = {
+    email: "Email",
+    phone: "Số điện thoại",
+    password: "Mật khẩu",
+    fullName: "Họ và tên",
+    areaId: "Khu vực",
+    username: "Tên người dùng",
+  };
+  return fieldMap[field] || field;
 };
 
 /**
@@ -46,51 +44,51 @@ const getFieldNameInVietnamese = (field) => {
  * @returns {string} Message lỗi tiếng Việt
  */
 const translateErrorMessage = (message) => {
-    if (!message) return "Đăng ký thất bại. Vui lòng thử lại.";
+  if (!message) return "Đăng ký thất bại. Vui lòng thử lại.";
 
-    const lowerMessage = message.toLowerCase();
+  const lowerMessage = message.toLowerCase();
 
-    // Các message lỗi phổ biến
-    const errorTranslations = {
-        'validation failed': 'Thông tin không hợp lệ',
-        'email already exists': 'Email đã được sử dụng',
-        'phone already exists': 'Số điện thoại đã được sử dụng',
-        'email or phone is required': 'Vui lòng nhập email hoặc số điện thoại',
-        'email is required': 'Vui lòng nhập email',
-        'phone is required': 'Vui lòng nhập số điện thoại',
-        'password is required': 'Vui lòng nhập mật khẩu',
-        'fullname is required': 'Vui lòng nhập họ và tên',
-        'areaid is required': 'Vui lòng nhập khu vực',
-        'invalid email': 'Email không hợp lệ',
-        'invalid phone': 'Số điện thoại không hợp lệ',
-        'password too short': 'Mật khẩu quá ngắn',
-        'password must be at least': 'Mật khẩu phải có ít nhất',
-        'email must be an email': 'Email không đúng định dạng',
-        'phone must be a phone number': 'Số điện thoại không đúng định dạng',
-        'areaid must be a uuid': 'ID khu vực không hợp lệ',
-        'user already exists': 'Người dùng đã tồn tại',
-        'internal server error': 'Lỗi hệ thống. Vui lòng thử lại sau.',
-        'bad request': 'Yêu cầu không hợp lệ',
-        'unauthorized': 'Không có quyền truy cập',
-        'forbidden': 'Bị cấm truy cập',
-        'not found': 'Không tìm thấy',
-        'conflict': 'Dữ liệu đã tồn tại'
-    };
+  // Các message lỗi phổ biến
+  const errorTranslations = {
+    "validation failed": "Thông tin không hợp lệ",
+    "email already exists": "Email đã được sử dụng",
+    "phone already exists": "Số điện thoại đã được sử dụng",
+    "email or phone is required": "Vui lòng nhập email hoặc số điện thoại",
+    "email is required": "Vui lòng nhập email",
+    "phone is required": "Vui lòng nhập số điện thoại",
+    "password is required": "Vui lòng nhập mật khẩu",
+    "fullname is required": "Vui lòng nhập họ và tên",
+    "areaid is required": "Vui lòng nhập khu vực",
+    "invalid email": "Email không hợp lệ",
+    "invalid phone": "Số điện thoại không hợp lệ",
+    "password too short": "Mật khẩu quá ngắn",
+    "password must be at least": "Mật khẩu phải có ít nhất",
+    "email must be an email": "Email không đúng định dạng",
+    "phone must be a phone number": "Số điện thoại không đúng định dạng",
+    "areaid must be a uuid": "ID khu vực không hợp lệ",
+    "user already exists": "Người dùng đã tồn tại",
+    "internal server error": "Lỗi hệ thống. Vui lòng thử lại sau.",
+    "bad request": "Yêu cầu không hợp lệ",
+    unauthorized: "Không có quyền truy cập",
+    forbidden: "Bị cấm truy cập",
+    "not found": "Không tìm thấy",
+    conflict: "Dữ liệu đã tồn tại",
+  };
 
-    // Tìm translation phù hợp
-    for (const [key, translation] of Object.entries(errorTranslations)) {
-        if (lowerMessage.includes(key)) {
-            return translation;
-        }
+  // Tìm translation phù hợp
+  for (const [key, translation] of Object.entries(errorTranslations)) {
+    if (lowerMessage.includes(key)) {
+      return translation;
     }
+  }
 
-    // Nếu không tìm thấy translation, trả về message gốc hoặc message mặc định
-    // Nếu message là tiếng Anh và không có trong danh sách, thêm prefix
-    if (/^[a-zA-Z\s]+$/.test(message) && message.length < 100) {
-        return message; // Giữ nguyên nếu là tiếng Anh ngắn
-    }
+  // Nếu không tìm thấy translation, trả về message gốc hoặc message mặc định
+  // Nếu message là tiếng Anh và không có trong danh sách, thêm prefix
+  if (/^[a-zA-Z\s]+$/.test(message) && message.length < 100) {
+    return message; // Giữ nguyên nếu là tiếng Anh ngắn
+  }
 
-    return message || "Đăng ký thất bại. Vui lòng thử lại.";
+  return message || "Đăng ký thất bại. Vui lòng thử lại.";
 };
 
 /**
@@ -100,22 +98,27 @@ const translateErrorMessage = (message) => {
  * @returns {never}
  */
 const handleApiError = (error, defaultMessage) => {
-    if (axios.isAxiosError(error)) {
-        if (error.response) {
-            const data = error.response.data;
-            let message = defaultMessage;
-            if (data?.message) message = data.message;
-            else if (data?.error) message = data.error;
-            else if (error.response.statusText) message = error.response.statusText;
-            throw new Error(message);
-        }
-        // Xử lý các lỗi network và CORS
-        if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
-            throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-        }
+  if (axios.isAxiosError(error)) {
+    if (error.response) {
+      const data = error.response.data;
+      let message = defaultMessage;
+      if (data?.message) message = data.message;
+      else if (data?.error) message = data.error;
+      else if (error.response.statusText) message = error.response.statusText;
+      throw new Error(message);
     }
-    if (error.message) throw error;
-    throw new Error(defaultMessage);
+    // Xử lý các lỗi network và CORS
+    if (
+      error.code === "ERR_NETWORK" ||
+      error.message?.includes("Network Error")
+    ) {
+      throw new Error(
+        "Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.",
+      );
+    }
+  }
+  if (error.message) throw error;
+  throw new Error(defaultMessage);
 };
 
 /**
@@ -125,15 +128,15 @@ const handleApiError = (error, defaultMessage) => {
  * @returns {Promise} Response từ API
  */
 export const login = async (identifier, password) => {
-    try {
-        const { data } = await api.post("/auth/login", {
-            identifier,
-            password,
-        });
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đăng nhập thất bại");
-    }
+  try {
+    const { data } = await api.post("/auth/login", {
+      identifier,
+      password,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đăng nhập thất bại");
+  }
 };
 
 /**
@@ -141,18 +144,18 @@ export const login = async (identifier, password) => {
  * @param {Object} tokens - Object chứa accessToken, refreshToken, tokenType, expiresInSeconds
  */
 export const saveTokens = (tokens) => {
-    if (tokens.accessToken) {
-        localStorage.setItem("accessToken", tokens.accessToken);
-    }
-    if (tokens.refreshToken) {
-        localStorage.setItem("refreshToken", tokens.refreshToken);
-    }
-    if (tokens.tokenType) {
-        localStorage.setItem("tokenType", tokens.tokenType);
-    }
-    if (tokens.expiresInSeconds) {
-        localStorage.setItem("expiresInSeconds", tokens.expiresInSeconds);
-    }
+  if (tokens.accessToken) {
+    localStorage.setItem("accessToken", tokens.accessToken);
+  }
+  if (tokens.refreshToken) {
+    localStorage.setItem("refreshToken", tokens.refreshToken);
+  }
+  if (tokens.tokenType) {
+    localStorage.setItem("tokenType", tokens.tokenType);
+  }
+  if (tokens.expiresInSeconds) {
+    localStorage.setItem("expiresInSeconds", tokens.expiresInSeconds);
+  }
 };
 
 /**
@@ -160,7 +163,7 @@ export const saveTokens = (tokens) => {
  * @param {Object} user - Object chứa thông tin user
  */
 export const saveUser = (user) => {
-    localStorage.setItem("user", JSON.stringify(user));
+  localStorage.setItem("user", JSON.stringify(user));
 };
 
 /**
@@ -168,7 +171,7 @@ export const saveUser = (user) => {
  * @returns {string|null} Access token
  */
 export const getAccessToken = () => {
-    return localStorage.getItem("accessToken");
+  return localStorage.getItem("accessToken");
 };
 
 /**
@@ -177,57 +180,63 @@ export const getAccessToken = () => {
  * @returns {Promise} Response từ API
  */
 export const register = async (userData) => {
-    try {
-        const { data } = await api.post("/auth/register", userData);
-        return data;
-    } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
-            const res = error.response;
-            const errorData = res.data;
-            let errorMessage = "Đăng ký thất bại";
+  try {
+    const { data } = await api.post("/auth/register", userData);
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const res = error.response;
+      const errorData = res.data;
+      let errorMessage = "Đăng ký thất bại";
 
-            if (errorData?.message) {
-                errorMessage = errorData.message;
-            } else if (errorData?.error) {
-                errorMessage = errorData.error;
-            } else if (Array.isArray(errorData?.errors)) {
-                const errorMessages = errorData.errors.map(err => {
-                    if (typeof err === "string") return err;
-                    return err.message || err.msg || JSON.stringify(err);
-                });
-                errorMessage = errorMessages.join(". ");
-            } else if (errorData?.validationErrors) {
-                const validationMessages = Object.entries(errorData.validationErrors)
-                    .map(([field, message]) => {
-                        const fieldName = getFieldNameInVietnamese(field);
-                        return `${fieldName}: ${message}`;
-                    });
-                errorMessage = validationMessages.join(". ");
-            } else if (res.statusText) {
-                errorMessage = res.statusText;
-            }
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      } else if (Array.isArray(errorData?.errors)) {
+        const errorMessages = errorData.errors.map((err) => {
+          if (typeof err === "string") return err;
+          return err.message || err.msg || JSON.stringify(err);
+        });
+        errorMessage = errorMessages.join(". ");
+      } else if (errorData?.validationErrors) {
+        const validationMessages = Object.entries(
+          errorData.validationErrors,
+        ).map(([field, message]) => {
+          const fieldName = getFieldNameInVietnamese(field);
+          return `${fieldName}: ${message}`;
+        });
+        errorMessage = validationMessages.join(". ");
+      } else if (res.statusText) {
+        errorMessage = res.statusText;
+      }
 
-            errorMessage = translateErrorMessage(errorMessage);
-            throw new Error(errorMessage);
-        }
-        // Xử lý các lỗi network và CORS
-        if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
-            throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-        }
-        if (error.message) throw error;
-        throw new Error("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
+      errorMessage = translateErrorMessage(errorMessage);
+      throw new Error(errorMessage);
     }
+    // Xử lý các lỗi network và CORS
+    if (
+      error.code === "ERR_NETWORK" ||
+      error.message?.includes("Network Error")
+    ) {
+      throw new Error(
+        "Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.",
+      );
+    }
+    if (error.message) throw error;
+    throw new Error("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
+  }
 };
 
 /**
  * Xóa token và user khỏi localStorage
  */
 export const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("tokenType");
-    localStorage.removeItem("expiresInSeconds");
-    localStorage.removeItem("user");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("tokenType");
+  localStorage.removeItem("expiresInSeconds");
+  localStorage.removeItem("user");
 };
 
 /**
@@ -238,16 +247,19 @@ export const logout = () => {
  * @returns {Promise} Response từ API
  */
 export const getLeaderboardByArea = async (areaId, days = 30, limit = 50) => {
-    try {
-        const params = {};
-        if (days !== undefined && days !== null) params.days = days;
-        if (limit !== undefined && limit !== null) params.limit = limit;
+  try {
+    const params = {};
+    if (days !== undefined && days !== null) params.days = days;
+    if (limit !== undefined && limit !== null) params.limit = limit;
 
-        const { data } = await api.get(`/areas/${areaId}/leaderboard`, { params });
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy bảng xếp hạng. Vui lòng thử lại.");
-    }
+    const { data } = await api.get(`/areas/${areaId}/leaderboard`, { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy bảng xếp hạng. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -255,12 +267,15 @@ export const getLeaderboardByArea = async (areaId, days = 30, limit = 50) => {
  * @returns {Promise} Response từ API
  */
 export const getAreaTree = async () => {
-    try {
-        const { data } = await api.get("/areas/tree");
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
-    }
+  try {
+    const { data } = await api.get("/areas/tree");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -268,12 +283,15 @@ export const getAreaTree = async () => {
  * @returns {Promise} Response từ API (200 OK)
  */
 export const getAreas = async () => {
-    try {
-        const { data } = await api.get("/areas");
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.");
-    }
+  try {
+    const { data } = await api.get("/areas");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách khu vực. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -284,12 +302,16 @@ export const getAreas = async () => {
  * @returns {Promise} Response từ API
  */
 export const createArea = async (body) => {
-    try {
-        const { data } = await api.post("/admin/areas", body);
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.");
+  try {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error("Vui lòng đăng nhập để tạo khu vực.");
     }
+    const { data } = await api.post("/admin/areas", body);
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.");
+  }
 };
 
 /**
@@ -297,12 +319,15 @@ export const createArea = async (body) => {
  * @returns {Promise} Response từ API
  */
 export const getWasteCategories = async () => {
-    try {
-        const { data } = await api.get("/waste-categories");
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách danh mục loại rác. Vui lòng thử lại.");
-    }
+  try {
+    const { data } = await api.get("/waste-categories");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách danh mục loại rác. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -312,17 +337,24 @@ export const getWasteCategories = async () => {
  * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"]
  * @returns {Promise} Response từ API
  */
-export const getCitizenReports = async (page = 0, size = 20, sort = ["createdAt,desc"]) => {
-    try {
-        const params = { page, size };
-        if (Array.isArray(sort) && sort.length) {
-            params.sort = sort;
-        }
-        const { data } = await api.get("/citizen/reports", { params });
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+export const getCitizenReports = async (
+  page = 0,
+  size = 20,
+  sort = ["createdAt,desc"],
+) => {
+  try {
+    const params = { page, size };
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
     }
+    const { data } = await api.get("/citizen/reports", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -331,16 +363,16 @@ export const getCitizenReports = async (page = 0, size = 20, sort = ["createdAt,
  * @returns {Promise} Response từ API
  */
 export const createCitizenReport = async (reportData) => {
-    try {
-        const token = getAccessToken();
-        if (!token) {
-            throw new Error("Vui lòng đăng nhập để tạo báo cáo.");
-        }
-        const { data } = await api.post("/citizen/reports", reportData);
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
+  try {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error("Vui lòng đăng nhập để tạo báo cáo.");
     }
+    const { data } = await api.post("/citizen/reports", reportData);
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi tạo báo cáo. Vui lòng thử lại.");
+  }
 };
 /**
  * Lấy chi tiết một báo cáo của công dân theo ID
@@ -348,50 +380,57 @@ export const createCitizenReport = async (reportData) => {
  * @returns {Promise} Response từ API
  */
 export const getCitizenReportById = async (id) => {
-    try {
-        const token = getAccessToken();
-        const headers = {
-            "Content-Type": "application/json",
-        };
+  try {
+    const token = getAccessToken();
+    const headers = {
+      "Content-Type": "application/json",
+    };
 
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const url = `${API_BASE_URL}/citizen/reports/${id}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: headers,
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể lấy chi tiết báo cáo";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
-        }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
-        }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi lấy chi tiết báo cáo. Vui lòng thử lại.");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
+
+    const url = `${API_BASE_URL}/citizen/reports/${id}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Không thể lấy chi tiết báo cáo";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Xử lý các lỗi network và CORS
+    if (error.name === "TypeError" && error.message.includes("fetch")) {
+      if (
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("NetworkError")
+      ) {
+        throw new Error(
+          "Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.",
+        );
+      }
+    }
+    // Nếu error đã có message, giữ nguyên
+    if (error.message) {
+      throw error;
+    }
+    // Nếu không có message, tạo message mặc định
+    throw new Error(
+      "Đã xảy ra lỗi khi lấy chi tiết báo cáo. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -403,30 +442,39 @@ export const getCitizenReportById = async (id) => {
  * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"] (optional)
  * @returns {Promise} Response từ API
  */
-export const getEnterpriseReportsInbox = async (areaId = null, status = null, page = 0, size = 20, sort = ["createdAt,desc"]) => {
-    try {
-        const params = {};
-        if (areaId) {
-            // Swagger định nghĩa param là "areaId"
-            params.areaId = areaId;
-        }
-        if (status) {
-            params.status = status;
-        }
-        if (page !== undefined && page !== null) {
-            params.page = page;
-        }
-        if (size !== undefined && size !== null) {
-            params.size = size;
-        }
-        if (Array.isArray(sort) && sort.length) {
-            params.sort = sort;
-        }
-        const { data } = await api.get("/enterprise/reports/inbox", { params });
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo doanh nghiệp. Vui lòng thử lại.");
+export const getEnterpriseReportsInbox = async (
+  areaId = null,
+  status = null,
+  page = 0,
+  size = 20,
+  sort = ["createdAt,desc"],
+) => {
+  try {
+    const params = {};
+    if (areaId) {
+      // Swagger định nghĩa param là "areaId"
+      params.areaId = areaId;
     }
+    if (status) {
+      params.status = status;
+    }
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+    const { data } = await api.get("/enterprise/reports/inbox", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách báo cáo doanh nghiệp. Vui lòng thử lại.",
+    );
+  }
 };
 
 /**
@@ -437,23 +485,30 @@ export const getEnterpriseReportsInbox = async (areaId = null, status = null, pa
  * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"] (optional)
  * @returns {Promise} Response từ API
  */
-export const getEnterpriseReports = async (page = 0, size = 20, sort = ["createdAt,desc"]) => {
-    try {
-        const params = {};
-        if (page !== undefined && page !== null) {
-            params.page = page;
-        }
-        if (size !== undefined && size !== null) {
-            params.size = size;
-        }
-        if (Array.isArray(sort) && sort.length) {
-            params.sort = sort;
-        }
-
-        // Swagger định nghĩa: GET /enterprise/reports?page=0&size=20&sort=property,(asc|desc)
-        const { data } = await api.get("/enterprise/reports", { params });
-        return data;
-    } catch (error) {
-        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+export const getEnterpriseReports = async (
+  page = 0,
+  size = 20,
+  sort = ["createdAt,desc"],
+) => {
+  try {
+    const params = {};
+    if (page !== undefined && page !== null) {
+      params.page = page;
     }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+
+    // Swagger định nghĩa: GET /enterprise/reports?page=0&size=20&sort=property,(asc|desc)
+    const { data } = await api.get("/enterprise/reports", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.",
+    );
+  }
 };
