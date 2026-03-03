@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
+import AssignModal from '../../components/AssignModal';
 
 const ReportDetail = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [requestId, setRequestId] = useState(null);
     const [requestData, setRequestData] = useState(null);
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
     useEffect(() => {
         // Lấy requestId từ URL
@@ -110,15 +112,30 @@ const ReportDetail = () => {
     };
 
     const handleAccept = () => {
-        // Handle accept logic here
+        // TODO: Gọi API chấp nhận yêu cầu
         console.log('Accept request:', requestId);
         alert('Yêu cầu đã được chấp nhận!');
     };
 
     const handleReject = () => {
-        // Handle reject logic here
+        // TODO: Gọi API từ chối yêu cầu
         console.log('Reject request:', requestId);
         alert('Yêu cầu đã bị từ chối!');
+    };
+
+    const handleOpenAssignModal = () => {
+        setIsAssignModalOpen(true);
+    };
+
+    const handleCloseAssignModal = () => {
+        setIsAssignModalOpen(false);
+    };
+
+    const handleAssignCollector = (collector) => {
+        // TODO: Gọi API để giao nhiệm vụ cho collector đã chọn
+        console.log('Assign request:', requestId, 'to collector:', collector);
+        alert(`Đã giao yêu cầu cho collector: ${collector.name || collector.code || collector.id}`);
+        setIsAssignModalOpen(false);
     };
 
     if (!requestData) {
@@ -265,6 +282,12 @@ const ReportDetail = () => {
                                     <h3 className="text-lg font-bold text-gray-900 mb-4">Thao tác</h3>
                                     <div className="space-y-3">
                                         <button
+                                            onClick={handleOpenAssignModal}
+                                            className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                        >
+                                            Giao việc cho collector
+                                        </button>
+                                        <button
                                             onClick={handleAccept}
                                             className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                                         >
@@ -289,6 +312,13 @@ const ReportDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Assign Modal */}
+            <AssignModal
+                show={isAssignModalOpen}
+                onClose={handleCloseAssignModal}
+                onAssign={handleAssignCollector}
+            />
         </div>
     );
 };
