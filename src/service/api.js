@@ -403,70 +403,57 @@ export const getCitizenReportById = async (id) => {
  * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"] (optional)
  * @returns {Promise} Response từ API
  */
-export const getEnterpriseReportsInbox = async (areaId = null, status = null, page = 0, size = 20, sort = null) => {
+export const getEnterpriseReportsInbox = async (areaId = null, status = null, page = 0, size = 20, sort = ["createdAt,desc"]) => {
     try {
-        const token = getAccessToken();
-        const headers = {
-            "Content-Type": "application/json",
-        };
-
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const queryParams = new URLSearchParams();
+        const params = {};
         if (areaId) {
-            queryParams.append("areald", areaId); // API sử dụng "areald" thay vì "areaId"
+            // Swagger định nghĩa param là "areaId"
+            params.areaId = areaId;
         }
         if (status) {
-            queryParams.append("status", status);
+            params.status = status;
         }
         if (page !== undefined && page !== null) {
-            queryParams.append("page", page.toString());
+            params.page = page;
         }
         if (size !== undefined && size !== null) {
-            queryParams.append("size", size.toString());
+            params.size = size;
         }
-        if (Array.isArray(sort)) {
-            sort.forEach((s) => {
-                if (s) {
-                    queryParams.append("sort", s);
-                }
-            });
+        if (Array.isArray(sort) && sort.length) {
+            params.sort = sort;
         }
-
-        const url = `${API_BASE_URL}/enterprise/reports/inbox${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: headers,
-        });
-
-        if (!response.ok) {
-            let errorMessage = "Không thể lấy danh sách báo cáo";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorData.error || errorMessage;
-            } catch (e) {
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
+        const { data } = await api.get("/enterprise/reports/inbox", { params });
         return data;
     } catch (error) {
-        // Xử lý các lỗi network và CORS
-        if (error.name === "TypeError" && error.message.includes("fetch")) {
-            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                throw new Error("Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối hoặc liên hệ quản trị viên.");
-            }
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo doanh nghiệp. Vui lòng thử lại.");
+    }
+};
+
+/**
+ * Lấy danh sách tất cả báo cáo cho doanh nghiệp (enterprise report list)
+ * Endpoint: GET /enterprise/reports
+ * @param {number} page - Chỉ số trang (zero-based, mặc định: 0)
+ * @param {number} size - Kích thước trang (mặc định: 20)
+ * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"] (optional)
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseReports = async (page = 0, size = 20, sort = ["createdAt,desc"]) => {
+    try {
+        const params = {};
+        if (page !== undefined && page !== null) {
+            params.page = page;
         }
-        // Nếu error đã có message, giữ nguyên
-        if (error.message) {
-            throw error;
+        if (size !== undefined && size !== null) {
+            params.size = size;
         }
-        // Nếu không có message, tạo message mặc định
-        throw new Error("Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
+        if (Array.isArray(sort) && sort.length) {
+            params.sort = sort;
+        }
+
+        // Swagger định nghĩa: GET /enterprise/reports?page=0&size=20&sort=property,(asc|desc)
+        const { data } = await api.get("/enterprise/reports", { params });
+        return data;
+    } catch (error) {
+        handleApiError(error, "Đã xảy ra lỗi khi lấy danh sách báo cáo. Vui lòng thử lại.");
     }
 };

@@ -1,7 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { getCitizenReports, getLeaderboardByArea } from '../../service/api';
 
 const HomePage = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [recentReports, setRecentReports] = useState([]);
+    const [recentReportsLoading, setRecentReportsLoading] = useState(false);
+    const [recentReportsError, setRecentReportsError] = useState('');
+    const [leaderboardUsers, setLeaderboardUsers] = useState([]);
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [leaderboardError, setLeaderboardError] = useState('');
+    const [currentUserId, setCurrentUserId] = useState(null);
+    const prevUserIdRef = useRef(null);
 
     useEffect(() => {
         // Kiểm tra trạng thái đăng nhập
@@ -10,13 +19,31 @@ const HomePage = () => {
             if (userData) {
                 try {
                     const user = JSON.parse(userData);
-                    setIsLoggedIn(user.isLoggedIn === true);
+                    const newIsLoggedIn = user.isLoggedIn === true;
+                    const userId = user.userId || user.id || null;
+
+                    // Chỉ cập nhật isLoggedIn nếu giá trị thay đổi
+                    setIsLoggedIn(prev => prev !== newIsLoggedIn ? newIsLoggedIn : prev);
+
+                    // Chỉ cập nhật currentUserId nếu giá trị thay đổi
+                    if (prevUserIdRef.current !== userId) {
+                        prevUserIdRef.current = userId;
+                        setCurrentUserId(userId);
+                    }
                 } catch (error) {
                     console.error('Error parsing user data:', error);
                     setIsLoggedIn(false);
+                    if (prevUserIdRef.current !== null) {
+                        prevUserIdRef.current = null;
+                        setCurrentUserId(null);
+                    }
                 }
             } else {
                 setIsLoggedIn(false);
+                if (prevUserIdRef.current !== null) {
+                    prevUserIdRef.current = null;
+                    setCurrentUserId(null);
+                }
             }
         };
 
@@ -34,6 +61,176 @@ const HomePage = () => {
             clearInterval(interval);
         };
     }, []);
+
+    const getStatusConfig = (status) => {
+        const upperStatus = (status || '').toUpperCase();
+        switch (upperStatus) {
+            case 'PENDING':
+                return {
+                    label: 'Chờ xử lý',
+                    color: 'bg-orange-100 text-orange-700',
+                };
+            case 'RECEIVED':
+                return {
+                    label: 'Đã tiếp nhận',
+                    color: 'bg-orange-100 text-orange-700',
+                };
+            case 'ASSIGNED':
+                return {
+                    label: 'Đã phân công',
+                    color: 'bg-blue-100 text-blue-700',
+                };
+            case 'COLLECTED':
+                return {
+                    label: 'Đã thu gom',
+                    color: 'bg-green-100 text-green-700',
+                };
+            case 'REJECTED':
+                return {
+                    label: 'Từ chối',
+                    color: 'bg-red-100 text-red-700',
+                };
+            default:
+                return {
+                    label: status || 'Không xác định',
+                    color: 'bg-gray-100 text-gray-700',
+                };
+        }
+    };
+
+    const formatRelativeTime = (dateString) => {
+        if (!dateString) return '';
+        const createdAt = new Date(dateString);
+        if (Number.isNaN(createdAt.getTime())) return '';
+
+        const diffMs = Date.now() - createdAt.getTime();
+        const diffMinutes = Math.floor(diffMs / (60 * 1000));
+
+        if (diffMinutes < 1) return 'Vừa xong';
+        if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `${diffHours} giờ trước`;
+
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays} ngày trước`;
+    };
+
+    const transformReportsFromApi = (apiReports) => {
+        if (!Array.isArray(apiReports)) return [];
+        return apiReports.map((item) => {
+            const statusConfig = getStatusConfig(item.currentStatus);
+            const mediaList = Array.isArray(item.media) ? item.media : [];
+            const imageMedia = mediaList.find((m) => m.mediaType === 'REPORT_IMAGE') || mediaList[0];
+            const imageUrl =
+                imageMedia?.url ||
+                'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop';
+
+            return {
+                id: item.id,
+                type: 'Rác thải',
+                typeColor: 'bg-green-100 text-green-700',
+                status: statusConfig.label,
+                statusColor: statusConfig.color,
+                location: item.addressText || 'Chưa có địa chỉ',
+                time: formatRelativeTime(item.createdAt),
+                points: 'Đang cập nhật',
+                image: imageUrl,
+            };
+        });
+    };
+
+    useEffect(() => {
+        const fetchRecentReports = async () => {
+            setRecentReportsLoading(true);
+            setRecentReportsError('');
+            try {
+                const response = await getCitizenReports(0, 4, ['createdAt,desc']);
+                const pageData = response?.data || {};
+                const apiReports = pageData.content || [];
+                const uiReports = transformReportsFromApi(apiReports);
+                setRecentReports(uiReports);
+            } catch (error) {
+                setRecentReportsError(error.message || 'Không thể tải báo cáo gần đây');
+            } finally {
+                setRecentReportsLoading(false);
+            }
+        };
+
+        if (isLoggedIn) {
+            fetchRecentReports();
+        } else {
+            setRecentReports([]);
+            setRecentReportsError('');
+        }
+    }, [isLoggedIn]);
+
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            setLeaderboardLoading(true);
+            setLeaderboardError('');
+            try {
+                const fixedAreaId = '33333333-3333-3333-3333-333333333333';
+                const response = await getLeaderboardByArea(fixedAreaId, 30, 5);
+
+                let items = [];
+                if (response && typeof response === 'object') {
+                    if (response.success && response.data) {
+                        items = response.data.items || [];
+                    } else if (Array.isArray(response)) {
+                        items = response;
+                    } else if (Array.isArray(response.items)) {
+                        items = response.items;
+                    }
+                }
+
+                // Lấy currentUserId từ localStorage để đảm bảo luôn có giá trị mới nhất
+                const userData = localStorage.getItem('user');
+                let currentUserIdForCheck = null;
+                if (userData) {
+                    try {
+                        const user = JSON.parse(userData);
+                        currentUserIdForCheck = user.userId || user.id || null;
+                    } catch (e) {
+                        // Ignore error
+                    }
+                }
+
+                const formatted = items.slice(0, 5).map((item, index) => {
+                    const rank = item.rank || index + 1;
+                    const name = item.fullName || item.name || 'Người dùng';
+                    const points = item.totalPoints || item.points || 0;
+                    const userId = item.userId || item.id || rank;
+                    const isCurrentUser = currentUserIdForCheck && userId === currentUserIdForCheck;
+                    const initials = name
+                        .split(' ')
+                        .filter(Boolean)
+                        .map((n) => n[0])
+                        .join('')
+                        .substring(0, 2)
+                        .toUpperCase();
+
+                    return {
+                        id: userId,
+                        name,
+                        initials,
+                        points,
+                        rank,
+                        isCurrentUser,
+                    };
+                });
+
+                setLeaderboardUsers(formatted);
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+                setLeaderboardError(error.message || 'Không thể tải bảng xếp hạng');
+            } finally {
+                setLeaderboardLoading(false);
+            }
+        };
+
+        fetchLeaderboard();
+    }, []); // Chỉ gọi một lần khi component mount
 
     // Carousel slides data
     const carouselSlides = [
@@ -241,13 +438,6 @@ const HomePage = () => {
         }
     ];
 
-    const leaderboardUsers = [
-        { id: 1, name: 'Trần Thị B', initials: 'TB', points: 5420, rank: 1, isCurrentUser: false },
-        { id: 2, name: 'Lê Văn C', initials: 'LC', points: 4850, rank: 2, isCurrentUser: false },
-        { id: 3, name: 'Phạm Minh D', initials: 'PD', points: 3920, rank: 3, isCurrentUser: false },
-        { id: 4, name: 'Nguyễn Văn A', initials: 'NA', points: 2450, rank: 4, isCurrentUser: true },
-        { id: 5, name: 'Hoàng Thị E', initials: 'HE', points: 2100, rank: 5, isCurrentUser: false }
-    ];
 
     const environmentalStats = [
         {
@@ -301,53 +491,6 @@ const HomePage = () => {
             ),
             color: 'text-purple-600',
             bgColor: 'bg-purple-100'
-        }
-    ];
-
-    const recentReports = [
-        {
-            id: 1,
-            type: 'Rác tái chế',
-            typeColor: 'bg-green-100 text-green-700',
-            status: 'Đã thu gom',
-            statusColor: 'bg-blue-100 text-blue-700',
-            location: '123 Nguyễn Huệ, Q.1',
-            time: '2 giờ trước',
-            points: '+25 điểm',
-            image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop'
-        },
-        {
-            id: 2,
-            type: 'Rác hữu cơ',
-            typeColor: 'bg-green-100 text-green-700',
-            status: 'Đã phân công',
-            statusColor: 'bg-blue-100 text-blue-700',
-            location: '45 Lê Lợi, Q.1',
-            time: '5 giờ trước',
-            points: '+20 điểm',
-            image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop'
-        },
-        {
-            id: 3,
-            type: 'Rác nguy hại',
-            typeColor: 'bg-red-100 text-red-700',
-            status: 'Đã tiếp nhận',
-            statusColor: 'bg-yellow-100 text-yellow-700',
-            location: '78 Trần Hưng Đạo, Q.5',
-            time: '1 ngày trước',
-            points: '+30 điểm',
-            image: 'https://images.unsplash.com/photo-1611909023030-19c0c2a79fb8?w=400&h=300&fit=crop'
-        },
-        {
-            id: 4,
-            type: 'Rác tái chế',
-            typeColor: 'bg-blue-100 text-blue-700',
-            status: 'Chờ xử lý',
-            statusColor: 'bg-green-100 text-green-700',
-            location: '12 Pasteur, Q.3',
-            time: '1 ngày trước',
-            points: 'Chờ duyệt điểm',
-            image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop'
         }
     ];
 
@@ -624,7 +767,7 @@ const HomePage = () => {
                                 </div>
                                 <h3 className="text-xl font-semibold text-gray-900">Báo cáo gần đây</h3>
                             </div>
-                            <a href="#" className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors flex items-center gap-1">
+                            <a href="/report" className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors flex items-center gap-1">
                                 Xem tất cả
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -632,43 +775,71 @@ const HomePage = () => {
                             </a>
                         </div>
                         {isLoggedIn ? (
-                            <div className="space-y-4">
-                                {recentReports.map((report) => (
-                                    <div key={report.id} className="bg-green-50 rounded-lg p-4 flex gap-4 hover:shadow-md transition-shadow">
-                                        {/* Image */}
-                                        <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-200 relative">
-                                            <img
-                                                src={report.image}
-                                                alt={report.type}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-2 mb-2">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.typeColor}`}>
-                                                        {report.type}
-                                                    </span>
-                                                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.statusColor}`}>
-                                                        {report.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <p className="text-sm text-gray-700 font-medium mb-1">
-                                                {report.location}
-                                            </p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">
-                                                    {report.time}
-                                                </span>
-                                                <span className={`text-sm font-semibold ${report.points.includes('Chờ') ? 'text-gray-600' : 'text-green-600'}`}>
-                                                    {report.points}
-                                                </span>
-                                            </div>
-                                        </div>
+                            <div>
+                                {recentReportsError && (
+                                    <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                                        {recentReportsError}
                                     </div>
-                                ))}
+                                )}
+
+                                {recentReportsLoading && (
+                                    <div className="text-center py-6 text-sm text-gray-600">
+                                        Đang tải báo cáo gần đây...
+                                    </div>
+                                )}
+
+                                {!recentReportsLoading && recentReports.length > 0 && (
+                                    <div className="space-y-4">
+                                        {recentReports.map((report) => (
+                                            <a
+                                                key={report.id}
+                                                href={`/report/${report.id}`}
+                                                className="block"
+                                            >
+                                                <div className="bg-green-50 rounded-lg p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer">
+                                                    {/* Image */}
+                                                    <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-200 relative">
+                                                        <img
+                                                            src={report.image}
+                                                            alt={report.type}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    {/* Content */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.typeColor}`}>
+                                                                    {report.type}
+                                                                </span>
+                                                                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${report.statusColor}`}>
+                                                                    {report.status}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-gray-700 font-medium mb-1">
+                                                            {report.location}
+                                                        </p>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs text-gray-500">
+                                                                {report.time}
+                                                            </span>
+                                                            <span className={`text-sm font-semibold ${report.points.includes('Chờ') ? 'text-gray-600' : 'text-green-600'}`}>
+                                                                {report.points}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {!recentReportsLoading && !recentReportsError && recentReports.length === 0 && (
+                                    <div className="text-center py-8 text-sm text-gray-600">
+                                        Chưa có báo cáo nào
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-center py-12">
@@ -700,69 +871,86 @@ const HomePage = () => {
                                     </svg>
                                     <h3 className="text-xl font-bold text-gray-900">Bảng xếp hạng</h3>
                                 </div>
-                                <a href="#" className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors">
+                                <a href="/rank" className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors">
                                     Xem thêm &gt;
                                 </a>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            {leaderboardUsers.map((user) => (
-                                <div
-                                    key={user.id}
-                                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${user.isCurrentUser
-                                        ? 'bg-green-50 border border-green-200'
-                                        : 'hover:bg-gray-50 border border-transparent hover:border-gray-200'
-                                        }`}
-                                >
-                                    {/* Rank Icon/Number */}
-                                    <div className="flex-shrink-0">
-                                        {user.rank === 1 ? (
-                                            <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                            </svg>
-                                        ) : user.rank === 2 ? (
-                                            <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                            </svg>
-                                        ) : user.rank === 3 ? (
-                                            <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                            </svg>
-                                        ) : (
-                                            <span className="text-gray-600 font-semibold text-sm w-6 text-center">
-                                                {user.rank}
+                        {leaderboardError && (
+                            <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                                {leaderboardError}
+                            </div>
+                        )}
+                        {leaderboardLoading && (
+                            <div className="text-center py-4 text-sm text-gray-600">
+                                Đang tải bảng xếp hạng...
+                            </div>
+                        )}
+                        {!leaderboardLoading && leaderboardUsers.length === 0 && !leaderboardError && (
+                            <div className="text-center py-4 text-sm text-gray-600">
+                                Chưa có dữ liệu bảng xếp hạng
+                            </div>
+                        )}
+                        {!leaderboardLoading && leaderboardUsers.length > 0 && (
+                            <div className="space-y-2">
+                                {leaderboardUsers.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${user.isCurrentUser
+                                            ? 'bg-green-50 border border-green-200'
+                                            : 'hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                                            }`}
+                                    >
+                                        {/* Rank Icon/Number */}
+                                        <div className="flex-shrink-0">
+                                            {user.rank === 1 ? (
+                                                <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                </svg>
+                                            ) : user.rank === 2 ? (
+                                                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                </svg>
+                                            ) : user.rank === 3 ? (
+                                                <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                </svg>
+                                            ) : (
+                                                <span className="text-gray-600 font-semibold text-sm w-6 text-center">
+                                                    {user.rank}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Avatar */}
+                                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${user.isCurrentUser
+                                            ? 'bg-green-700'
+                                            : 'bg-green-100'
+                                            }`}>
+                                            <span className={`font-semibold text-sm ${user.isCurrentUser
+                                                ? 'text-white'
+                                                : 'text-gray-900'
+                                                }`}>
+                                                {user.initials}
                                             </span>
-                                        )}
-                                    </div>
+                                        </div>
 
-                                    {/* Avatar */}
-                                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${user.isCurrentUser
-                                        ? 'bg-green-700'
-                                        : 'bg-green-100'
-                                        }`}>
-                                        <span className={`font-semibold text-sm ${user.isCurrentUser
-                                            ? 'text-white'
-                                            : 'text-gray-900'
-                                            }`}>
-                                            {user.initials}
-                                        </span>
+                                        {/* Name and Points */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-semibold text-sm truncate ${user.isCurrentUser
+                                                ? 'text-green-700'
+                                                : 'text-gray-900'
+                                                }`}>
+                                                {user.name}{user.isCurrentUser && ' (Bạn)'}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {user.points.toLocaleString('vi-VN')} điểm
+                                            </p>
+                                        </div>
                                     </div>
-
-                                    {/* Name and Points */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`font-semibold text-sm truncate ${user.isCurrentUser
-                                            ? 'text-green-700'
-                                            : 'text-gray-900'
-                                            }`}>
-                                            {user.name}{user.isCurrentUser && ' (Bạn)'}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                            {user.points.toLocaleString('vi-VN')} điểm
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

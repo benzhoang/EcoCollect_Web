@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import FilterEnterpriseModal from '../../components/FilterEnterpriseModal';
+import { getEnterpriseReports } from '../../service/api';
 
 const EnterpriseHomePage = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -9,45 +10,70 @@ const EnterpriseHomePage = () => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filterAreaId, setFilterAreaId] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const itemsPerPage = 4;
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [pageInfo, setPageInfo] = useState({
+        page: 0,
+        size: 20,
+        totalElements: 0,
+        totalPages: 1,
+    });
 
-    const requests = [
-        {
-            id: 1,
-            type: 'Nhựa (PET)',
-            typeColor: 'bg-blue-100 text-blue-700',
-            weight: '1.2 Tấn',
-            location: 'Khu công nghiệp Bắc Thăng L',
-            time: '2 giờ trước'
-        },
-        {
-            id: 2,
-            type: 'Hữu cơ',
-            typeColor: 'bg-green-100 text-green-700',
-            weight: '450 kg',
-            location: 'Chung cư Green Valley, Quận 7',
-            time: '5 giờ trước'
-        },
-        {
-            id: 3,
-            type: 'Giấy vụn',
-            typeColor: 'bg-orange-100 text-orange-700',
-            weight: '800 kg',
-            location: 'Tòa nhà Bitexco, Quận 1',
-            time: 'Hôm qua'
-        },
-        {
-            id: 4,
-            type: 'Điện tử',
-            typeColor: 'bg-purple-100 text-purple-700',
-            weight: '150 kg',
-            location: 'Khu Công nghệ cao, Quận 9',
-            time: '2 ngày trước'
+    const itemsPerPage = pageInfo.size || 20;
+
+    const mapStatusToLabel = (status) => {
+        switch (status) {
+            case 'PENDING':
+                return 'Chờ xử lý';
+            case 'IN_PROGRESS':
+                return 'Đang thực hiện';
+            case 'COMPLETED':
+                return 'Đã hoàn thành';
+            default:
+                return status || 'Không rõ';
         }
-    ];
+    };
 
-    const totalRequests = 24;
-    const totalPages = Math.ceil(totalRequests / itemsPerPage);
+    const mapStatusToBadgeClass = (status) => {
+        switch (status) {
+            case 'PENDING':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'IN_PROGRESS':
+                return 'bg-blue-100 text-blue-800';
+            case 'COMPLETED':
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-700';
+        }
+    };
+
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                // API dùng page index 0-based, còn UI dùng 1-based
+                const res = await getEnterpriseReports(currentPage - 1, itemsPerPage, ['createdAt,desc']);
+                const pageData = res?.data || {};
+                setReports(pageData.content || []);
+                setPageInfo({
+                    page: pageData.page ?? (currentPage - 1),
+                    size: pageData.size ?? itemsPerPage,
+                    totalElements: pageData.totalElements ?? (pageData.content ? pageData.content.length : 0),
+                    totalPages: pageData.totalPages ?? 1,
+                });
+            } catch (err) {
+                setError(err?.message || 'Không thể tải danh sách báo cáo');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReports();
+    }, [currentPage, itemsPerPage]);
+
+    const totalPages = pageInfo.totalPages || 1;
 
     const handleViewDetail = (requestId) => {
         window.history.pushState({}, '', `/enterprise/report/${requestId}`);
@@ -57,8 +83,6 @@ const EnterpriseHomePage = () => {
     const handleFilterApply = (filters) => {
         setFilterAreaId(filters.areaId || '');
         setFilterStatus(filters.status || '');
-        // TODO: 在这里调用 API 来获取过滤后的数据
-        // 例如: fetchFilteredData(filters.areaId, filters.status);
         console.log('应用过滤器:', filters);
     };
 
@@ -157,20 +181,43 @@ const EnterpriseHomePage = () => {
                                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">LOẠI RÁC THẢI</th>
                                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">KHỐI LƯỢNG</th>
                                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ĐỊA ĐIỂM</th>
-                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">THỜI GIAN</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">TRẠNG THÁI</th>
                                             <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">THAO TÁC</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {requests.map((request) => (
-                                            <tr key={request.id} className="hover:bg-gray-50 transition-colors">
+                                        {loading && (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                                                    Đang tải danh sách báo cáo...
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!loading && error && (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-4 text-center text-sm text-red-500">
+                                                    {error}
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!loading && !error && reports.length === 0 && (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                                                    Không có báo cáo nào.
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!loading && !error && reports.map((report) => (
+                                            <tr key={report.reportId} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${request.typeColor}`}>
-                                                        {request.type}
+                                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                                        {report.wasteCategoryId || 'Không rõ'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm font-medium text-gray-900">{request.weight}</span>
+                                                    <span className="text-sm font-medium text-gray-900">
+                                                        {report.estimatedWeightKg != null ? `${report.estimatedWeightKg} kg` : '—'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
@@ -178,15 +225,19 @@ const EnterpriseHomePage = () => {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                                         </svg>
-                                                        <span className="text-sm text-gray-700">{request.location}</span>
+                                                        <span className="text-sm text-gray-700">
+                                                            {report.addressText || 'Không có địa chỉ'}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-600">{request.time}</span>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${mapStatusToBadgeClass(report.currentStatus)}`}>
+                                                        {mapStatusToLabel(report.currentStatus)}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <button
-                                                        onClick={() => handleViewDetail(request.id)}
+                                                        onClick={() => handleViewDetail(report.reportId)}
                                                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                                                     >
                                                         View Detail
@@ -200,7 +251,15 @@ const EnterpriseHomePage = () => {
                             {/* Pagination */}
                             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                                 <div className="text-sm text-gray-600">
-                                    Hiển thị 1-{itemsPerPage} của {totalRequests} yêu cầu
+                                    {pageInfo.totalElements > 0 ? (
+                                        <>
+                                            Hiển thị {pageInfo.page * pageInfo.size + 1}
+                                            -
+                                            {pageInfo.page * pageInfo.size + reports.length} của {pageInfo.totalElements} yêu cầu
+                                        </>
+                                    ) : (
+                                        'Không có yêu cầu nào'
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
