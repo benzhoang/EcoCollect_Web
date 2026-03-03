@@ -89,8 +89,9 @@ const AreaList = () => {
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm pr-6 overflow-x-auto overflow-y-visible">
-        <table className="w-full min-w-100 table-fixed">
+      {/* mr-6: chừa chỗ bên phải để thanh scroll của layout nằm ngoài bảng */}
+      <div className="mr-6 overflow-x-auto overflow-y-visible bg-white border border-gray-200 rounded-lg shadow-sm">
+        <table className="w-full table-fixed min-w-100">
           <colgroup>
             <col className="w-20" />
             <col />
@@ -141,9 +142,12 @@ const AreaList = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-<span className="text-sm font-medium text-gray-900">
-                        {area.name ?? "-"}
-                      </span>
+                    <span
+                      className="text-sm font-medium text-gray-900"
+                      title={area.name}
+                    >
+                      {area.name ?? "-"}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2">

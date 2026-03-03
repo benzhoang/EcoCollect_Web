@@ -1,5 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import { getAreas, createArea } from "../../../service/api";
+
+/**
+ * Chuyển cây khu vực thành danh sách phẳng, mỗi node có name = path đầy đủ (TP.HCM, TP.HCM - Quan 1, ...).
+ */
+const buildAllAreaOptions = (nodes, parentName = "") => {
+  if (!nodes) return [];
+  const result = [];
+  (Array.isArray(nodes) ? nodes : [nodes]).forEach((node) => {
+    if (!node) return;
+    const currentName = parentName ? `${parentName} - ${node.name}` : node.name;
+    result.push({ id: node.id, name: currentName });
+    if (
+      Array.isArray(node.children) &&
+      node.children.length > 0 &&
+      typeof node.children[0] === "object"
+    ) {
+      result.push(...buildAllAreaOptions(node.children, currentName));
+    }
+  });
+  return result;
+};
 
 const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -7,6 +30,28 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
     name: "",
   });
   const [error, setError] = useState("");
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [loadingAreas, setLoadingAreas] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchAreas = async () => {
+      setLoadingAreas(true);
+      try {
+        const raw = await getAreas();
+        const data = raw?.data ?? raw;
+        const roots = Array.isArray(data) ? data : data ? [data] : [];
+        setAreaOptions(buildAllAreaOptions(roots));
+      } catch (err) {
+        console.error(err);
+        setAreaOptions([]);
+      } finally {
+        setLoadingAreas(false);
+      }
+    };
+    fetchAreas();
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -14,26 +59,38 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const parentId = formData.parentId.trim();
     const name = formData.name.trim();
     if (!name) {
-      setError("Vui lòng nhập tên khu vực.");
+      toast.error("Vui lòng nhập tên khu vực.");
       return;
     }
     setError("");
-    const newArea = {
-      id: `temp-${Date.now()}`,
-      name,
-      parentId: parentId || null,
-    };
-    onSuccess?.(newArea);
-    setFormData({ parentId: "", name: "" });
-    onClose?.();
+    setSubmitting(true);
+    const body = { name };
+    if (parentId) body.parentId = parentId;
+    console.log("[CreateAreaModal] submit body:", body);
+    try {
+      const data = await createArea(body);
+      console.log("[CreateAreaModal] createArea success:", data);
+      toast.success("Tạo khu vực thành công");
+      onSuccess?.(data);
+      setFormData({ parentId: "", name: "" });
+      onClose?.();
+    } catch (err) {
+      console.error("[CreateAreaModal] createArea error:", err);
+      const message = err?.message ?? "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
+    if (submitting) return;
     setFormData({ parentId: "", name: "" });
     setError("");
     onClose?.();
@@ -64,16 +121,25 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
-              ID khu vực
+              Khu vực cha
             </label>
-            <input
-              type="text"
+            <select
               name="parentId"
               value={formData.parentId}
               onChange={handleChange}
-              placeholder="UUID khu vực cha (ví dụ: 11111111-1111-1111-1111-111111111111) hoặc để trống"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+              disabled={loadingAreas}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">— Không chọn (tạo cấp gốc) —</option>
+              {areaOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+            {loadingAreas && (
+              <p className="mt-1 text-xs text-gray-500">Đang tải danh sách khu vực...</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -94,9 +160,10 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="flex justify-center pt-4">
             <button
               type="submit"
-              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors"
+              disabled={submitting}
+              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors"
             >
-              Thêm
+              {submitting ? "Đang tạo..." : "Thêm"}
             </button>
           </div>
         </form>
