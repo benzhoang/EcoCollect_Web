@@ -35,6 +35,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy cho API danh mục loại rác (waste-categories)
+      "/waste-categories": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

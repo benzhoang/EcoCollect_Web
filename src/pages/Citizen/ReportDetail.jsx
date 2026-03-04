@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenReportById } from '../../service/api';
+import { getCitizenReportById, getWasteCategories } from '../../service/api';
 
 const ReportDetail = () => {
     const [reportId, setReportId] = useState(null);
@@ -43,20 +43,37 @@ const ReportDetail = () => {
                 const id = pathParts[pathParts.length - 1];
                 setReportId(id);
 
-                const response = await getCitizenReportById(id);
+                const [reportResponse, categoryResponse] = await Promise.all([
+                    getCitizenReportById(id),
+                    getWasteCategories()
+                ]);
                 // response theo format: { success, code, message, data, timestamp }
-                const apiReport = response?.data;
+                const apiReport = reportResponse?.data;
 
                 if (!apiReport) {
                     throw new Error('Không tìm thấy dữ liệu báo cáo');
                 }
+
+                const categoryList = categoryResponse?.data || [];
+                const categoryMap = {};
+                if (Array.isArray(categoryList)) {
+                    categoryList.forEach((cat) => {
+                        if (cat && cat.id) {
+                            categoryMap[cat.id] = cat.name || cat.displayName || 'Rác thải';
+                        }
+                    });
+                }
+
+                const wasteTypeName = apiReport.wasteCategoryId
+                    ? (categoryMap[apiReport.wasteCategoryId] || 'Rác thải')
+                    : 'Rác thải';
 
                 const statusInfo = getStatusInfo(apiReport.currentStatus);
 
                 // Map dữ liệu backend -> cấu trúc UI hiện tại
                 const mappedReport = {
                     id: apiReport.id,
-                    wasteType: 'Báo cáo rác thải', // Backend hiện chỉ trả wasteCategoryId, nên hiển thị chung
+                    wasteType: wasteTypeName,
                     wasteTypeColor: 'bg-blue-100 text-blue-700',
                     status: statusInfo.label,
                     statusColor: statusInfo.color,

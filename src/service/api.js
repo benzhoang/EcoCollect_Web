@@ -512,3 +512,21 @@ export const getEnterpriseReports = async (
     );
   }
 };
+
+/**
+ * Lấy chi tiết một báo cáo của doanh nghiệp theo ID
+ * Endpoint: GET /enterprise/reports/{id}
+ * @param {string} id - ID của báo cáo
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseReportById = async (id) => {
+  try {
+    const { data } = await api.get(`/enterprise/reports/${id}`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy chi tiết báo cáo. Vui lòng thử lại.",
+    );
+  }
+};

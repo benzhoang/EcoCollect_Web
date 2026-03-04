@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import FilterEnterpriseModal from '../../components/FilterEnterpriseModal';
-import { getEnterpriseReports } from '../../service/api';
+import { getEnterpriseReports, getWasteCategories } from '../../service/api';
 
 const EnterpriseHomePage = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -13,6 +13,7 @@ const EnterpriseHomePage = () => {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [wasteCategoryMap, setWasteCategoryMap] = useState({});
     const [pageInfo, setPageInfo] = useState({
         page: 0,
         size: 20,
@@ -48,6 +49,38 @@ const EnterpriseHomePage = () => {
         }
     };
 
+    // Lấy danh mục loại rác để map ID -> tên loại rác
+    useEffect(() => {
+        const fetchWasteCategories = async () => {
+            try {
+                const response = await getWasteCategories();
+
+                // Swagger: { success, code, message, data: [...], timestamp }
+                let rawData = null;
+                if (response && typeof response === 'object') {
+                    rawData = response.data ?? response;
+                }
+
+                const items = Array.isArray(rawData)
+                    ? rawData
+                    : Array.isArray(rawData?.items)
+                        ? rawData.items
+                        : [];
+
+                const map = {};
+                items.forEach((cat) => {
+                    if (!cat || !cat.id) return;
+                    map[cat.id] = cat.name || cat.code || cat.id;
+                });
+                setWasteCategoryMap(map);
+            } catch (err) {
+                console.error('Không thể tải danh mục loại rác:', err);
+            }
+        };
+
+        fetchWasteCategories();
+    }, []);
+
     useEffect(() => {
         const fetchReports = async () => {
             try {
@@ -74,6 +107,11 @@ const EnterpriseHomePage = () => {
     }, [currentPage, itemsPerPage]);
 
     const totalPages = pageInfo.totalPages || 1;
+
+    const getWasteCategoryName = (id) => {
+        if (!id) return 'Không rõ';
+        return wasteCategoryMap[id] || id || 'Không rõ';
+    };
 
     const handleViewDetail = (requestId) => {
         window.history.pushState({}, '', `/enterprise/report/${requestId}`);
@@ -211,7 +249,7 @@ const EnterpriseHomePage = () => {
                                             <tr key={report.reportId} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                                                        {report.wasteCategoryId || 'Không rõ'}
+                                                        {getWasteCategoryName(report.wasteCategoryId)}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

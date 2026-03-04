@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenReports } from '../../service/api';
+import { getCitizenReports, getWasteCategories } from '../../service/api';
 
 const Report = () => {
     const [activeFilter, setActiveFilter] = useState('Tất cả');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('Mới nhất');
     const [reports, setReports] = useState([]);
+    const [categoryMap, setCategoryMap] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -98,6 +99,10 @@ const Report = () => {
             const imageMedia = mediaList.find(m => m.mediaType === 'REPORT_IMAGE') || mediaList[0];
             const imageUrl = imageMedia?.url || 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop';
 
+            const wasteCategoryId = item.wasteCategoryId;
+            const wasteCategoryName = wasteCategoryId ? categoryMap[wasteCategoryId] : null;
+            const displayWasteType = wasteCategoryName || 'Rác thải';
+
             const createdAt = item.createdAt ? new Date(item.createdAt) : null;
             const dateText = createdAt
                 ? createdAt.toLocaleString('vi-VN', {
@@ -112,7 +117,7 @@ const Report = () => {
 
             return {
                 id: item.id,
-                wasteType: 'Rác thải', // Backend chưa trả tên loại rác -> hiển thị chung
+                wasteType: displayWasteType,
                 wasteTypeColor: 'bg-gray-100 text-gray-700',
                 status: statusConfig.label,
                 statusColor: statusConfig.color,
@@ -125,6 +130,28 @@ const Report = () => {
             };
         });
     };
+
+    useEffect(() => {
+        const fetchWasteCategories = async () => {
+            try {
+                const response = await getWasteCategories();
+                const data = response?.data || [];
+                if (Array.isArray(data)) {
+                    const map = {};
+                    data.forEach((cat) => {
+                        if (cat && cat.id) {
+                            map[cat.id] = cat.name || cat.displayName || 'Rác thải';
+                        }
+                    });
+                    setCategoryMap(map);
+                }
+            } catch (err) {
+                console.error('Không thể tải danh sách loại rác:', err);
+            }
+        };
+
+        fetchWasteCategories();
+    }, []);
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -145,7 +172,7 @@ const Report = () => {
         };
 
         fetchReports();
-    }, [sortBy]);
+    }, [sortBy, categoryMap]);
 
     const filterTabs = ['Tất cả', 'Chờ xử lý', 'Tiếp nhận', 'Phân công', 'Thu gom'];
 

@@ -1,109 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import AssignModal from '../../components/AssignModal';
+import { getEnterpriseReportById, getWasteCategories } from '../../service/api';
 
 const ReportDetail = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [requestId, setRequestId] = useState(null);
     const [requestData, setRequestData] = useState(null);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Lấy requestId từ URL
-        const pathParts = window.location.pathname.split('/');
-        const id = pathParts[pathParts.length - 1];
-        setRequestId(id);
+        const fetchDetail = async () => {
+            try {
+                // Lấy requestId từ URL
+                const pathParts = window.location.pathname.split('/');
+                const id = pathParts[pathParts.length - 1];
+                setRequestId(id);
 
-        // Giả lập dữ liệu yêu cầu (trong thực tế sẽ fetch từ API)
-        const mockRequests = {
-            '1': {
-                id: 1,
-                code: 'REQ-2024-001',
-                type: 'Nhựa (PET)',
-                typeColor: 'bg-blue-100 text-blue-700',
-                weight: '1.2 Tấn',
-                location: 'Khu công nghiệp Bắc Thăng L',
-                fullAddress: '123 Đường ABC, Khu công nghiệp Bắc Thăng L, Quận 1, TP.HCM',
-                time: '2 giờ trước',
-                submittedAt: '2024-01-15 14:30',
-                status: 'Chờ xử lý',
-                statusColor: 'bg-yellow-100 text-yellow-700',
-                description: 'Rác thải nhựa PET từ quá trình sản xuất, đã được phân loại và đóng gói sẵn.',
-                contactPerson: 'Nguyễn Văn A',
-                contactPhone: '0901234567',
-                contactEmail: 'nguyenvana@example.com',
-                images: [
-                    'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop',
-                    'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop'
-                ],
-                coordinates: { lat: 10.8231, lng: 106.6297 }
-            },
-            '2': {
-                id: 2,
-                code: 'REQ-2024-002',
-                type: 'Hữu cơ',
-                typeColor: 'bg-green-100 text-green-700',
-                weight: '450 kg',
-                location: 'Chung cư Green Valley, Quận 7',
-                fullAddress: '456 Đường XYZ, Chung cư Green Valley, Quận 7, TP.HCM',
-                time: '5 giờ trước',
-                submittedAt: '2024-01-15 11:30',
-                status: 'Chờ xử lý',
-                statusColor: 'bg-yellow-100 text-yellow-700',
-                description: 'Rác thải hữu cơ từ khu vực chung cư, bao gồm thức ăn thừa và rác vườn.',
-                contactPerson: 'Trần Thị B',
-                contactPhone: '0907654321',
-                contactEmail: 'tranthib@example.com',
-                images: [
-                    'https://images.unsplash.com/photo-1611909023030-19c0c2a79fb8?w=400&h=300&fit=crop'
-                ],
-                coordinates: { lat: 10.7300, lng: 106.7200 }
-            },
-            '3': {
-                id: 3,
-                code: 'REQ-2024-003',
-                type: 'Giấy vụn',
-                typeColor: 'bg-orange-100 text-orange-700',
-                weight: '800 kg',
-                location: 'Tòa nhà Bitexco, Quận 1',
-                fullAddress: '789 Đường DEF, Tòa nhà Bitexco, Quận 1, TP.HCM',
-                time: 'Hôm qua',
-                submittedAt: '2024-01-14 16:00',
-                status: 'Chờ xử lý',
-                statusColor: 'bg-yellow-100 text-yellow-700',
-                description: 'Giấy vụn từ văn phòng, đã được phân loại và đóng thùng.',
-                contactPerson: 'Phạm Minh C',
-                contactPhone: '0912345678',
-                contactEmail: 'phamminhc@example.com',
-                images: [],
-                coordinates: { lat: 10.7719, lng: 106.7042 }
-            },
-            '4': {
-                id: 4,
-                code: 'REQ-2024-004',
-                type: 'Điện tử',
-                typeColor: 'bg-purple-100 text-purple-700',
-                weight: '150 kg',
-                location: 'Khu Công nghệ cao, Quận 9',
-                fullAddress: '321 Đường GHI, Khu Công nghệ cao, Quận 9, TP.HCM',
-                time: '2 ngày trước',
-                submittedAt: '2024-01-13 10:00',
-                status: 'Chờ xử lý',
-                statusColor: 'bg-yellow-100 text-yellow-700',
-                description: 'Thiết bị điện tử cũ cần tái chế, bao gồm máy tính, điện thoại và các linh kiện.',
-                contactPerson: 'Hoàng Văn D',
-                contactPhone: '0923456789',
-                contactEmail: 'hoangvand@example.com',
-                images: [
-                    'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop'
-                ],
-                coordinates: { lat: 10.8417, lng: 106.8099 }
+                setLoading(true);
+                setError(null);
+
+                // Gọi song song: chi tiết báo cáo + danh mục loại rác để map ID -> tên
+                const [reportRes, wasteCategoriesRes] = await Promise.all([
+                    getEnterpriseReportById(id),
+                    getWasteCategories()
+                ]);
+
+                const apiReport = reportRes?.data;
+                if (!apiReport) {
+                    throw new Error('Không tìm thấy dữ liệu báo cáo');
+                }
+
+                // Chuẩn hóa danh sách waste category
+                let rawCats = null;
+                if (wasteCategoriesRes && typeof wasteCategoriesRes === 'object') {
+                    rawCats = wasteCategoriesRes.data ?? wasteCategoriesRes;
+                }
+                const catItems = Array.isArray(rawCats)
+                    ? rawCats
+                    : Array.isArray(rawCats?.items)
+                        ? rawCats.items
+                        : [];
+
+                const wasteCategoryMap = {};
+                catItems.forEach((cat) => {
+                    if (!cat || !cat.id) return;
+                    wasteCategoryMap[cat.id] = cat.name || cat.code || cat.id;
+                });
+
+                const wasteTypeName = apiReport.wasteCategoryId
+                    ? (wasteCategoryMap[apiReport.wasteCategoryId] || apiReport.wasteCategoryId)
+                    : 'Không rõ';
+
+                const status = apiReport.currentStatus || apiReport.status || 'PENDING';
+                let statusLabel = 'Chờ xử lý';
+                let statusColor = 'bg-yellow-100 text-yellow-700';
+                switch (status) {
+                    case 'IN_PROGRESS':
+                        statusLabel = 'Đang thực hiện';
+                        statusColor = 'bg-blue-100 text-blue-700';
+                        break;
+                    case 'COMPLETED':
+                        statusLabel = 'Đã hoàn thành';
+                        statusColor = 'bg-green-100 text-green-700';
+                        break;
+                    default:
+                        break;
+                }
+
+                const createdAt = apiReport.createdAt ? new Date(apiReport.createdAt) : null;
+                const createdText = createdAt
+                    ? createdAt.toLocaleString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    })
+                    : '';
+
+                const mediaList = Array.isArray(apiReport.media) ? apiReport.media : [];
+                const reportImages = mediaList
+                    .filter(m => m.mediaType === 'REPORT_IMAGE')
+                    .map(m => m.url)
+                    .filter(Boolean);
+
+                const mapped = {
+                    id: apiReport.id,
+                    code: apiReport.code || apiReport.id,
+                    type: wasteTypeName,
+                    typeColor: 'bg-blue-100 text-blue-700',
+                    weight: apiReport.actualWeightKg != null ? `${apiReport.actualWeightKg} kg` : 'Đang cập nhật',
+                    location: apiReport.addressText || 'Chưa có địa chỉ',
+                    fullAddress: apiReport.addressText || 'Chưa có địa chỉ chi tiết',
+                    time: createdText,
+                    submittedAt: createdText,
+                    status: statusLabel,
+                    statusColor,
+                    description: apiReport.description || 'Không có mô tả',
+                    contactPerson: apiReport.contactName || 'Đang cập nhật',
+                    contactPhone: apiReport.contactPhone || 'Đang cập nhật',
+                    contactEmail: apiReport.contactEmail || '',
+                    images: reportImages,
+                    coordinates: (apiReport.latitude && apiReport.longitude)
+                        ? { lat: apiReport.latitude, lng: apiReport.longitude }
+                        : { lat: 10.8231, lng: 106.6297 },
+                };
+
+                setRequestData(mapped);
+            } catch (err) {
+                console.error(err);
+                setError(err.message || 'Đã xảy ra lỗi khi tải chi tiết báo cáo');
+            } finally {
+                setLoading(false);
             }
         };
 
-        if (mockRequests[id]) {
-            setRequestData(mockRequests[id]);
-        }
+        fetchDetail();
     }, []);
 
     const handleBack = () => {
@@ -138,13 +154,49 @@ const ReportDetail = () => {
         setIsAssignModalOpen(false);
     };
 
+    if (loading) {
+        return (
+            <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
+                <EnterpriseSidebar isOpen={isSidebarOpen} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-gray-500 mb-2">Đang tải thông tin báo cáo...</div>
+                        {requestId && (
+                            <div className="text-xs text-gray-400">Mã báo cáo: {requestId}</div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
+                <EnterpriseSidebar isOpen={isSidebarOpen} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="max-w-md bg-white rounded-lg shadow-sm border border-red-200 p-6 text-center">
+                        <h2 className="text-lg font-bold text-red-600 mb-2">Không thể tải chi tiết báo cáo</h2>
+                        <p className="text-sm text-gray-700 mb-4">{error}</p>
+                        <button
+                            onClick={handleBack}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                        >
+                            Quay lại danh sách
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (!requestData) {
         return (
             <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
                 <EnterpriseSidebar isOpen={isSidebarOpen} />
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <div className="text-gray-500 mb-4">Đang tải thông tin...</div>
+                        <div className="text-gray-500 mb-4">Không có dữ liệu báo cáo.</div>
                     </div>
                 </div>
             </div>
