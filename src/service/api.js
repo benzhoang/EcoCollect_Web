@@ -530,3 +530,42 @@ export const getEnterpriseReportById = async (id) => {
     );
   }
 };
+
+/**
+ * Chấp nhận (accept) một báo cáo cho doanh nghiệp
+ * Endpoint: POST /enterprise/reports/{id}/accept
+ * @param {string} id - ID của báo cáo
+ * @returns {Promise} Response từ API
+ */
+export const acceptEnterpriseReport = async (id) => {
+  try {
+    const { data } = await api.post(`/enterprise/reports/${id}/accept`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi chấp nhận báo cáo. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Từ chối (reject) một báo cáo cho doanh nghiệp với lý do
+ * Endpoint: POST /enterprise/reports/{id}/reject
+ * @param {string} id - ID của báo cáo
+ * @param {string} reason - Lý do từ chối
+ * @returns {Promise} Response từ API
+ */
+export const rejectEnterpriseReport = async (id, reason) => {
+  try {
+    const { data } = await api.post(`/enterprise/reports/${id}/reject`, {
+      reason,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi từ chối báo cáo. Vui lòng thử lại.",
+    );
+  }
+};
