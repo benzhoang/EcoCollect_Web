@@ -174,14 +174,17 @@ const Report = () => {
         fetchReports();
     }, [sortBy, categoryMap]);
 
-    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Tiếp nhận', 'Phân công', 'Thu gom'];
+    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Từ chối', 'Thu gom'];
+
+    const handleDeleteReport = (id) => {
+        setReports((prevReports) => prevReports.filter((report) => report.id !== id));
+    };
 
     // Lọc báo cáo theo filter
     const filteredReports = reports.filter(report => {
         if (activeFilter === 'Tất cả') return true;
         if (activeFilter === 'Chờ xử lý') return report.status === 'Chờ xử lý';
-        if (activeFilter === 'Tiếp nhận') return report.status === 'Đã tiếp nhận';
-        if (activeFilter === 'Phân công') return report.status === 'Đã phân công';
+        if (activeFilter === 'Từ chối') return report.status === 'Từ chối';
         if (activeFilter === 'Thu gom') return report.status === 'Đã thu gom';
         return true;
     });
@@ -369,9 +372,27 @@ const Report = () => {
                                                         {report.status}
                                                     </span>
                                                 </div>
-                                                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                </svg>
+                                                <div className="flex items-center gap-3 flex-shrink-0">
+                                                    {report.status === 'Chờ xử lý' && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleDeleteReport(report.id);
+                                                            }}
+                                                            className="text-red-500 hover:text-red-600"
+                                                            title="Xóa báo cáo đang chờ xử lý"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-3h4m-6 0h8m-9 3h10" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
                                             </div>
                                             <p className="text-sm text-gray-700 font-medium mb-1">
                                                 {report.address}

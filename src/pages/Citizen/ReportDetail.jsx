@@ -88,6 +88,9 @@ const ReportDetail = () => {
                     coordinates: (apiReport.latitude && apiReport.longitude)
                         ? { lat: apiReport.latitude, lng: apiReport.longitude }
                         : { lat: 10.7769, lng: 106.7009 }, // fallback HCM
+                    latitude: apiReport.latitude || null,
+                    longitude: apiReport.longitude || null,
+                    estimatedWeightKg: apiReport.estimatedWeightKg || null,
                 };
 
                 setReportData(mappedReport);
@@ -213,6 +216,12 @@ const ReportDetail = () => {
                                     <label className="text-sm font-medium text-gray-600">Mô tả</label>
                                     <p className="mt-1 text-gray-700">{reportData.description}</p>
                                 </div>
+                                {reportData.estimatedWeightKg != null && (
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600">Trọng lượng ước tính</label>
+                                        <p className="mt-1 text-gray-900 font-medium">{reportData.estimatedWeightKg} kg</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -233,6 +242,22 @@ const ReportDetail = () => {
                                         </div>
                                     </div>
                                 </div>
+                                {(reportData.latitude != null || reportData.longitude != null) && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {reportData.latitude != null && (
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">Vĩ độ (Latitude)</label>
+                                                <p className="mt-1 text-gray-900 font-medium">{reportData.latitude}</p>
+                                            </div>
+                                        )}
+                                        {reportData.longitude != null && (
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">Kinh độ (Longitude)</label>
+                                                <p className="mt-1 text-gray-900 font-medium">{reportData.longitude}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="rounded-lg overflow-hidden border border-gray-200 h-64">
                                     <iframe
                                         src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1234567890123!2d${reportData.coordinates.lng}!3d${reportData.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f5c8c8c8c8d%3A0x8c8c8c8c8c8c8c8c!2sHo%20Chi%20Minh%20City!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s`}

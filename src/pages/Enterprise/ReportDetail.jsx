@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import AssignModal from '../../components/AssignModal';
-import { getEnterpriseReportById, getWasteCategories } from '../../service/api';
+import ReasonRejectModal from '../../components/ReasonRejectModal';
+import { getEnterpriseReportById, getWasteCategories, acceptEnterpriseReport, rejectEnterpriseReport } from '../../service/api';
 
 const ReportDetail = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [requestId, setRequestId] = useState(null);
     const [requestData, setRequestData] = useState(null);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [toast, setToast] = useState({
+        visible: false,
+        message: '',
+        type: 'success', // 'success' | 'error'
+    });
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -108,6 +115,9 @@ const ReportDetail = () => {
                     coordinates: (apiReport.latitude && apiReport.longitude)
                         ? { lat: apiReport.latitude, lng: apiReport.longitude }
                         : { lat: 10.8231, lng: 106.6297 },
+                    latitude: apiReport.latitude || null,
+                    longitude: apiReport.longitude || null,
+                    estimatedWeightKg: apiReport.estimatedWeightKg || null,
                 };
 
                 setRequestData(mapped);
@@ -122,21 +132,157 @@ const ReportDetail = () => {
         fetchDetail();
     }, []);
 
+    const showToast = (message, type = 'success') => {
+        setToast({
+            visible: true,
+            message,
+            type,
+        });
+        setTimeout(() => {
+            setToast(prev => ({
+                ...prev,
+                visible: false,
+            }));
+        }, 3000);
+    };
+
     const handleBack = () => {
         window.history.pushState({}, '', '/enterprise');
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
 
-    const handleAccept = () => {
-        // TODO: Gọi API chấp nhận yêu cầu
-        console.log('Accept request:', requestId);
-        alert('Yêu cầu đã được chấp nhận!');
+    const handleAccept = async () => {
+        if (!requestId) {
+            alert('Không tìm thấy ID yêu cầu để chấp nhận.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res = await acceptEnterpriseReport(requestId);
+
+            // Nếu backend trả về report mới trong res.data thì có thể dùng để cập nhật UI
+            const apiReport = res?.data;
+            if (apiReport) {
+                const status = apiReport.currentStatus || apiReport.status || 'IN_PROGRESS';
+                let statusLabel = 'Đang thực hiện';
+                let statusColor = 'bg-blue-100 text-blue-700';
+                switch (status) {
+                    case 'PENDING':
+                        statusLabel = 'Chờ xử lý';
+                        statusColor = 'bg-yellow-100 text-yellow-700';
+                        break;
+                    case 'COMPLETED':
+                        statusLabel = 'Đã hoàn thành';
+                        statusColor = 'bg-green-100 text-green-700';
+                        break;
+                    default:
+                        break;
+                }
+
+                setRequestData(prev => prev ? {
+                    ...prev,
+                    status: statusLabel,
+                    statusColor,
+                } : prev);
+            } else {
+                // Nếu không có data chi tiết, ít nhất cũng set sang đang thực hiện
+                setRequestData(prev => prev ? {
+                    ...prev,
+                    status: 'Đang thực hiện',
+                    statusColor: 'bg-blue-100 text-blue-700',
+                } : prev);
+            }
+
+            showToast('Yêu cầu đã được chấp nhận và đưa vào điều phối!', 'success');
+        } catch (err) {
+            console.error(err);
+            const msg = err?.message || '';
+            if (msg.includes('Waste category capability is not accepting')) {
+                showToast('Loại rác này hiện không được hệ thống cho phép nhận thêm yêu cầu. Vui lòng chọn loại rác khác hoặc liên hệ quản trị viên.', 'error');
+            } else {
+                showToast(msg || 'Đã xảy ra lỗi khi chấp nhận yêu cầu.', 'error');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleReject = () => {
-        // TODO: Gọi API từ chối yêu cầu
-        console.log('Reject request:', requestId);
-        alert('Yêu cầu đã bị từ chối!');
+    const handleOpenRejectModal = () => {
+        if (!requestId) {
+            alert('Không tìm thấy ID yêu cầu để từ chối.');
+            return;
+        }
+        setIsRejectModalOpen(true);
+    };
+
+    const handleCloseRejectModal = () => {
+        setIsRejectModalOpen(false);
+    };
+
+    const handleConfirmReject = async (reason) => {
+        if (!requestId) {
+            showToast('Không tìm thấy ID yêu cầu để từ chối.', 'error');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res = await rejectEnterpriseReport(requestId, reason);
+
+            const apiReport = res?.data;
+            if (apiReport) {
+                const status = apiReport.currentStatus || apiReport.status || 'REJECTED';
+                let statusLabel = 'Đã từ chối';
+                let statusColor = 'bg-red-100 text-red-700';
+                switch (status) {
+                    case 'PENDING':
+                        statusLabel = 'Chờ xử lý';
+                        statusColor = 'bg-yellow-100 text-yellow-700';
+                        break;
+                    case 'IN_PROGRESS':
+                        statusLabel = 'Đang thực hiện';
+                        statusColor = 'bg-blue-100 text-blue-700';
+                        break;
+                    case 'COMPLETED':
+                        statusLabel = 'Đã hoàn thành';
+                        statusColor = 'bg-green-100 text-green-700';
+                        break;
+                    case 'REJECTED':
+                    default:
+                        statusLabel = 'Đã từ chối';
+                        statusColor = 'bg-red-100 text-red-700';
+                        break;
+                }
+
+                setRequestData(prev => prev ? {
+                    ...prev,
+                    status: statusLabel,
+                    statusColor,
+                } : prev);
+            } else {
+                // Nếu không có data chi tiết, ít nhất cũng set sang đã từ chối
+                setRequestData(prev => prev ? {
+                    ...prev,
+                    status: 'Đã từ chối',
+                    statusColor: 'bg-red-100 text-red-700',
+                } : prev);
+            }
+
+            setIsRejectModalOpen(false);
+            showToast('Yêu cầu đã bị từ chối!', 'success');
+
+            // Sau một khoảng thời gian ngắn, quay lại trang trước (danh sách)
+            setTimeout(() => {
+                handleBack();
+            }, 1500);
+        } catch (err) {
+            console.error(err);
+            const msg = err?.message || 'Đã xảy ra lỗi khi từ chối yêu cầu.';
+            showToast(msg, 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleOpenAssignModal = () => {
@@ -150,7 +296,7 @@ const ReportDetail = () => {
     const handleAssignCollector = (collector) => {
         // TODO: Gọi API để giao nhiệm vụ cho collector đã chọn
         console.log('Assign request:', requestId, 'to collector:', collector);
-        alert(`Đã giao yêu cầu cho collector: ${collector.name || collector.code || collector.id}`);
+        showToast(`Đã giao yêu cầu cho collector: ${collector.name || collector.code || collector.id}`, 'success');
         setIsAssignModalOpen(false);
     };
 
@@ -265,10 +411,12 @@ const ReportDetail = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-600">Khối lượng</label>
-                                            <p className="mt-1 text-lg font-semibold text-gray-900">{requestData.weight}</p>
-                                        </div>
+                                        {requestData.estimatedWeightKg != null && (
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">Khối lượng ước tính</label>
+                                                <p className="mt-1 text-lg font-semibold text-gray-900">{requestData.estimatedWeightKg} kg</p>
+                                            </div>
+                                        )}
                                         <div>
                                             <label className="text-sm font-medium text-gray-600">Mô tả</label>
                                             <p className="mt-1 text-gray-700">{requestData.description}</p>
@@ -293,6 +441,22 @@ const ReportDetail = () => {
                                                 </div>
                                             </div>
                                         </div>
+                                        {(requestData.latitude != null || requestData.longitude != null) && (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {requestData.latitude != null && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">Vĩ độ (Latitude)</label>
+                                                        <p className="mt-1 text-gray-900 font-medium">{requestData.latitude}</p>
+                                                    </div>
+                                                )}
+                                                {requestData.longitude != null && (
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-600">Kinh độ (Longitude)</label>
+                                                        <p className="mt-1 text-gray-900 font-medium">{requestData.longitude}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="rounded-lg overflow-hidden border border-gray-200 h-64">
                                             <iframe
                                                 src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1234567890123!2d${requestData.coordinates.lng}!3d${requestData.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f5c8c8c8c8d%3A0x8c8c8c8c8c8c8c8c!2sHo%20Chi%20Minh%20City!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s`}
@@ -346,7 +510,7 @@ const ReportDetail = () => {
                                             Chấp nhận yêu cầu
                                         </button>
                                         <button
-                                            onClick={handleReject}
+                                            onClick={handleOpenRejectModal}
                                             className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
                                         >
                                             Từ chối yêu cầu
@@ -371,6 +535,25 @@ const ReportDetail = () => {
                 onClose={handleCloseAssignModal}
                 onAssign={handleAssignCollector}
             />
+
+            {/* Reason Reject Modal */}
+            <ReasonRejectModal
+                show={isRejectModalOpen}
+                onClose={handleCloseRejectModal}
+                onConfirm={handleConfirmReject}
+            />
+
+            {/* Simple Toast */}
+            {toast.visible && (
+                <div className="fixed bottom-4 right-4 z-50">
+                    <div
+                        className={`px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+                            }`}
+                    >
+                        {toast.message}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
