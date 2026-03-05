@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa";
+import { getCollectorAssignmentReportDetail } from "../../service/api";
 
-// Dữ liệu mẫu (đồng bộ với RequestListPage - khi có API sẽ thay bằng fetch theo id)
+/* Dữ liệu mẫu (đồng bộ với RequestListPage - dùng khi không gọi API)
 const MOCK_REQUESTS = [
   {
     id: 1,
@@ -108,30 +109,129 @@ const MOCK_REQUESTS = [
     coordinates: { lat: 10.7822, lng: 106.6884 },
   },
 ];
+*/
+
+const getStatusColor = (status) => {
+  if (!status) return "bg-gray-100 text-gray-700";
+  const s = String(status).toLowerCase();
+  if (s.includes("đã gán")) return "bg-green-100 text-green-700";
+  if (s.includes("đang trên đường") || s.includes("đang thực hiện")) return "bg-amber-100 text-amber-700";
+  if (s.includes("hoàn thành")) return "bg-green-100 text-green-700";
+  return "bg-gray-100 text-gray-700";
+};
+
+const getWasteTypeColor = (wasteType) => {
+  if (!wasteType) return "bg-gray-100 text-gray-700";
+  const t = String(wasteType).toLowerCase();
+  if (t.includes("nhựa") || t.includes("pet")) return "bg-blue-100 text-blue-700";
+  if (t.includes("điện tử")) return "bg-orange-100 text-orange-700";
+  if (t.includes("giấy") || t.includes("carton")) return "bg-amber-100 text-amber-700";
+  if (t.includes("kim loại")) return "bg-gray-100 text-gray-700";
+  return "bg-gray-100 text-gray-700";
+};
+
+/** Map response API sang shape dùng trong UI */
+const mapDetailToRequest = (data) => {
+  if (!data) return null;
+  const report = data.report || data;
+  const lat = report.latitude ?? data.latitude ?? 10.7769;
+  const lng = report.longitude ?? data.longitude ?? 106.7009;
+  const imageUrls = report.imageUrls ?? report.images ?? [];
+  const firstImage = Array.isArray(imageUrls) && imageUrls.length > 0 ? imageUrls[0] : report.image ?? "";
+  return {
+    id: report.id ?? data.reportId ?? data.id,
+    code: report.code ?? data.code ?? "-",
+    image: firstImage,
+    images: Array.isArray(imageUrls) ? imageUrls : (firstImage ? [firstImage] : []),
+    wasteType: report.wasteCategoryName ?? report.wasteType ?? data.wasteType ?? "-",
+    wasteTypeColor: report.wasteTypeColor ?? data.wasteTypeColor ?? getWasteTypeColor(report.wasteCategoryName ?? report.wasteType),
+    estimatedWeight: report.estimatedWeightKg != null ? `~${report.estimatedWeightKg} kg` : (report.estimatedWeight ?? data.estimatedWeight ?? "-"),
+    address: report.addressText ?? report.address ?? data.address ?? "-",
+    assignedAt: data.assignedAt ?? report.assignedAt ?? "-",
+    status: data.status ?? report.status ?? report.currentStatus ?? "-",
+    statusColor: data.statusColor ?? report.statusColor ?? getStatusColor(data.status ?? report.status),
+    coordinates: { lat: Number(lat), lng: Number(lng) },
+  };
+};
 
 const RequestDetailPage = () => {
   const pathname = window.location.pathname;
-  const idStr = pathname.replace("/collector/request-list/", "").split("/")[0];
-  const id = parseInt(idStr, 10);
-  const request = id ? MOCK_REQUESTS.find((r) => r.id === id) || null : null;
+  const reportId = pathname.replace("/collector/request-list/", "").split("/")[0]?.trim() || null;
+
+  const [request, setRequest] = useState(null);
+  const [loading, setLoading] = useState(!!reportId);
+  const [error, setError] = useState(null);
+
+  const fetchDetail = useCallback(async () => {
+    if (!reportId) {
+      setRequest(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getCollectorAssignmentReportDetail(reportId);
+      setRequest(mapDetailToRequest(data));
+    } catch (err) {
+      setError(err?.message ?? "Không thể tải chi tiết yêu cầu.");
+      setRequest(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [reportId]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   const handleBack = () => {
     window.history.pushState({}, "", "/collector/request-list");
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col w-full h-full min-h-0">
+        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+          <button type="button" className="flex items-center gap-2 text-gray-700 hover:text-gray-900" onClick={handleBack}>
+            <FaArrowLeft />
+            <span>Quay lại</span>
+          </button>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-6">
+          <p className="text-gray-500">Đang tải chi tiết yêu cầu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col w-full h-full min-h-0">
+        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+          <button type="button" className="flex items-center gap-2 text-gray-700 hover:text-gray-900" onClick={handleBack}>
+            <FaArrowLeft />
+            <span>Quay lại</span>
+          </button>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-6">
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!request) {
     return (
       <div className="flex flex-col w-full h-full min-h-0">
-        <div className="flex items-center gap-4 mb-6">
-          <a
-            href="/collector/request-list"
-            className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </a>
+        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+          <button type="button" className="flex items-center gap-2 text-gray-700 hover:text-gray-900" onClick={handleBack}>
+            <FaArrowLeft />
+            <span>Quay lại</span>
+          </button>
+        </header>
+        <div className="flex flex-1 items-center justify-center p-6">
           <p className="text-gray-500">Không tìm thấy yêu cầu.</p>
         </div>
       </div>
