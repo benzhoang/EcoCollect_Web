@@ -569,3 +569,51 @@ export const rejectEnterpriseReport = async (id, reason) => {
     );
   }
 };
+
+/**
+ * Collector lấy danh sách assignment của mình
+ * GET /collector/assignments
+ * @param {Object} options - Tham số query
+ * @param {string} [options.status] - Trạng thái assignment
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Mảng sort dạng: ["property,asc"] hoặc ["property,desc"]
+ * @returns {Promise} Response từ API
+ */
+export const getCollectorAssignments = async ({
+  status,
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = { page, size };
+    if (status != null && status !== "") params.status = status;
+    if (Array.isArray(sort) && sort.length) params.sort = sort;
+    const { data } = await api.get("/collector/assignments", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách phân công. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Collector lấy chi tiết báo cáo của assignment (theo reportId)
+ * GET /collector/assignments/report/{reportId}
+ * @param {string} reportId - ID báo cáo (bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const getCollectorAssignmentReportDetail = async (reportId) => {
+  try {
+    const { data } = await api.get(`/collector/assignments/report/${reportId}`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy chi tiết báo cáo phân công. Vui lòng thử lại.",
+    );
+  }
+};

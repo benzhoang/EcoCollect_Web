@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaEye } from "react-icons/fa";
 
 // Dữ liệu mẫu: các yêu cầu đã hoàn thành (lịch sử công việc)
 const MOCK_HISTORY = [
@@ -142,6 +142,9 @@ const HistoryPage = () => {
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Địa điểm
                   </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -175,8 +178,17 @@ const HistoryPage = () => {
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 truncate">
+                    <td className="px-4 py-3 text-sm text-gray-600 min-w-[180px] max-w-[320px] break-words">
                       {item.address}
+                    </td>
+                    <td className="px-4 py-3">
+                      <a
+                        href={`/collector/request-list/${item.id}`}
+                        className="inline-flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg no-underline hover:bg-blue-50 shrink-0"
+                        title="Xem chi tiết"
+                      >
+                        <FaEye className="text-blue-600 text-sm" />
+                      </a>
                     </td>
                   </tr>
                 ))}
