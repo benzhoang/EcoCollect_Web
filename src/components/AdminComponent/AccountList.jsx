@@ -1,54 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import ModalConfirm from "./Modal/ModalConfirm";
 import UpdateAccountModal from "./Modal/UpdateAccountModal";
+import { getAdminUsers } from "../../service/api";
 
-const AccountList = () => {
+const ROLE_LABELS = {
+  ROLE_CITIZEN: "Dân cư",
+  ROLE_COLLECTOR: "Người thu gom",
+  ROLE_ENTERPRISE_MANAGER: "Doanh nghiệp tái chế",
+};
+
+const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAccountEmail, setSelectedAccountEmail] = useState("");
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dữ liệu mẫu
-  const accounts = [
-    {
-      id: 1,
-      fullName: "Alice Johnson",
-      email: "alice.johnson@example.com",
-      phone: "123-456-7890",
-      role: "Dân cư",
-    },
-    {
-      id: 2,
-      fullName: "Bob Smith",
-      email: "bob.smith@example.com",
-      phone: "234-567-8901",
-      role: "Dân cư",
-    },
-    {
-      id: 3,
-      fullName: "Charlie Brown",
-      email: "charlie.brown@example.com",
-      phone: "345-678-9012",
-      role: "Dân cư",
-    },
-    {
-      id: 4,
-      fullName: "Diana Prince",
-      email: "diana.prince@example.com",
-      phone: "456-789-0123",
-      role: "Dân cư",
-    },
-    {
-      id: 5,
-      fullName: "Ethan Hunt",
-      email: "ethan.hunt@example.com",
-      phone: "567-890-1234",
-      role: "Dân cư",
-    },
-  ];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getAdminUsers({
+          role: roleFilter || undefined,
+          searchTerm: searchTerm || undefined,
+          page: 0,
+          size: 10,
+        });
+        const list = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.content)
+            ? response.content
+            : Array.isArray(response?.data)
+              ? response.data
+              : Array.isArray(response?.data?.content)
+                ? response.data.content
+                : [];
+        setAccounts(list);
+      } catch (err) {
+        setError(err?.message || "Không thể tải danh sách tài khoản.");
+        setAccounts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [roleFilter, searchTerm]);
 
   const handleView = () => {
-    // Sử dụng window.history để tương thích với custom routing trong App.jsx
     window.history.pushState({}, "", `/admin/account/detail`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
@@ -63,12 +64,41 @@ const AccountList = () => {
   };
 
   const handleConfirmDelete = () => {
-    // Xử lý logic xóa tài khoản
     console.log("Delete account:", selectedAccountEmail);
-    // TODO: Gọi API xóa tài khoản
     setIsModalOpen(false);
     setSelectedAccountEmail("");
   };
+
+  const formatRoles = (roles) => {
+    if (!Array.isArray(roles)) return "—";
+    return roles.map((r) => ROLE_LABELS[r] || r).join(", ") || "—";
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("vi-VN");
+    } catch {
+      return dateStr;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <p className="text-gray-500">Đang tải...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-6 py-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-sm text-red-700">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -89,8 +119,14 @@ const AccountList = () => {
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
                   SỐ ĐIỆN THOẠI
                 </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase">
+                  TRẠNG THÁI
+                </th>
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
                   VAI TRÒ
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  NGÀY TẠO
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase w-40">
                   THAO TÁC
@@ -98,63 +134,94 @@ const AccountList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {accounts.map((account, index) => (
-                <tr
-                  key={account.id}
-                  className="transition-colors hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">
-                      {account.fullName}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {account.email}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {account.phone}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {account.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleView(account.id)}
-                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-blue-50 shrink-0"
-                        title="Xem chi tiết"
-                      >
-                        <FaEye className="text-blue-600 text-sm" />
-                      </button>
-                      <button
-                        onClick={handleEdit}
-                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-yellow-50 shrink-0"
-                        title="Sửa"
-                      >
-                        <FaEdit className="text-yellow-600 text-sm" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(account.id, account.email)}
-                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-red-50 shrink-0"
-                        title="Xóa"
-                      >
-                        <FaTrash className="text-red-600 text-sm" />
-                      </button>
-                    </div>
+              {accounts.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-6 py-8 text-sm text-center text-gray-500"
+                  >
+                    Chưa có dữ liệu tài khoản.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                accounts.map((account, index) => (
+                  <tr
+                    key={account.id}
+                    className="transition-colors hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {account.fullName ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {account.email ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {account.phone ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          account.status === "ACTIVE"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {account.status === "ACTIVE"
+                          ? "Hoạt động"
+                          : (account.status ?? "—")}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {formatRoles(account.roles)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {formatDate(account.createdAt)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleView(account.id)}
+                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-blue-50 shrink-0"
+                          title="Xem chi tiết"
+                        >
+                          <FaEye className="text-blue-600 text-sm" />
+                        </button>
+                        <button
+                          onClick={handleEdit}
+                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-yellow-50 shrink-0"
+                          title="Sửa"
+                        >
+                          <FaEdit className="text-yellow-600 text-sm" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDelete(account.id, account.email)
+                          }
+                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-red-50 shrink-0"
+                          title="Xóa"
+                        >
+                          <FaTrash className="text-red-600 text-sm" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

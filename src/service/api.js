@@ -443,7 +443,9 @@ export const getCitizenReportById = async (id) => {
 export const cancelCitizenReport = async (id, reason) => {
   try {
     if (!id) throw new Error("Thiếu ID báo cáo để hủy.");
-    const payload = { reason: String(reason ?? "").trim() || "Citizen cancel report" };
+    const payload = {
+      reason: String(reason ?? "").trim() || "Citizen cancel report",
+    };
     const { data } = await api.post(`/citizen/reports/${id}/cancel`, payload);
     return data;
   } catch (error) {
@@ -675,6 +677,59 @@ export const getCollectorAssignmentReportDetail = async (reportId) => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy chi tiết báo cáo phân công. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách waste capabilities (Admin)
+ * GET /admin/waste-capabilities - List waste capabilities
+ * @returns {Promise} Response từ API
+ */
+export const getAdminWasteCapabilities = async () => {
+  try {
+    const { data } = await api.get("/admin/waste-capabilities");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách waste capabilities. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách user (Admin)
+ * GET /admin/users - Get list of user
+ * @param {Object} options - Tham số query
+ * @param {string} [options.searchTerm] - Chuỗi tìm kiếm
+ * @param {string} [options.role] - Lọc theo role
+ * @param {string} [options.status] - Lọc theo status
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc), nhiều tiêu chí được hỗ trợ
+ * @returns {Promise} Response từ API
+ */
+export const getAdminUsers = async ({
+  searchTerm,
+  role,
+  status,
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = { page, size };
+    if (searchTerm != null && searchTerm !== "") params.searchTerm = searchTerm;
+    if (role != null && role !== "") params.role = role;
+    if (status != null && status !== "") params.status = status;
+    if (Array.isArray(sort) && sort.length) params.sort = sort;
+    const { data } = await api.get("/admin/users", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách người dùng. Vui lòng thử lại.",
     );
   }
 };

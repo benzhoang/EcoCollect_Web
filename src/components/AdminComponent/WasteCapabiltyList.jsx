@@ -1,63 +1,75 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
-import { getWasteCategories } from "../../service/api";
+import { getAdminWasteCapabilities } from "../../service/api";
 
-const WasteCategoryList = () => {
+const WasteCapabilityList = ({ searchTerm = "" }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categories, setCategories] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [capabilities, setCapabilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchCapabilities = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await getWasteCategories();
+        const response = await getAdminWasteCapabilities();
         const list = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
             ? response.data
-            : [];
-        setCategories(list);
+            : Array.isArray(response?.data?.content)
+              ? response.data.content
+              : [];
+        setCapabilities(list);
       } catch (err) {
-        setError(err?.message || "Không thể tải danh sách danh mục loại rác.");
-        setCategories([]);
+        setError(err?.message || "Không thể tải danh sách công suất.");
+        setCapabilities([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchCategories();
+    fetchCapabilities();
   }, []);
 
-  const handleEdit = (category) => {
-    setEditingCategory(category);
+  const filteredList = searchTerm
+    ? capabilities.filter(
+        (item) => {
+          const name = item.wasteCategoryName ?? item.wasteType ?? "";
+          const code = item.wasteCategoryCode ?? item.wasteTypeId ?? "";
+          const term = searchTerm.toLowerCase();
+          return name.toString().toLowerCase().includes(term) || code.toString().toLowerCase().includes(term);
+        }
+      )
+    : capabilities;
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
     setIsModalUpdateOpen(true);
   };
 
-  const handleDelete = (category) => {
-    setSelectedCategory(category);
+  const handleDelete = (item) => {
+    setSelectedItem(item);
     setIsModalDeleteOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (selectedCategory) {
-      setCategories((prev) => prev.filter((c) => c.id !== selectedCategory.id));
+    if (selectedItem) {
+      setCapabilities((prev) => prev.filter((c) => c.id !== selectedItem.id));
       setIsModalDeleteOpen(false);
-      setSelectedCategory(null);
+      setSelectedItem(null);
     }
   };
 
-  const handleUpdateSuccess = (updatedCategory) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === updatedCategory.id ? updatedCategory : c)),
+  const onUpdateSuccess = (updatedItem) => {
+    setCapabilities((prev) =>
+      prev.map((c) => (c.id === updatedItem.id ? updatedItem : c)),
     );
     setIsModalUpdateOpen(false);
-    setEditingCategory(null);
+    setEditingItem(null);
   };
 
   if (loading) {
@@ -90,10 +102,13 @@ const WasteCategoryList = () => {
                   MÃ LOẠI
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
-                  TÊN LOẠI RÁC
+                  LOẠI RÁC
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
+                  CÔNG SUẤT (KG/NGÀY)
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase">
-                  TRẠNG THÁI
+                  ĐANG TIẾP NHẬN
                 </th>
                 <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase">
                   THAO TÁC
@@ -101,19 +116,19 @@ const WasteCategoryList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {categories.length === 0 ? (
+              {filteredList.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-sm text-center text-gray-500"
                   >
-                    Chưa có dữ liệu danh mục loại rác.
+                    Chưa có dữ liệu công suất tiếp nhận rác.
                   </td>
                 </tr>
               ) : (
-                categories.map((category, index) => (
+                filteredList.map((item, index) => (
                   <tr
-                    key={category.id}
+                    key={item.id}
                     className="transition-colors hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -123,36 +138,44 @@ const WasteCategoryList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {category.code ?? "—"}
+                        {item.wasteCategoryCode ?? item.wasteTypeId ?? "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {category.name ?? "—"}
+                        {item.wasteCategoryName ?? item.wasteType ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {(() => {
+                          const cap = item.dailyCapacityKg ?? item.capacityPerDay;
+                          return typeof cap === "number" ? `${cap} kg` : (cap ?? "—");
+                        })()}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          category.active
+                          (item.accepting ?? item.status) === true
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {category.active ? "Hoạt động" : "Ẩn"}
+                        {(item.accepting ?? item.status) === true ? "Có" : "Không"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => handleEdit(category)}
+                          onClick={() => handleEdit(item)}
                           className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
                           title="Sửa"
                         >
                           <FaEdit className="text-sm text-yellow-600" />
                         </button>
                         <button
-                          onClick={() => handleDelete(category)}
+                          onClick={() => handleDelete(item)}
                           className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
                           title="Xóa"
                         >
@@ -168,13 +191,13 @@ const WasteCategoryList = () => {
         </div>
       </div>
 
-      {/* Modal xác nhận xóa danh mục */}
-      {isModalDeleteOpen && selectedCategory && (
+      {/* Modal xác nhận xóa */}
+      {isModalDeleteOpen && selectedItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => {
             setIsModalDeleteOpen(false);
-            setSelectedCategory(null);
+            setSelectedItem(null);
           }}
         >
           <div
@@ -188,7 +211,8 @@ const WasteCategoryList = () => {
             </div>
             <div className="px-5 py-4">
               <p className="text-gray-700">
-                Bạn có chắc muốn xóa danh mục &quot;{selectedCategory.name}
+                Bạn có chắc muốn xóa công suất tiếp nhận &quot;
+                {selectedItem.wasteCategoryName ?? selectedItem.wasteType ?? selectedItem.wasteCategoryCode ?? "này"}
                 &quot;?
               </p>
             </div>
@@ -196,7 +220,7 @@ const WasteCategoryList = () => {
               <button
                 onClick={() => {
                   setIsModalDeleteOpen(false);
-                  setSelectedCategory(null);
+                  setSelectedItem(null);
                 }}
                 type="button"
                 className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
@@ -215,17 +239,49 @@ const WasteCategoryList = () => {
         </div>
       )}
 
-      <UpdateWasteCategoryModal
-        isOpen={isModalUpdateOpen}
-        onClose={() => {
-          setIsModalUpdateOpen(false);
-          setEditingCategory(null);
-        }}
-        category={editingCategory}
-        onSuccess={handleUpdateSuccess}
-      />
+      {/* TODO: thay bằng UpdateWasteCapabilityModal khi có */}
+      {isModalUpdateOpen && editingItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => {
+            setIsModalUpdateOpen(false);
+            setEditingItem(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Sửa công suất
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Modal cập nhật công suất sẽ được thêm sau.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModalUpdateOpen(false);
+                  setEditingItem(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateSuccess(editingItem)}
+                className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700"
+              >
+                Lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
 
-export default WasteCategoryList;
+export default WasteCapabilityList;

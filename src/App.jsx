@@ -40,6 +40,7 @@ import CreateIncidentReportPage from "./pages/Collector/CreateIncidentReportPage
 import RequestDetailPage from "./pages/Collector/RequestDetailPage";
 import AreaListPage from "./pages/Admin/AreaListPage";
 import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
+import WasteCapabilityListPage from "./pages/Admin/WasteCapabilityListPage";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -230,6 +231,12 @@ function App() {
         return (
           <AdminLayout>
             <WasteCategoryListPage />
+          </AdminLayout>
+        );
+      case "/admin/config/waste-capabilities":
+        return (
+          <AdminLayout>
+            <WasteCapabilityListPage />
           </AdminLayout>
         );
       case "/admin/config/areas":
