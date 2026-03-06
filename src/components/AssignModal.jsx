@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { getEnterpriseCollectors } from '../service/api';
 
 /**
  * Modal giao việc cho collector
@@ -7,55 +8,76 @@ import React, { useState, useMemo } from 'react';
  * - show: boolean - có hiển thị modal hay không
  * - onClose: () => void - hàm đóng modal
  * - onAssign: (collector) => void - callback khi xác nhận giao việc
- * - collectors?: array - danh sách collector (tùy chọn, nếu không truyền sẽ dùng mock)
+ * - collectors?: array - danh sách collector (tùy chọn, nếu không truyền sẽ gọi API)
+ * - areaId?: string - ID khu vực của báo cáo, dùng để tự động lọc collector theo khu vực
  */
-const AssignModal = ({ show, onClose, onAssign, collectors }) => {
+const AssignModal = ({ show, onClose, onAssign, collectors, areaId }) => {
     const [selectedCollectorId, setSelectedCollectorId] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const [apiCollectors, setApiCollectors] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // Mock danh sách collector (có thể thay bằng dữ liệu từ API sau này)
-    const defaultCollectors = [
-        {
-            id: 'c1',
-            name: 'Nguyễn Văn C',
-            code: 'COL-001',
-            area: 'Quận 1',
-            status: 'Đang rảnh',
-            statusColor: 'bg-green-100 text-green-700',
-            activeTasks: 1,
-        },
-        {
-            id: 'c2',
-            name: 'Trần Thị D',
-            code: 'COL-002',
-            area: 'Quận 7',
-            status: 'Đang thu gom',
-            statusColor: 'bg-yellow-100 text-yellow-700',
-            activeTasks: 3,
-        },
-        {
-            id: 'c3',
-            name: 'Lê Văn E',
-            code: 'COL-003',
-            area: 'Quận 9',
-            status: 'Đang rảnh',
-            statusColor: 'bg-green-100 text-green-700',
-            activeTasks: 0,
-        },
-        {
-            id: 'c4',
-            name: 'Phạm Thị F',
-            code: 'COL-004',
-            area: 'Thủ Đức',
-            status: 'Đang trên đường',
-            statusColor: 'bg-blue-100 text-blue-700',
-            activeTasks: 2,
-        },
-    ];
+    // Lấy danh sách collector từ API nếu không truyền qua props
+    useEffect(() => {
+        // Chỉ load khi modal mở
+        if (!show) return;
 
-    const collectorList = collectors && Array.isArray(collectors) && collectors.length > 0
-        ? collectors
-        : defaultCollectors;
+        // Nếu đã truyền collectors từ bên ngoài thì không cần gọi API
+        if (collectors && Array.isArray(collectors) && collectors.length > 0) {
+            return;
+        }
+
+        const fetchCollectors = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const res = await getEnterpriseCollectors({
+                    areaId,
+                    page: 0,
+                    size: 50,
+                    // Có thể sort theo fullName nếu backend hỗ trợ
+                    // sort: ['fullName,asc'],
+                });
+
+                // Swagger: data.content là mảng collector
+                const rawData = res && typeof res === 'object' ? (res.data ?? res) : null;
+                const content = Array.isArray(rawData?.content)
+                    ? rawData.content
+                    : Array.isArray(rawData)
+                        ? rawData
+                        : [];
+
+                const mapped = content.map((c, index) => ({
+                    id: c.id,
+                    name: c.fullName || `Collector ${index + 1}`,
+                    code: c.email || '',
+                    area: c.areaName || c.areaId || '',
+                    status: 'Đang rảnh',
+                    statusColor: 'bg-green-100 text-green-700',
+                    activeTasks: typeof c.activeAssignments === 'number' ? c.activeAssignments : 0,
+                    raw: c,
+                }));
+
+                setApiCollectors(mapped);
+            } catch (err) {
+                console.error(err);
+                setError(err.message || 'Đã xảy ra lỗi khi tải danh sách collector.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCollectors();
+    }, [show, areaId, collectors]);
+
+    const collectorList = useMemo(() => {
+        if (collectors && Array.isArray(collectors) && collectors.length > 0) {
+            return collectors;
+        }
+        return apiCollectors;
+    }, [collectors, apiCollectors]);
 
     const filteredCollectors = useMemo(() => {
         if (!searchText.trim()) return collectorList;
@@ -134,7 +156,17 @@ const AssignModal = ({ show, onClose, onAssign, collectors }) => {
 
                 {/* List */}
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-                    {filteredCollectors.length === 0 && (
+                    {loading && (
+                        <div className="text-center text-sm text-gray-500 py-6">
+                            Đang tải danh sách collector...
+                        </div>
+                    )}
+                    {!loading && error && (
+                        <div className="text-center text-sm text-red-600 py-6">
+                            {error}
+                        </div>
+                    )}
+                    {!loading && !error && filteredCollectors.length === 0 && (
                         <div className="text-center text-sm text-gray-500 py-8">
                             Không tìm thấy collector phù hợp với từ khóa.
                         </div>

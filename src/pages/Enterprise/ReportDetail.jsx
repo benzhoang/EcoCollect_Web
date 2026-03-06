@@ -65,13 +65,17 @@ const ReportDetail = () => {
                 let statusLabel = 'Chờ xử lý';
                 let statusColor = 'bg-yellow-100 text-yellow-700';
                 switch (status) {
-                    case 'IN_PROGRESS':
-                        statusLabel = 'Đang thực hiện';
-                        statusColor = 'bg-blue-100 text-blue-700';
+                    case 'REJECTED':
+                        statusLabel = 'Từ chối';
+                        statusColor = 'bg-red-100 text-red-700';
                         break;
-                    case 'COMPLETED':
-                        statusLabel = 'Đã hoàn thành';
+                    case 'ACCEPTED':
+                        statusLabel = 'Chấp thuận';
                         statusColor = 'bg-green-100 text-green-700';
+                        break;
+                    case 'CANCELLED':
+                        statusLabel = 'Đã hủy';
+                        statusColor = 'bg-gray-100 text-gray-700';
                         break;
                     default:
                         break;
@@ -107,6 +111,7 @@ const ReportDetail = () => {
                     submittedAt: createdText,
                     status: statusLabel,
                     statusColor,
+                    rawStatus: status, // Lưu trạng thái gốc để kiểm tra điều kiện
                     description: apiReport.description || 'Không có mô tả',
                     contactPerson: apiReport.contactName || 'Đang cập nhật',
                     contactPhone: apiReport.contactPhone || 'Đang cập nhật',
@@ -118,6 +123,7 @@ const ReportDetail = () => {
                     latitude: apiReport.latitude || null,
                     longitude: apiReport.longitude || null,
                     estimatedWeightKg: apiReport.estimatedWeightKg || null,
+                    areaId: apiReport.areaId || null,
                 };
 
                 setRequestData(mapped);
@@ -164,13 +170,21 @@ const ReportDetail = () => {
             // Nếu backend trả về report mới trong res.data thì có thể dùng để cập nhật UI
             const apiReport = res?.data;
             if (apiReport) {
-                const status = apiReport.currentStatus || apiReport.status || 'IN_PROGRESS';
-                let statusLabel = 'Đang thực hiện';
-                let statusColor = 'bg-blue-100 text-blue-700';
+                const status = apiReport.currentStatus || apiReport.status || 'ACCEPTED';
+                let statusLabel = 'Chấp thuận';
+                let statusColor = 'bg-green-100 text-green-700';
                 switch (status) {
                     case 'PENDING':
                         statusLabel = 'Chờ xử lý';
                         statusColor = 'bg-yellow-100 text-yellow-700';
+                        break;
+                    case 'ACCEPTED':
+                        statusLabel = 'Chấp thuận';
+                        statusColor = 'bg-green-100 text-green-700';
+                        break;
+                    case 'IN_PROGRESS':
+                        statusLabel = 'Đang thực hiện';
+                        statusColor = 'bg-blue-100 text-blue-700';
                         break;
                     case 'COMPLETED':
                         statusLabel = 'Đã hoàn thành';
@@ -184,17 +198,24 @@ const ReportDetail = () => {
                     ...prev,
                     status: statusLabel,
                     statusColor,
+                    rawStatus: status, // Cập nhật rawStatus để điều khiển hiển thị nút
                 } : prev);
             } else {
-                // Nếu không có data chi tiết, ít nhất cũng set sang đang thực hiện
+                // Nếu không có data chi tiết, set sang ACCEPTED
                 setRequestData(prev => prev ? {
                     ...prev,
-                    status: 'Đang thực hiện',
-                    statusColor: 'bg-blue-100 text-blue-700',
+                    status: 'Chấp thuận',
+                    statusColor: 'bg-green-100 text-green-700',
+                    rawStatus: 'ACCEPTED',
                 } : prev);
             }
 
             showToast('Yêu cầu đã được chấp nhận và đưa vào điều phối!', 'success');
+
+            // Sau một khoảng thời gian ngắn, quay lại trang trước (danh sách)
+            setTimeout(() => {
+                handleBack();
+            }, 1500);
         } catch (err) {
             console.error(err);
             const msg = err?.message || '';
@@ -259,6 +280,7 @@ const ReportDetail = () => {
                     ...prev,
                     status: statusLabel,
                     statusColor,
+                    rawStatus: status, // Cập nhật rawStatus để điều khiển hiển thị nút
                 } : prev);
             } else {
                 // Nếu không có data chi tiết, ít nhất cũng set sang đã từ chối
@@ -266,6 +288,7 @@ const ReportDetail = () => {
                     ...prev,
                     status: 'Đã từ chối',
                     statusColor: 'bg-red-100 text-red-700',
+                    rawStatus: 'REJECTED',
                 } : prev);
             }
 
@@ -497,24 +520,32 @@ const ReportDetail = () => {
                                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                     <h3 className="text-lg font-bold text-gray-900 mb-4">Thao tác</h3>
                                     <div className="space-y-3">
-                                        <button
-                                            onClick={handleOpenAssignModal}
-                                            className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                        >
-                                            Giao việc cho collector
-                                        </button>
-                                        <button
-                                            onClick={handleAccept}
-                                            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                                        >
-                                            Chấp nhận yêu cầu
-                                        </button>
-                                        <button
-                                            onClick={handleOpenRejectModal}
-                                            className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                                        >
-                                            Từ chối yêu cầu
-                                        </button>
+                                        {/* Nút giao việc - chỉ hiển thị khi status là ACCEPTED */}
+                                        {requestData.rawStatus === 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && (
+                                            <button
+                                                onClick={handleOpenAssignModal}
+                                                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                            >
+                                                Giao việc cho collector
+                                            </button>
+                                        )}
+                                        {/* Nút chấp nhận và từ chối - chỉ hiển thị khi status không phải REJECTED, không phải ACCEPTED và không phải CANCELLED */}
+                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && (
+                                            <>
+                                                <button
+                                                    onClick={handleAccept}
+                                                    className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                                >
+                                                    Chấp nhận yêu cầu
+                                                </button>
+                                                <button
+                                                    onClick={handleOpenRejectModal}
+                                                    className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                                >
+                                                    Từ chối yêu cầu
+                                                </button>
+                                            </>
+                                        )}
                                         <button
                                             onClick={handleBack}
                                             className="w-full px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
@@ -534,6 +565,7 @@ const ReportDetail = () => {
                 show={isAssignModalOpen}
                 onClose={handleCloseAssignModal}
                 onAssign={handleAssignCollector}
+                areaId={requestData.areaId}
             />
 
             {/* Reason Reject Modal */}

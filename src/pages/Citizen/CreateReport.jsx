@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { createCitizenReport, getAreaTree } from '../../service/api';
+import { createCitizenReport, getAreaTree, getWasteCategories } from '../../service/api';
 
 const CreateReport = () => {
+    // Lưu trực tiếp wasteCategoryId (UUID) thay vì name để submit chuẩn
     const [selectedWasteType, setSelectedWasteType] = useState(null);
     const [location, setLocation] = useState(null);
     const [description, setDescription] = useState('');
@@ -16,82 +17,87 @@ const CreateReport = () => {
     const [areaId, setAreaId] = useState(null);
     const [areaTree, setAreaTree] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [wasteTypes, setWasteTypes] = useState([]);
+    const [isWasteTypesLoading, setIsWasteTypesLoading] = useState(false);
     const fileInputRef = useRef(null);
 
-    const wasteTypes = [
-        {
-            // code: PAPER
-            id: 'paper',
-            // Sử dụng UUID thật trong bảng waste_categories cho PAPER
-            categoryId: '44444444-4444-4444-4444-444444444444',
-            name: 'Rác giấy',
-            description: 'Giấy in, báo, bìa carton, túi giấy',
-            icon: (
+    const getWasteTypeIcon = (codeOrName) => {
+        const v = String(codeOrName || '').toUpperCase();
+        if (v.includes('PAPER') || v.includes('GIẤY')) {
+            return (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 4h8l4 4v12H8a2 2 0 01-2-2V6a2 2 0 012-2z"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4h8l4 4v12H8a2 2 0 01-2-2V6a2 2 0 012-2z" />
                 </svg>
-            )
-        },
-        {
-            // code: PLASTIC
-            id: 'plastic',
-            // Sử dụng UUID thật trong bảng waste_categories cho PLASTIC
-            categoryId: '55555555-5555-5555-5555-555555555555',
-            name: 'Rác nhựa',
-            description: 'Chai nhựa, túi nilon, hộp nhựa',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 2h4l1 4v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V6l1-4z"
-                    />
-                </svg>
-            )
-        },
-        {
-            // code: ORGANIC
-            id: 'organic',
-            // Sử dụng UUID thật trong bảng waste_categories cho ORGANIC
-            categoryId: '66666666-6666-6666-6666-666666666666',
-            name: 'Rác hữu cơ',
-            description: 'Thực phẩm thừa, lá cây, rác sinh học',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                </svg>
-            )
-        },
-        {
-            // code: HAZARDOUS
-            id: 'hazardous',
-            // Sử dụng UUID thật trong bảng waste_categories cho HAZARDOUS
-            categoryId: '77777777-7777-7777-7777-777777777777',
-            name: 'Rác nguy hại',
-            description: 'Pin, hóa chất, rác điện tử, y tế',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                </svg>
-            )
+            );
         }
-    ];
+        if (v.includes('PLASTIC') || v.includes('NHỰA')) {
+            return (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 2h4l1 4v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V6l1-4z" />
+                </svg>
+            );
+        }
+        if (v.includes('ORGANIC') || v.includes('HỮU CƠ')) {
+            return (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            );
+        }
+        if (v.includes('HAZARDOUS') || v.includes('NGUY HẠI')) {
+            return (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            );
+        }
+        return (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+    };
+
+    // Load waste categories từ API (thay cho data giả)
+    useEffect(() => {
+        const loadWasteCategories = async () => {
+            try {
+                setIsWasteTypesLoading(true);
+                const response = await getWasteCategories();
+
+                // Swagger thường: { success, code, message, data: [...], timestamp }
+                let raw = null;
+                if (response && typeof response === 'object') {
+                    raw = response.data ?? response;
+                }
+                const items = Array.isArray(raw)
+                    ? raw
+                    : Array.isArray(raw?.items)
+                        ? raw.items
+                        : [];
+
+                const mapped = items
+                    .filter((c) => c && c.id)
+                    .map((c) => ({
+                        id: c.id,
+                        name: c.name || c.displayName || c.code || 'Rác thải',
+                        description: c.description || '',
+                        code: c.code || '',
+                        icon: getWasteTypeIcon(c.code || c.name),
+                    }));
+
+                setWasteTypes(mapped);
+            } catch (error) {
+                console.error('Không thể tải danh sách loại rác:', error);
+                toast.error('Không thể tải danh sách loại rác. Vui lòng thử lại.', { duration: 4000 });
+                setWasteTypes([]);
+            } finally {
+                setIsWasteTypesLoading(false);
+            }
+        };
+
+        loadWasteCategories();
+    }, []);
 
     useEffect(() => {
         const loadAreaTree = async () => {
@@ -297,9 +303,9 @@ const CreateReport = () => {
         setIsSubmitting(true);
 
         try {
-            // 获取选中的 waste type 的 categoryId
-            const selectedType = wasteTypes.find(type => type.name === selectedWasteType);
-            if (!selectedType || !selectedType.categoryId) {
+            // selectedWasteType đã là wasteCategoryId (UUID)
+            const wasteCategoryId = selectedWasteType;
+            if (!wasteCategoryId) {
                 throw new Error('Không tìm thấy loại rác được chọn.');
             }
 
@@ -323,7 +329,7 @@ const CreateReport = () => {
             // 准备 API 请求数据
             const reportData = {
                 areaId: areaId,
-                wasteCategoryId: selectedType.categoryId,
+                wasteCategoryId,
                 description: description.trim() || '',
                 estimatedWeightKg: Number(estimatedWeightKg),
                 latitude: Number(latitude),
@@ -548,13 +554,18 @@ const CreateReport = () => {
                                         Loại rác <span className="text-red-500">*</span>
                                     </label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {isWasteTypesLoading && (
+                                            <div className="md:col-span-2 text-sm text-gray-600">
+                                                Đang tải danh sách loại rác...
+                                            </div>
+                                        )}
                                         {wasteTypes.map((type) => {
-                                            const isSelected = selectedWasteType === type.name;
+                                            const isSelected = selectedWasteType === type.id;
                                             return (
                                                 <button
                                                     key={type.id}
                                                     type="button"
-                                                    onClick={() => setSelectedWasteType(type.name)}
+                                                    onClick={() => setSelectedWasteType(type.id)}
                                                     className={`relative p-4 rounded-lg border-2 transition-all duration-200 text-left group ${isSelected
                                                         ? 'border-blue-500 bg-blue-50 shadow-sm'
                                                         : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'

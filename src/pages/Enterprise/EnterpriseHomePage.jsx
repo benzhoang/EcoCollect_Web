@@ -16,17 +16,23 @@ const EnterpriseHomePage = () => {
     const [wasteCategoryMap, setWasteCategoryMap] = useState({});
     const [pageInfo, setPageInfo] = useState({
         page: 0,
-        size: 20,
+        size: 5,
         totalElements: 0,
         totalPages: 1,
     });
 
-    const itemsPerPage = pageInfo.size || 20;
+    const itemsPerPage = 5;
 
     const mapStatusToLabel = (status) => {
         switch (status) {
             case 'PENDING':
                 return 'Chờ xử lý';
+            case 'ACCEPTED':
+                return 'Đã chấp nhận';
+            case 'REJECTED':
+                return 'Đã từ chối';
+            case 'CANCELLED':
+                return 'Đã hủy';
             case 'IN_PROGRESS':
                 return 'Đang thực hiện';
             case 'COMPLETED':
@@ -40,10 +46,16 @@ const EnterpriseHomePage = () => {
         switch (status) {
             case 'PENDING':
                 return 'bg-yellow-100 text-yellow-800';
+            case 'ACCEPTED':
+                return 'bg-green-100 text-green-800';
+            case 'REJECTED':
+                return 'bg-red-100 text-red-800';
             case 'IN_PROGRESS':
                 return 'bg-blue-100 text-blue-800';
             case 'COMPLETED':
                 return 'bg-green-100 text-green-800';
+            case 'CANCELLED':
+                return 'bg-gray-100 text-gray-800';
             default:
                 return 'bg-gray-100 text-gray-700';
         }
