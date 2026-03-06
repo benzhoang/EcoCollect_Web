@@ -46,6 +46,8 @@ const AdminSidebar = ({ isOpen }) => {
   const isWasteCategoryActive =
     currentPath === "/admin/config/waste-categories";
   const isAreaActive = currentPath === "/admin/config/areas";
+  const isWasteCapabilityActive =
+    currentPath === "/admin/config/waste-capabilities";
   const isComplaintsActive = currentPath === "/admin/complaints";
 
   const handleLogout = () => {
@@ -231,6 +233,18 @@ const AdminSidebar = ({ isOpen }) => {
                   }`}
                 >
                   Danh mục loại rác
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/admin/config/waste-capabilities"
+                  className={`block px-3 py-2 rounded-lg transition-colors no-underline text-sm ${
+                    isWasteCapabilityActive
+                      ? "bg-green-50 text-green-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-green-600"
+                  }`}
+                >
+                  Công suất tiếp nhận rác
                 </Link>
               </li>
               <li>

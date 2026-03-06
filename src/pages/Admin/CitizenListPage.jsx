@@ -37,7 +37,7 @@ const CitizenListPage = () => {
         </div>
       </header>
 
-      <AccountList />
+      <AccountList roleFilter="ROLE_CITIZEN" searchTerm={searchTerm} />
     </div>
   );
 };

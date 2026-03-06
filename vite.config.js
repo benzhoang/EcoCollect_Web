@@ -24,6 +24,18 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy API công suất tiếp nhận rác
+      "/admin/waste-capabilities": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
+      // Proxy API danh sách user (admin)
+      "/admin/users": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
       // Proxy cho các API công dân (citizen) để tránh 404 trên Vite dev server
       "/citizen": {
         target: "http://localhost:8080",

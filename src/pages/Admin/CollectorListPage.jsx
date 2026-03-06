@@ -54,7 +54,7 @@ const CollectorListPage = () => {
         </div>
       </header>
 
-      <AccountList />
+      <AccountList roleFilter="ROLE_COLLECTOR" searchTerm={searchTerm} />
 
       <CreateAccountModal
         isOpen={isModalOpen}

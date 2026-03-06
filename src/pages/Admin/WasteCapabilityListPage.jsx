@@ -1,38 +1,36 @@
 import React, { useState } from "react";
-import AccountList from "../../components/AdminComponent/AccountList";
-import CreateAccountModal from "../../components/AdminComponent/Modal/CreateAccountModal";
+import WasteCapabilityList from "../../components/AdminComponent/WasteCapabiltyList";
 import { FaPlus, FaSearch } from "react-icons/fa";
 
-const RecyclingEnterpriseListPage = () => {
+const WasteCapabilityListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCreate = () => {
-    setIsModalOpen(true);
+    // TODO: mở modal thêm công suất khi có CreateWasteCapabilityModal
   };
 
   const handleSearch = () => {
     console.log("Search:", searchTerm);
-    // Xử lý logic tìm kiếm
+    // TODO: truyền searchTerm xuống WasteCapabilityList hoặc refetch với filter
   };
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
       {/* Page Header */}
-      <header className="flex items-center justify-between w-full px-6 py-4 bg-white border-b border-gray-200">
+      <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-black">
-            Danh sách doanh nghiệp tái chế
+            Công suất tiếp nhận rác
           </h1>
           <p className="text-sm text-gray-600">
-            Quản lý và theo dõi thông tin các doanh nghiệp tái chế.
+            Quản lý công suất tiếp nhận rác theo khu vực và loại rác.
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm kiếm tên, email..."
+              placeholder="Tìm kiếm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-4 pr-10 text-gray-900 placeholder-gray-400 bg-white border border-gray-300 rounded-lg min-w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -49,22 +47,14 @@ const RecyclingEnterpriseListPage = () => {
             className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 shrink-0"
           >
             <FaPlus className="text-white" />
-            <span>Tạo tài khoản mới</span>
+            <span>Thêm công suất</span>
           </button>
         </div>
       </header>
 
-      <AccountList
-        roleFilter="ROLE_ENTERPRISE_MANAGER"
-        searchTerm={searchTerm}
-      />
-
-      <CreateAccountModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      <WasteCapabilityList searchTerm={searchTerm} />
     </div>
   );
 };
 
-export default RecyclingEnterpriseListPage;
+export default WasteCapabilityListPage;
