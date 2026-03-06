@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenReports, getWasteCategories } from '../../service/api';
+import { toast } from 'react-hot-toast';
+import { cancelCitizenReport, getCitizenReports, getWasteCategories } from '../../service/api';
+import CancelModal from '../../components/CancelModal';
 
 const Report = () => {
     const [activeFilter, setActiveFilter] = useState('Tất cả');
@@ -9,6 +11,9 @@ const Report = () => {
     const [categoryMap, setCategoryMap] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [selectedReportId, setSelectedReportId] = useState(null);
+    const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
     const getSortParam = (sortLabel) => {
         switch (sortLabel) {
@@ -78,6 +83,27 @@ const Report = () => {
                         </svg>
                     )
                 };
+            case 'CANCELLED':
+            case 'CANCELED':
+                return {
+                    label: 'Hủy bỏ',
+                    color: 'bg-gray-100 text-gray-700',
+                    icon: (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    )
+                };
+            case 'ACCEPTED':
+                return {
+                    label: 'Chấp thuận',
+                    color: 'bg-green-100 text-green-700',
+                    icon: (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    )
+                };
             default:
                 return {
                     label: status || 'Không xác định',
@@ -94,7 +120,8 @@ const Report = () => {
     const transformReportsFromApi = (apiReports) => {
         if (!Array.isArray(apiReports)) return [];
         return apiReports.map((item) => {
-            const statusConfig = getStatusConfig(item.currentStatus);
+            const rawStatus = (item.currentStatus || '').toUpperCase();
+            const statusConfig = getStatusConfig(rawStatus);
             const mediaList = Array.isArray(item.media) ? item.media : [];
             const imageMedia = mediaList.find(m => m.mediaType === 'REPORT_IMAGE') || mediaList[0];
             const imageUrl = imageMedia?.url || 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop';
@@ -117,6 +144,7 @@ const Report = () => {
 
             return {
                 id: item.id,
+                rawStatus,
                 wasteType: displayWasteType,
                 wasteTypeColor: 'bg-gray-100 text-gray-700',
                 status: statusConfig.label,
@@ -174,17 +202,57 @@ const Report = () => {
         fetchReports();
     }, [sortBy, categoryMap]);
 
-    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Từ chối', 'Thu gom'];
+    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Chấp thuận', 'Từ chối', 'Hủy bỏ', 'Thu gom'];
 
-    const handleDeleteReport = (id) => {
-        setReports((prevReports) => prevReports.filter((report) => report.id !== id));
+    const openCancelModal = (id) => {
+        setSelectedReportId(id);
+        setCancelModalOpen(true);
+    };
+
+    const closeCancelModal = () => {
+        if (cancelSubmitting) return;
+        setCancelModalOpen(false);
+        setSelectedReportId(null);
+    };
+
+    const handleConfirmCancelReport = async (reason) => {
+        if (!selectedReportId) return;
+
+        try {
+            setCancelSubmitting(true);
+            await cancelCitizenReport(selectedReportId, reason);
+            const cancelledConfig = getStatusConfig('CANCELLED');
+            setReports((prev) =>
+                prev.map((r) =>
+                    r.id === selectedReportId
+                        ? {
+                            ...r,
+                            rawStatus: 'CANCELLED',
+                            status: cancelledConfig.label,
+                            statusColor: cancelledConfig.color,
+                            statusIcon: cancelledConfig.icon,
+                        }
+                        : r
+                )
+            );
+            toast.success('Đã hủy báo cáo thành công!', { duration: 2500 });
+            setCancelModalOpen(false);
+            setSelectedReportId(null);
+        } catch (err) {
+            console.error(err);
+            toast.error(err?.message || 'Không thể hủy báo cáo. Vui lòng thử lại.', { duration: 3500 });
+        } finally {
+            setCancelSubmitting(false);
+        }
     };
 
     // Lọc báo cáo theo filter
     const filteredReports = reports.filter(report => {
         if (activeFilter === 'Tất cả') return true;
         if (activeFilter === 'Chờ xử lý') return report.status === 'Chờ xử lý';
+        if (activeFilter === 'Chấp thuận') return report.status === 'Chấp thuận';
         if (activeFilter === 'Từ chối') return report.status === 'Từ chối';
+        if (activeFilter === 'Hủy bỏ') return report.status === 'Hủy bỏ';
         if (activeFilter === 'Thu gom') return report.status === 'Đã thu gom';
         return true;
     });
@@ -373,16 +441,16 @@ const Report = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-3 flex-shrink-0">
-                                                    {report.status === 'Chờ xử lý' && (
+                                                    {report.rawStatus === 'PENDING' && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 e.stopPropagation();
-                                                                handleDeleteReport(report.id);
+                                                                openCancelModal(report.id);
                                                             }}
                                                             className="text-red-500 hover:text-red-600"
-                                                            title="Xóa báo cáo đang chờ xử lý"
+                                                            title="Hủy báo cáo"
                                                         >
                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-3h4m-6 0h8m-9 3h10" />
@@ -424,6 +492,13 @@ const Report = () => {
                     </>
                 )}
             </div>
+
+            <CancelModal
+                show={cancelModalOpen}
+                onClose={closeCancelModal}
+                onConfirm={handleConfirmCancelReport}
+                loading={cancelSubmitting}
+            />
         </div>
     );
 };

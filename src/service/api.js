@@ -434,6 +434,24 @@ export const getCitizenReportById = async (id) => {
 };
 
 /**
+ * Citizen hủy báo cáo (chỉ khi trạng thái PENDING/ACCEPTED)
+ * POST /citizen/reports/{id}/cancel
+ * @param {string} id - ID report
+ * @param {string} reason - Lý do hủy (required by swagger)
+ * @returns {Promise} Response từ API
+ */
+export const cancelCitizenReport = async (id, reason) => {
+  try {
+    if (!id) throw new Error("Thiếu ID báo cáo để hủy.");
+    const payload = { reason: String(reason ?? "").trim() || "Citizen cancel report" };
+    const { data } = await api.post(`/citizen/reports/${id}/cancel`, payload);
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi hủy báo cáo. Vui lòng thử lại.");
+  }
+};
+
+/**
  * Lấy danh sách báo cáo trong hộp thư của doanh nghiệp (pending/filtered reports in dispatch inbox)
  * @param {string} areaId - ID của khu vực (optional)
  * @param {string} status - Trạng thái báo cáo (optional)
@@ -527,6 +545,49 @@ export const getEnterpriseReportById = async (id) => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy chi tiết báo cáo. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách collector đang hoạt động theo khu vực làm việc
+ * Endpoint: GET /enterprise/collectors
+ * @param {Object} options - Tham số query
+ * @param {string} options.areaId - ID khu vực làm việc của collector (bắt buộc để lọc theo khu vực)
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Mảng sort dạng: ["property,asc"] hoặc ["property,desc"]
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseCollectors = async ({
+  areaId,
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = {};
+
+    // Swagger định nghĩa các query param: areaId, page, size, sort
+    if (areaId) {
+      params.areaId = areaId;
+    }
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+
+    const { data } = await api.get("/enterprise/collectors", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách collector. Vui lòng thử lại.",
     );
   }
 };
