@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { getEnterpriseCollectors } from '../service/api';
+import { getEnterpriseCollectors, assignEnterpriseReport } from '../service/api';
 
 /**
  * Modal giao việc cho collector
@@ -7,15 +7,17 @@ import { getEnterpriseCollectors } from '../service/api';
  * Props:
  * - show: boolean - có hiển thị modal hay không
  * - onClose: () => void - hàm đóng modal
- * - onAssign: (collector) => void - callback khi xác nhận giao việc
+ * - onAssign: (collector, response) => void - callback khi giao việc thành công
  * - collectors?: array - danh sách collector (tùy chọn, nếu không truyền sẽ gọi API)
  * - areaId?: string - ID khu vực của báo cáo, dùng để tự động lọc collector theo khu vực
+ * - reportId?: string - ID report để gọi API assign
  */
-const AssignModal = ({ show, onClose, onAssign, collectors, areaId }) => {
+const AssignModal = ({ show, onClose, onAssign, collectors, areaId, reportId }) => {
     const [selectedCollectorId, setSelectedCollectorId] = useState(null);
     const [searchText, setSearchText] = useState('');
     const [apiCollectors, setApiCollectors] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [assigning, setAssigning] = useState(false);
     const [error, setError] = useState(null);
 
     // Lấy danh sách collector từ API nếu không truyền qua props
@@ -91,14 +93,29 @@ const AssignModal = ({ show, onClose, onAssign, collectors, areaId }) => {
 
     if (!show) return null;
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         const selected = collectorList.find((c) => c.id === selectedCollectorId);
         if (!selected) {
             alert('Vui lòng chọn một collector để giao việc.');
             return;
         }
-        if (onAssign) {
-            onAssign(selected);
+
+        if (!reportId) {
+            alert('Không tìm thấy ID báo cáo để giao việc.');
+            return;
+        }
+
+        try {
+            setAssigning(true);
+            const res = await assignEnterpriseReport(reportId, selected.id);
+            if (onAssign) {
+                onAssign(selected, res);
+            }
+        } catch (err) {
+            console.error(err);
+            alert(err?.message || 'Đã xảy ra lỗi khi giao việc cho collector.');
+        } finally {
+            setAssigning(false);
         }
     };
 
@@ -259,9 +276,10 @@ const AssignModal = ({ show, onClose, onAssign, collectors, areaId }) => {
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                        disabled={assigning}
+                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${assigning ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                     >
-                        Giao việc
+                        {assigning ? 'Đang giao việc...' : 'Giao việc'}
                     </button>
                 </div>
             </div>

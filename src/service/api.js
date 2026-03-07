@@ -634,6 +634,24 @@ export const rejectEnterpriseReport = async (id, reason) => {
 };
 
 /**
+ * Giao việc collector cho báo cáo đã ACCEPTED (enterprise)
+ * Endpoint: POST /enterprise/reports/{id}/assign
+ * @param {string} id - ID của báo cáo
+ * @param {string} collectorId - ID của collector
+ * @returns {Promise} Response từ API
+ */
+export const assignEnterpriseReport = async (id, collectorId) => {
+  try {
+    const { data } = await api.post(`/enterprise/reports/${id}/assign`, {
+      collectorId,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi giao việc cho collector. Vui lòng thử lại.");
+  }
+};
+
+/**
  * Collector lấy danh sách assignment của mình
  * GET /collector/assignments
  * @param {Object} options - Tham số query

@@ -33,8 +33,8 @@ const EnterpriseHomePage = () => {
                 return 'Đã từ chối';
             case 'CANCELLED':
                 return 'Đã hủy';
-            case 'IN_PROGRESS':
-                return 'Đang thực hiện';
+            case 'ASSIGNED':
+                return 'Đã giao';
             case 'COMPLETED':
                 return 'Đã hoàn thành';
             default:
@@ -50,7 +50,7 @@ const EnterpriseHomePage = () => {
                 return 'bg-green-100 text-green-800';
             case 'REJECTED':
                 return 'bg-red-100 text-red-800';
-            case 'IN_PROGRESS':
+            case 'ASSIGNED':
                 return 'bg-blue-100 text-blue-800';
             case 'COMPLETED':
                 return 'bg-green-100 text-green-800';

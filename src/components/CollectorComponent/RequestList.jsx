@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FaEye } from "react-icons/fa";
-import { getCollectorAssignments } from "../../service/api";
+import { getCollectorAssignments, getWasteCategories } from "../../service/api";
 import CollectorPagination from "./CollectorPagination";
 
 // Dữ liệu mẫu danh sách yêu cầu thu gom đã được doanh nghiệp gán cho Collector
@@ -91,7 +91,7 @@ import CollectorPagination from "./CollectorPagination";
 //   },
 // ];
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const getWasteTypeColor = (wasteType) => {
   if (!wasteType) return "bg-gray-100 text-gray-700";
@@ -116,29 +116,35 @@ const getStatusColor = (status) => {
 };
 
 /** Map item từ API (content[]) sang row hiển thị */
-const mapAssignmentToRow = (item) => {
+const mapAssignmentToRow = (item, categoryMap = {}) => {
   const report = item.report || {};
-  const id = item.reportId ?? report.id ?? item.id;
+  const id = item.reportId ?? item.assignmentId ?? report.id ?? item.id;
+  const wasteCategoryId = item.wasteCategoryId ?? report.wasteCategoryId;
   const code = report.code ?? item.code ?? "-";
-  const address = report.addressText ?? report.address ?? item.address ?? "-";
-  const wasteType = report.wasteCategoryName ?? item.wasteType ?? "-";
-  const estimatedWeight =
-    item.estimatedWeight ??
-    (report.estimatedWeightKg != null
-      ? `~${report.estimatedWeightKg} kg`
-      : "-");
+  const address =
+    item.addressText ?? report.addressText ?? report.address ?? item.address ?? "-";
+  const wasteType =
+    categoryMap[wasteCategoryId] ??
+    item.wasteCategoryName ??
+    report.wasteCategoryName ??
+    item.wasteType ??
+    "-";
   const assignedAt = item.assignedAt ?? report.assignedAt ?? "-";
-  const status = item.status ?? report.status ?? "-";
+  const status = item.currentStatus ?? item.status ?? report.status ?? "-";
+  const latitude = item.latitude ?? report.latitude ?? "-";
+  const longitude = item.longitude ?? report.longitude ?? "-";
+
   return {
     id,
     code,
     address,
     wasteType,
     wasteTypeColor: item.wasteTypeColor ?? getWasteTypeColor(wasteType),
-    estimatedWeight,
     assignedAt,
     status,
     statusColor: item.statusColor ?? getStatusColor(status),
+    latitude,
+    longitude,
   };
 };
 
@@ -153,6 +159,7 @@ const RequestList = ({ requests: requestsProp, status }) => {
   const [loading, setLoading] = useState(useApi);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
+  const [categoryMap, setCategoryMap] = useState({});
   const [pageInfo, setPageInfo] = useState({
     page: 0,
     size: PAGE_SIZE,
@@ -165,20 +172,24 @@ const RequestList = ({ requests: requestsProp, status }) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await getCollectorAssignments({
+        const response = await getCollectorAssignments({
           status: status || undefined,
           page: pageIndex,
           size: PAGE_SIZE,
           sort: ["assignedAt,desc"],
         });
-        const content = data?.content ?? (Array.isArray(data) ? data : []);
-        const mapped = content.map(mapAssignmentToRow);
+
+        // API có thể trả trực tiếp page object hoặc bọc trong response.data
+        const pageData = response?.data ?? response;
+        const content = pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
+        const mapped = content.map((item) => mapAssignmentToRow(item, categoryMap));
+
         setList(mapped);
         setPageInfo({
-          page: data?.number ?? data?.page ?? pageIndex,
-          size: data?.size ?? PAGE_SIZE,
-          totalElements: data?.totalElements ?? mapped.length,
-          totalPages: data?.totalPages ?? 1,
+          page: pageData?.number ?? pageData?.page ?? pageIndex,
+          size: pageData?.size ?? PAGE_SIZE,
+          totalElements: pageData?.totalElements ?? mapped.length,
+          totalPages: pageData?.totalPages ?? 1,
         });
       } catch (err) {
         setError(err?.message ?? "Không thể tải danh sách phân công.");
@@ -188,8 +199,30 @@ const RequestList = ({ requests: requestsProp, status }) => {
         setLoading(false);
       }
     },
-    [status],
+    [status, categoryMap],
   );
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getWasteCategories();
+        const categories = response?.data ?? response ?? [];
+        if (Array.isArray(categories)) {
+          const nextMap = {};
+          categories.forEach((cat) => {
+            if (cat?.id) {
+              nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+            }
+          });
+          setCategoryMap(nextMap);
+        }
+      } catch (err) {
+        console.error("Không thể tải danh mục loại rác:", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (useApi) {
@@ -216,7 +249,7 @@ const RequestList = ({ requests: requestsProp, status }) => {
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                    Mã yêu cầu
+                    STT
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Thời gian gán
@@ -225,7 +258,10 @@ const RequestList = ({ requests: requestsProp, status }) => {
                     Loại rác
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                    Khối lượng
+                    Vĩ độ
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
+                    Kinh độ
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Trạng thái
@@ -242,7 +278,7 @@ const RequestList = ({ requests: requestsProp, status }) => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-12 text-center text-gray-500"
                     >
                       Đang tải...
@@ -251,7 +287,7 @@ const RequestList = ({ requests: requestsProp, status }) => {
                 ) : error ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-12 text-center text-red-600"
                     >
                       {error}
@@ -260,22 +296,20 @@ const RequestList = ({ requests: requestsProp, status }) => {
                 ) : !loading && !error && displayList.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-4 text-center text-sm text-gray-500"
                     >
                       Chưa có yêu cầu thu gom nào
                     </td>
                   </tr>
                 ) : (
-                  displayList.map((request) => (
+                  displayList.map((request, index) => (
                     <tr
                       key={request.id}
                       className="transition-colors hover:bg-gray-50/80"
                     >
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-gray-900">
-                          {request.code}
-                        </span>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {page * PAGE_SIZE + index + 1}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {request.assignedAt}
@@ -288,7 +322,10 @@ const RequestList = ({ requests: requestsProp, status }) => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {request.estimatedWeight}
+                        {request.latitude}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {request.longitude}
                       </td>
                       <td className="px-4 py-3">
                         <span
