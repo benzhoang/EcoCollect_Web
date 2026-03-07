@@ -454,6 +454,36 @@ export const cancelCitizenReport = async (id, reason) => {
 };
 
 /**
+ * Citizen bổ sung ảnh cho báo cáo PENDING
+ * POST /citizen/reports/{id}/images
+ * @param {string} id - ID báo cáo
+ * @param {string[]} imageUrls - Danh sách URL ảnh cần thêm
+ * @returns {Promise} Response từ API
+ */
+export const addImagesToCitizenReport = async (id, imageUrls) => {
+  try {
+    if (!id) throw new Error("Thiếu ID báo cáo để bổ sung ảnh.");
+
+    const normalizedImageUrls = Array.isArray(imageUrls)
+      ? imageUrls.map((url) => String(url || "").trim()).filter(Boolean)
+      : [];
+
+    if (!normalizedImageUrls.length) {
+      throw new Error("Vui lòng nhập ít nhất một URL ảnh hợp lệ.");
+    }
+
+    const payload = {
+      imageUrls: normalizedImageUrls,
+    };
+
+    const { data } = await api.post(`/citizen/reports/${id}/images`, payload);
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi bổ sung ảnh cho báo cáo. Vui lòng thử lại.");
+  }
+};
+
+/**
  * Lấy danh sách báo cáo trong hộp thư của doanh nghiệp (pending/filtered reports in dispatch inbox)
  * @param {string} areaId - ID của khu vực (optional)
  * @param {string} status - Trạng thái báo cáo (optional)
