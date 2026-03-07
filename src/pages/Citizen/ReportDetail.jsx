@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getCitizenReportById, getWasteCategories } from '../../service/api';
+import AddImageModal from '../../components/AddImageModal';
 
 const ReportDetail = () => {
     const [reportId, setReportId] = useState(null);
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isAddImageModalOpen, setIsAddImageModalOpen] = useState(false);
 
     const formatDateTime = (dateString) => {
         if (!dateString) return '';
@@ -38,18 +40,16 @@ const ReportDetail = () => {
                 setLoading(true);
                 setError(null);
 
-                // Lấy reportId từ URL
                 const pathParts = window.location.pathname.split('/');
                 const id = pathParts[pathParts.length - 1];
                 setReportId(id);
 
                 const [reportResponse, categoryResponse] = await Promise.all([
                     getCitizenReportById(id),
-                    getWasteCategories()
+                    getWasteCategories(),
                 ]);
-                // response theo format: { success, code, message, data, timestamp }
-                const apiReport = reportResponse?.data;
 
+                const apiReport = reportResponse?.data;
                 if (!apiReport) {
                     throw new Error('Không tìm thấy dữ liệu báo cáo');
                 }
@@ -65,14 +65,17 @@ const ReportDetail = () => {
                 }
 
                 const wasteTypeName = apiReport.wasteCategoryId
-                    ? (categoryMap[apiReport.wasteCategoryId] || 'Rác thải')
+                    ? categoryMap[apiReport.wasteCategoryId] || 'Rác thải'
                     : 'Rác thải';
 
                 const statusInfo = getStatusInfo(apiReport.currentStatus);
+                const mediaUrls = Array.isArray(apiReport.media)
+                    ? apiReport.media.map((m) => m?.url).filter(Boolean)
+                    : [];
 
-                // Map dữ liệu backend -> cấu trúc UI hiện tại
                 const mappedReport = {
                     id: apiReport.id,
+                    rawStatus: apiReport.currentStatus || '',
                     wasteType: wasteTypeName,
                     wasteTypeColor: 'bg-blue-100 text-blue-700',
                     status: statusInfo.label,
@@ -83,11 +86,12 @@ const ReportDetail = () => {
                     submittedAt: formatDateTime(apiReport.createdAt),
                     points: apiReport.rewardPoints != null ? `+${apiReport.rewardPoints} điểm` : 'Chưa có điểm',
                     pointsColor: apiReport.rewardPoints > 0 ? 'text-green-600' : 'text-gray-600',
-                    image: Array.isArray(apiReport.media) && apiReport.media.length > 0 ? apiReport.media[0].url : null,
+                    image: mediaUrls.length > 0 ? mediaUrls[0] : null,
+                    images: mediaUrls,
                     description: apiReport.description || 'Không có mô tả',
-                    coordinates: (apiReport.latitude && apiReport.longitude)
+                    coordinates: apiReport.latitude && apiReport.longitude
                         ? { lat: apiReport.latitude, lng: apiReport.longitude }
-                        : { lat: 10.7769, lng: 106.7009 }, // fallback HCM
+                        : { lat: 10.7769, lng: 106.7009 },
                     latitude: apiReport.latitude || null,
                     longitude: apiReport.longitude || null,
                     estimatedWeightKg: apiReport.estimatedWeightKg || null,
@@ -110,15 +114,26 @@ const ReportDetail = () => {
         window.dispatchEvent(new PopStateEvent('popstate'));
     };
 
+    const handleSaveImage = (newImageUrl) => {
+        if (!newImageUrl) return;
+        setReportData((prev) => {
+            if (!prev) return prev;
+            const nextImages = Array.isArray(prev.images) ? [...prev.images, newImageUrl] : [newImageUrl];
+            return {
+                ...prev,
+                image: prev.image || newImageUrl,
+                images: nextImages,
+            };
+        });
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-green-50">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="text-center">
                         <div className="text-gray-500 mb-4">Đang tải thông tin...</div>
-                        {reportId && (
-                            <div className="text-xs text-gray-400">Mã báo cáo: #{reportId}</div>
-                        )}
+                        {reportId && <div className="text-xs text-gray-400">Mã báo cáo: #{reportId}</div>}
                     </div>
                 </div>
             </div>
@@ -159,7 +174,6 @@ const ReportDetail = () => {
     return (
         <div className="min-h-screen bg-green-50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
-                {/* Header */}
                 <div className="mb-6">
                     <button
                         onClick={handleBack}
@@ -187,20 +201,15 @@ const ReportDetail = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Main Info */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Status Card */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-xl font-bold text-gray-900">Thông tin báo cáo</h2>
-                                <span className={`text-sm font-semibold ${reportData.pointsColor}`}>
-                                    {reportData.points}
-                                </span>
+                                <span className={`text-sm font-semibold ${reportData.pointsColor}`}>{reportData.points}</span>
                             </div>
                             <p className="text-sm text-gray-600">Ngày tạo: {reportData.submittedAt}</p>
                         </div>
 
-                        {/* Basic Information */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <h3 className="text-lg font-bold text-gray-900 mb-4">Thông tin cơ bản</h3>
                             <div className="space-y-4">
@@ -225,7 +234,6 @@ const ReportDetail = () => {
                             </div>
                         </div>
 
-                        {/* Location Information */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <h3 className="text-lg font-bold text-gray-900 mb-4">Thông tin địa điểm</h3>
                             <div className="space-y-4">
@@ -273,24 +281,41 @@ const ReportDetail = () => {
                             </div>
                         </div>
 
-                        {/* Image */}
-                        {reportData.image && (
-                            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">Hình ảnh</h3>
-                                <div className="rounded-lg overflow-hidden border border-gray-200">
-                                    <img
-                                        src={reportData.image}
-                                        alt={reportData.wasteType}
-                                        className="w-full h-64 object-cover"
-                                    />
-                                </div>
+                        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-gray-900">Hình ảnh</h3>
+                                {String(reportData.rawStatus || '').toUpperCase() === 'PENDING' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddImageModalOpen(true)}
+                                        className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        Thêm ảnh
+                                    </button>
+                                )}
                             </div>
-                        )}
+
+                            {Array.isArray(reportData.images) && reportData.images.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {reportData.images.map((img, idx) => (
+                                        <div key={`${img}-${idx}`} className="rounded-lg overflow-hidden border border-gray-200">
+                                            <img
+                                                src={img}
+                                                alt={`${reportData.wasteType}-${idx + 1}`}
+                                                className="w-full h-64 object-cover"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+                                    Chưa có hình ảnh cho báo cáo này.
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Right Column - Summary */}
                     <div className="space-y-6">
-                        {/* Summary Card */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <h3 className="text-lg font-bold text-gray-900 mb-4">Tóm tắt</h3>
                             <div className="space-y-4">
@@ -304,9 +329,7 @@ const ReportDetail = () => {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Điểm thưởng</label>
-                                    <p className={`mt-1 text-lg font-semibold ${reportData.pointsColor}`}>
-                                        {reportData.points}
-                                    </p>
+                                    <p className={`mt-1 text-lg font-semibold ${reportData.pointsColor}`}>{reportData.points}</p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-600">Ngày báo cáo</label>
@@ -315,7 +338,6 @@ const ReportDetail = () => {
                             </div>
                         </div>
 
-                        {/* Back Button */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <button
                                 onClick={handleBack}
@@ -327,6 +349,13 @@ const ReportDetail = () => {
                     </div>
                 </div>
             </div>
+
+            <AddImageModal
+                isOpen={isAddImageModalOpen}
+                onClose={() => setIsAddImageModalOpen(false)}
+                onSave={handleSaveImage}
+                reportId={reportData?.id}
+            />
         </div>
     );
 };
