@@ -781,3 +781,53 @@ export const getAdminUsers = async ({
     );
   }
 };
+
+/**
+ * Lấy danh sách khiếu nại đang hoạt động (List active complaints)
+ * GET /complaints
+ * @param {Object} options - Tham số query
+ * @param {string} [options.category] - Lọc theo category
+ * @param {string} [options.status] - Lọc theo status
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc)
+ * @returns {Promise} Response từ API
+ */
+export const getComplaints = async ({
+  category,
+  status,
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = { page, size };
+    if (category != null && category !== "") params.category = category;
+    if (status != null && status !== "") params.status = status;
+    if (Array.isArray(sort) && sort.length) params.sort = sort;
+    const { data } = await api.get("/complaints", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách khiếu nại. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách quy tắc thưởng (Admin) - List reward rules
+ * GET /admin/reward-rules - No parameters
+ * @returns {Promise} Response từ API
+ */
+export const getAdminRewardRules = async () => {
+  try {
+    const { data } = await api.get("/admin/reward-rules");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
