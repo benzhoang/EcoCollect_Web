@@ -41,6 +41,7 @@ import RequestDetailPage from "./pages/Collector/RequestDetailPage";
 import AreaListPage from "./pages/Admin/AreaListPage";
 import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
 import WasteCapabilityListPage from "./pages/Admin/WasteCapabilityListPage";
+import RewardRuleListPage from "./pages/Admin/RewardRuleListPage";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -237,6 +238,12 @@ function App() {
         return (
           <AdminLayout>
             <WasteCapabilityListPage />
+          </AdminLayout>
+        );
+      case "/admin/config/reward-rules":
+        return (
+          <AdminLayout>
+            <RewardRuleListPage />
           </AdminLayout>
         );
       case "/admin/config/areas":

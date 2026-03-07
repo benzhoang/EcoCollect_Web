@@ -142,10 +142,7 @@ const AreaList = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className="text-sm font-medium text-gray-900"
-                      title={area.name}
-                    >
+                    <span className="text-sm text-gray-900" title={area.name}>
                       {area.name ?? "-"}
                     </span>
                   </td>

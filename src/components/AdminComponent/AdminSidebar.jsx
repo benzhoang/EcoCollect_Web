@@ -48,6 +48,7 @@ const AdminSidebar = ({ isOpen }) => {
   const isAreaActive = currentPath === "/admin/config/areas";
   const isWasteCapabilityActive =
     currentPath === "/admin/config/waste-capabilities";
+  const isRewardRuleActive = currentPath === "/admin/config/reward-rules";
   const isComplaintsActive = currentPath === "/admin/complaints";
 
   const handleLogout = () => {
@@ -257,6 +258,18 @@ const AdminSidebar = ({ isOpen }) => {
                   }`}
                 >
                   Khu vực
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/admin/config/reward-rules"
+                  className={`block px-3 py-2 rounded-lg transition-colors no-underline text-sm ${
+                    isRewardRuleActive
+                      ? "bg-green-50 text-green-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-green-600"
+                  }`}
+                >
+                  Quy tắc điểm thưởng
                 </Link>
               </li>
             </ul>
