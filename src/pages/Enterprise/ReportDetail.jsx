@@ -77,6 +77,10 @@ const ReportDetail = () => {
                         statusLabel = 'Đã hủy';
                         statusColor = 'bg-gray-100 text-gray-700';
                         break;
+                    case 'ASSIGNED':
+                        statusLabel = 'Đã giao';
+                        statusColor = 'bg-blue-100 text-blue-700';
+                        break;
                     default:
                         break;
                 }
@@ -316,9 +320,48 @@ const ReportDetail = () => {
         setIsAssignModalOpen(false);
     };
 
-    const handleAssignCollector = (collector) => {
-        // TODO: Gọi API để giao nhiệm vụ cho collector đã chọn
-        console.log('Assign request:', requestId, 'to collector:', collector);
+    const handleAssignCollector = (collector, res) => {
+        const apiReport = res?.data;
+        const status = apiReport?.currentStatus || apiReport?.status || 'IN_PROGRESS';
+
+        let statusLabel = 'Đang thực hiện';
+        let statusColor = 'bg-blue-100 text-blue-700';
+        switch (status) {
+            case 'PENDING':
+                statusLabel = 'Chờ xử lý';
+                statusColor = 'bg-yellow-100 text-yellow-700';
+                break;
+            case 'ACCEPTED':
+                statusLabel = 'Chấp thuận';
+                statusColor = 'bg-green-100 text-green-700';
+                break;
+            case 'IN_PROGRESS':
+                statusLabel = 'Đang thực hiện';
+                statusColor = 'bg-blue-100 text-blue-700';
+                break;
+            case 'COMPLETED':
+                statusLabel = 'Đã hoàn thành';
+                statusColor = 'bg-green-100 text-green-700';
+                break;
+            case 'REJECTED':
+                statusLabel = 'Đã từ chối';
+                statusColor = 'bg-red-100 text-red-700';
+                break;
+            case 'CANCELLED':
+                statusLabel = 'Đã hủy';
+                statusColor = 'bg-gray-100 text-gray-700';
+                break;
+            default:
+                break;
+        }
+
+        setRequestData(prev => prev ? {
+            ...prev,
+            status: statusLabel,
+            statusColor,
+            rawStatus: status,
+        } : prev);
+
         showToast(`Đã giao yêu cầu cho collector: ${collector.name || collector.code || collector.id}`, 'success');
         setIsAssignModalOpen(false);
     };
@@ -521,7 +564,7 @@ const ReportDetail = () => {
                                     <h3 className="text-lg font-bold text-gray-900 mb-4">Thao tác</h3>
                                     <div className="space-y-3">
                                         {/* Nút giao việc - chỉ hiển thị khi status là ACCEPTED */}
-                                        {requestData.rawStatus === 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && (
+                                        {requestData.rawStatus === 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && (
                                             <button
                                                 onClick={handleOpenAssignModal}
                                                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -530,7 +573,7 @@ const ReportDetail = () => {
                                             </button>
                                         )}
                                         {/* Nút chấp nhận và từ chối - chỉ hiển thị khi status không phải REJECTED, không phải ACCEPTED và không phải CANCELLED */}
-                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && (
+                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && (
                                             <>
                                                 <button
                                                     onClick={handleAccept}
@@ -566,6 +609,7 @@ const ReportDetail = () => {
                 onClose={handleCloseAssignModal}
                 onAssign={handleAssignCollector}
                 areaId={requestData.areaId}
+                reportId={requestId}
             />
 
             {/* Reason Reject Modal */}
