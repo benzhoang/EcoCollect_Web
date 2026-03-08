@@ -30,6 +30,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/admin/waste-categories": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
       // Proxy API danh sách user (admin)
       "/admin/users": {
         target: "http://localhost:8080",
@@ -67,7 +72,7 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
         secure: false,
-      }
+      },
     },
   },
 });

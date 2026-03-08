@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaArrowLeft,
   FaInfoCircle,
@@ -7,7 +7,6 @@ import {
   FaExclamationTriangle,
   FaCircle,
   FaCalendarAlt,
-  FaWeight,
   FaChevronDown,
   FaUserShield,
   FaLock,
@@ -17,6 +16,30 @@ import {
   FaTrash,
   FaCheckSquare,
 } from "react-icons/fa";
+import { getAdminUserDetail, getAreas } from "../../service/api";
+
+/**
+ * Chuyển cây khu vực -> danh sách phẳng chỉ leaf (giống AreaList).
+ * Mỗi phần tử: { id, name } với name = "TP.HCM - Quan 1 - Phuong Ben Nghe".
+ */
+const buildAreaOptions = (nodes, parentName = "") => {
+  if (!nodes) return [];
+  const result = [];
+  nodes.forEach((node) => {
+    if (!node) return;
+    const currentName = parentName ? `${parentName} - ${node.name}` : node.name;
+    if (
+      Array.isArray(node.children) &&
+      node.children.length > 0 &&
+      typeof node.children[0] === "object"
+    ) {
+      result.push(...buildAreaOptions(node.children, currentName));
+    } else {
+      result.push({ id: node.id, name: currentName });
+    }
+  });
+  return result;
+};
 
 const AccountDetailPage = () => {
   // Permission Management States
@@ -35,18 +58,92 @@ const AccountDetailPage = () => {
   const [suspendJustification, setSuspendJustification] = useState("");
   const [isSuspended, setIsSuspended] = useState(false);
 
-  // Sample data
+  // User detail from API
+  const [userDetail, setUserDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [areaOptions, setAreaOptions] = useState([]);
+
+  const pathParts =
+    typeof window !== "undefined" ? window.location.pathname.split("/") : [];
+  const userId = pathParts[4] || null;
+
+  useEffect(() => {
+    if (!userId) {
+      queueMicrotask(() => setLoading(false));
+      return;
+    }
+    let cancelled = false;
+    const fetch = async () => {
+      setLoading(true);
+      const data = await getAdminUserDetail(userId);
+      if (!cancelled && data?.data) {
+        setUserDetail(data.data);
+        setIsSuspended(data.data.status === "SUSPENDED");
+      }
+      if (!cancelled) setLoading(false);
+    };
+    fetch();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAreas = async () => {
+      const response = await getAreas();
+      if (cancelled) return;
+      const rawData = response?.data ?? response;
+      const rootNodes = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+      setAreaOptions(buildAreaOptions(rootNodes));
+    };
+    fetchAreas();
+    return () => { cancelled = true; };
+  }, []);
+
+  const getWorkingAreaName = (workingAreaId) => {
+    if (!workingAreaId) return null;
+    const area = areaOptions.find((a) => a.id === workingAreaId);
+    return area?.name ?? workingAreaId;
+  };
+
+  const getRoleLabel = (roles) => {
+    if (!roles?.length) return "—";
+    const role = roles[0];
+    const map = {
+      ROLE_CITIZEN: "Công dân",
+      ROLE_COLLECTOR: "Nhân viên thu gom",
+      ROLE_ENTERPRISE: "Doanh nghiệp tái chế",
+      ROLE_ADMIN: "Quản trị viên",
+    };
+    return map[role] || role;
+  };
+
+  const formatJoinedDate = (iso) => {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString("vi-VN", {
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
+  // Fallback for sections that still need user-like object
   const user = {
-    name: "John Doe",
+    name: userDetail?.fullName ?? "—",
     username: "@johndoe123",
-    id: "#884920",
-    joinedDate: "T10/2022",
-    recycled: "1240kg",
-    status: isSuspended ? "Đã khóa" : "Tài khoản hoạt động",
-    email: "j***@example.com",
+    id: userId ?? "",
+    joinedDate: formatJoinedDate(userDetail?.createdAt),
+    status:
+      userDetail?.status === "SUSPENDED" ? "Đã khóa" : "Tài khoản hoạt động",
+    email: userDetail?.email ?? "—",
     tokens: "450",
     pendingRequests: 2,
-    currentRoles: ["citizen"],
+    currentRoles: userDetail?.roles ?? [],
   };
 
   const availableRoles = [
@@ -176,7 +273,14 @@ const AccountDetailPage = () => {
           <button
             className="flex items-center gap-2 text-gray-700 transition-colors hover:text-gray-900"
             onClick={() => {
-              window.history.pushState({}, "", `/admin/account/citizens`);
+              const pathParts = window.location.pathname.split("/");
+              // path: /admin/account/{citizens|collectors|recycling-enterprises}/:id
+              const segment =
+                pathParts[3] && pathParts[3] !== "account"
+                  ? pathParts[3]
+                  : "citizens";
+              const listPath = `/admin/account/${segment}`;
+              window.history.pushState({}, "", listPath);
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
           >
@@ -201,57 +305,65 @@ const AccountDetailPage = () => {
           <div className="space-y-6 lg:col-span-2">
             {/* User Profile Summary Card */}
             <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-start gap-4">
-                {/* Avatar Badge */}
-                <div className="relative">
-                  <div className="flex items-center justify-center w-20 h-20 text-2xl font-bold text-white bg-green-600 rounded-lg">
-                    JD
-                  </div>
-                  <div className="absolute w-4 h-4 bg-green-500 border-2 border-white rounded-full -bottom-1 -right-1"></div>
+              {loading ? (
+                <div className="flex items-center justify-center py-8 text-gray-500">
+                  Đang tải...
                 </div>
+              ) : !userDetail ? (
+                <div className="flex items-center justify-center py-8 text-gray-500">
+                  Không tìm thấy thông tin tài khoản.
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  {/* User Info */}
+                  <div className="flex-1">
+                    <h2 className="mb-1 text-2xl font-bold text-gray-900">
+                      {userDetail.fullName ?? "—"}
+                    </h2>
+                    <p className="mb-3 text-sm font-medium text-green-600">
+                      {getRoleLabel(userDetail.roles)}
+                    </p>
+                    <div className="flex flex-col gap-1 mb-3 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <FaCalendarAlt className="text-xs" />
+                        Tham gia {formatJoinedDate(userDetail.createdAt)}
+                      </span>
+                      {userDetail.workingAreaId != null &&
+                        userDetail.workingAreaId !== "" && (
+                          <span className="flex items-center gap-1 mt-3">
+                            Khu vực:{" "}
+                            <span className="font-medium">
+                              {getWorkingAreaName(userDetail.workingAreaId)}
+                            </span>
+                          </span>
+                        )}
+                    </div>
+                  </div>
 
-                {/* User Info */}
-                <div className="flex-1">
-                  <h2 className="mb-1 text-2xl font-bold text-gray-900">
-                    {user.name}
-                  </h2>
-                  <p className="mb-3 text-sm font-medium text-green-600">
-                    CỘNG TÁC VIÊN TIN CẬY
-                  </p>
-                  <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-                    <span>{user.id}</span>
-                    <span className="flex items-center gap-1">
-                      <FaCalendarAlt className="text-xs" />
-                      Tham gia {user.joinedDate}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FaWeight className="text-xs" />
-                      {user.recycled} đã tái chế
-                    </span>
+                  {/* Status Badge */}
+                  <div className="text-right">
+                    <p className="mb-1 text-xs text-gray-500">
+                      TRẠNG THÁI HIỆN TẠI
+                    </p>
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full ${
+                        userDetail.status === "SUSPENDED"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-green-50 text-green-700"
+                      }`}
+                    >
+                      {userDetail.status === "SUSPENDED" ? (
+                        <FaLock className="text-xs" />
+                      ) : (
+                        <FaCheckCircle className="text-xs" />
+                      )}
+                      {userDetail.status === "SUSPENDED"
+                        ? "Đã khóa"
+                        : "Tài khoản hoạt động"}
+                    </div>
                   </div>
                 </div>
-
-                {/* Status Badge */}
-                <div className="text-right">
-                  <p className="mb-1 text-xs text-gray-500">
-                    TRẠNG THÁI HIỆN TẠI
-                  </p>
-                  <div
-                    className={`inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full ${
-                      isSuspended
-                        ? "bg-red-50 text-red-700"
-                        : "bg-green-50 text-green-700"
-                    }`}
-                  >
-                    {isSuspended ? (
-                      <FaLock className="text-xs" />
-                    ) : (
-                      <FaCheckCircle className="text-xs" />
-                    )}
-                    {user.status}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Role & Permission Management Section */}
