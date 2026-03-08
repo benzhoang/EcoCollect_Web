@@ -1,131 +1,99 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getWasteCategories } from '../../service/api';
 
 const ConfigPointModal = ({
     show,
     editingRule,
     formData,
-    wasteTypes,
+    wasteTypes: propWasteTypes,
     onClose,
     onSubmit,
     onInputChange,
     onConditionChange
 }) => {
+    const [wasteTypes, setWasteTypes] = useState([]);
+    const [loadingWasteTypes, setLoadingWasteTypes] = useState(false);
+
+    useEffect(() => {
+        if (!show) return;
+
+        let cancelled = false;
+        const loadWasteCategories = async () => {
+            setLoadingWasteTypes(true);
+            try {
+                const response = await getWasteCategories();
+
+                let categories = [];
+                if (Array.isArray(response)) {
+                    categories = response;
+                } else if (Array.isArray(response?.data)) {
+                    categories = response.data;
+                } else if (Array.isArray(response?.content)) {
+                    categories = response.content;
+                }
+
+                const mapped = categories.map((cat) => ({
+                    value: cat?.id || cat?.value,
+                    label: cat?.name || cat?.label || 'Unknown',
+                    color: 'bg-blue-100 text-blue-700',
+                }));
+
+                if (!cancelled) {
+                    setWasteTypes(mapped);
+                }
+            } catch (error) {
+                console.error('Error loading waste categories:', error);
+                if (!cancelled && Array.isArray(propWasteTypes) && propWasteTypes.length > 0) {
+                    setWasteTypes(propWasteTypes);
+                } else if (!cancelled) {
+                    setWasteTypes([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoadingWasteTypes(false);
+                }
+            }
+        };
+
+        loadWasteCategories();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [show, propWasteTypes]);
+
+    useEffect(() => {
+        if (Array.isArray(propWasteTypes) && propWasteTypes.length > 0 && wasteTypes.length === 0 && !loadingWasteTypes) {
+            setWasteTypes(propWasteTypes);
+        }
+    }, [propWasteTypes, wasteTypes.length, loadingWasteTypes]);
+
     if (!show) return null;
 
-    const renderConditionFields = () => {
-        switch (formData.type) {
-            case 'waste_type':
-                return (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Loại rác thải
-                            </label>
-                            <select
-                                value={formData.conditions.wasteType || ''}
-                                onChange={(e) => onConditionChange('wasteType', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                            >
-                                <option value="">Chọn loại rác</option>
-                                {wasteTypes.map(type => (
-                                    <option key={type.value} value={type.value}>
-                                        {type.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Khối lượng tối thiểu (kg)
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.conditions.minWeight || ''}
-                                onChange={(e) => onConditionChange('minWeight', parseInt(e.target.value, 10))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Nhập khối lượng tối thiểu"
-                                min="0"
-                            />
-                        </div>
-                    </div>
-                );
-            case 'report_quality':
-                return (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Điểm chất lượng tối thiểu (0-10)
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.conditions.qualityScore || ''}
-                                onChange={(e) => onConditionChange('qualityScore', parseInt(e.target.value, 10))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Nhập điểm chất lượng"
-                                min="0"
-                                max="10"
-                            />
-                        </div>
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="hasImages"
-                                checked={formData.conditions.hasImages || false}
-                                onChange={(e) => onConditionChange('hasImages', e.target.checked)}
-                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            />
-                            <label htmlFor="hasImages" className="ml-2 text-sm text-gray-700">
-                                Yêu cầu có hình ảnh
-                            </label>
-                        </div>
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="hasDescription"
-                                checked={formData.conditions.hasDescription || false}
-                                onChange={(e) => onConditionChange('hasDescription', e.target.checked)}
-                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            />
-                            <label htmlFor="hasDescription" className="ml-2 text-sm text-gray-700">
-                                Yêu cầu có mô tả chi tiết
-                            </label>
-                        </div>
-                    </div>
-                );
-            case 'processing_time':
-                return (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Thời gian xử lý tối đa (giờ)
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.conditions.maxHours || ''}
-                                onChange={(e) => onConditionChange('maxHours', parseInt(e.target.value, 10))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Nhập số giờ tối đa"
-                                min="1"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Thời gian xử lý tối thiểu (giờ) - Tùy chọn
-                            </label>
-                            <input
-                                type="number"
-                                value={formData.conditions.minHours || ''}
-                                onChange={(e) => onConditionChange('minHours', parseInt(e.target.value, 10))}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Nhập số giờ tối thiểu (không bắt buộc)"
-                                min="1"
-                            />
-                        </div>
-                    </div>
-                );
-            default:
-                return null;
+    const formatDateTimeLocal = (isoString) => {
+        if (!isoString) return '';
+        try {
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch {
+            return '';
         }
+    };
+
+    const handleDateTimeChange = (name, value) => {
+        const syntheticEvent = {
+            target: {
+                name,
+                value: value ? new Date(value).toISOString() : ''
+            }
+        };
+        onInputChange(syntheticEvent);
     };
 
     return (
@@ -145,84 +113,131 @@ const ConfigPointModal = ({
                     </button>
                 </div>
                 <form onSubmit={onSubmit} className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Left column */}
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tên quy tắc <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={onInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="Nhập tên quy tắc"
-                                    required
-                                />
-                            </div>
+                    <div className="space-y-6">
+                        {/* Loại rác thải */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Loại rác thải <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="wasteCategoryId"
+                                value={formData.wasteCategoryId || ''}
+                                onChange={onInputChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                disabled={loadingWasteTypes}
+                                required
+                            >
+                                <option value="">
+                                    {loadingWasteTypes ? 'Đang tải...' : 'Chọn loại rác thải'}
+                                </option>
+                                {wasteTypes.map(type => (
+                                    <option key={type.value} value={type.value}>
+                                        {type.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
+                        {/* Điểm số */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Loại quy tắc <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    name="type"
-                                    value={formData.type}
-                                    onChange={onInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                >
-                                    <option value="waste_type">Loại rác thải</option>
-                                    <option value="report_quality">Chất lượng báo cáo</option>
-                                    <option value="processing_time">Thời gian xử lý</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Điểm thưởng <span className="text-red-500">*</span>
+                                    Điểm mỗi kg <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
-                                    name="points"
-                                    value={formData.points}
+                                    name="pointsPerKg"
+                                    value={formData.pointsPerKg || ''}
                                     onChange={onInputChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="Nhập số điểm"
+                                    placeholder="0"
                                     min="0"
+                                    step="0.01"
                                     required
                                 />
                             </div>
 
-                            <div className="flex items-start gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="isActive"
-                                    name="isActive"
-                                    checked={formData.isActive}
-                                    onChange={onInputChange}
-                                    className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                />
-                                <label htmlFor="isActive" className="text-sm text-gray-700">
-                                    Kích hoạt quy tắc ngay sau khi tạo
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Điểm thưởng chất lượng
                                 </label>
+                                <input
+                                    type="number"
+                                    name="bonusQualityPoints"
+                                    value={formData.bonusQualityPoints || ''}
+                                    onChange={onInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="0"
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Điểm hoàn thành nhanh
+                                </label>
+                                <input
+                                    type="number"
+                                    name="bonusFastCompletePoints"
+                                    value={formData.bonusFastCompletePoints || ''}
+                                    onChange={onInputChange}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    placeholder="0"
+                                    min="0"
+                                    step="0.01"
+                                />
                             </div>
                         </div>
 
-                        {/* Right column */}
-                        <div className="space-y-6">
+                        {/* Thời gian hiệu lực */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Điều kiện áp dụng <span className="text-red-500">*</span>
-                                    </label>
-                                    <span className="text-xs text-gray-500">Phụ thuộc vào loại quy tắc</span>
-                                </div>
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                    {renderConditionFields()}
-                                </div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Có hiệu lực từ <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    name="effectiveFrom"
+                                    value={formData.effectiveFrom ? formatDateTimeLocal(formData.effectiveFrom) : ''}
+                                    onChange={(e) => handleDateTimeChange('effectiveFrom', e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Có hiệu lực đến <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    name="effectiveTo"
+                                    value={formData.effectiveTo ? formatDateTimeLocal(formData.effectiveTo) : ''}
+                                    onChange={(e) => handleDateTimeChange('effectiveTo', e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Độ ưu tiên */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Độ ưu tiên
+                            </label>
+                            <input
+                                type="number"
+                                name="priority"
+                                value={formData.priority || ''}
+                                onChange={onInputChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="0"
+                                min="0"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                                Số càng cao, độ ưu tiên càng lớn
+                            </p>
                         </div>
                     </div>
 
@@ -248,4 +263,3 @@ const ConfigPointModal = ({
 };
 
 export default ConfigPointModal;
-
