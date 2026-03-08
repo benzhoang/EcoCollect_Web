@@ -331,6 +331,26 @@ export const getWasteCategories = async () => {
 };
 
 /**
+ * Tạo danh mục loại rác (Admin) - Create waste category
+ * POST /admin/waste-categories
+ * @param {Object} body - Request body
+ * @param {string} body.code - Mã danh mục (vd: "DEMO")
+ * @param {string} body.name - Tên danh mục (vd: "Demo")
+ * @returns {Promise} Response từ API
+ */
+export const createWasteCategory = async (body) => {
+  try {
+    const { data } = await api.post("/admin/waste-categories", body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi tạo danh mục loại rác. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách báo cáo của công dân hiện tại
  * @param {number} page - Chỉ số trang (zero-based)
  * @param {number} size - Kích thước trang
@@ -778,6 +798,24 @@ export const getAdminUsers = async ({
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy danh sách người dùng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy chi tiết user (Admin) - Get user detail
+ * GET /admin/users/{userId}
+ * @param {string} userId - ID user (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const getAdminUserDetail = async (userId) => {
+  try {
+    const { data } = await api.get(`/admin/users/${userId}`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy chi tiết người dùng. Vui lòng thử lại.",
     );
   }
 };

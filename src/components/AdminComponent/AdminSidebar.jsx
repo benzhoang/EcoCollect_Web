@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logoImage from "../../assets/Screenshot_2026-01-17_220348-removebg-preview.png";
 import {
   FaChartBar,
@@ -12,8 +12,8 @@ import {
 import { logout } from "../../service/api";
 
 const AdminSidebar = ({ isOpen }) => {
-  const location = useLocation();
-  const currentPath = location.pathname;
+  const currentPath =
+    typeof window !== "undefined" ? window.location.pathname : "";
   const [isAccountOpen, setIsAccountOpen] = useState(
     currentPath.startsWith("/admin/account/"),
   );
@@ -32,16 +32,27 @@ const AdminSidebar = ({ isOpen }) => {
   }, []);
 
   useEffect(() => {
-    setIsAccountOpen(currentPath.startsWith("/admin/account/"));
-    setIsConfigOpen(currentPath.startsWith("/admin/config/"));
-  }, [currentPath]);
+    const onUpdate = () => {
+      const path =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      setIsAccountOpen(path.startsWith("/admin/account/"));
+      setIsConfigOpen(path.startsWith("/admin/config/"));
+    };
+    window.addEventListener("popstate", onUpdate);
+    return () => window.removeEventListener("popstate", onUpdate);
+  }, []);
 
   const isDashboardActive = currentPath === "/admin/dashboard";
   const isAccountActive = currentPath.startsWith("/admin/account/");
-  const isCitizensActive = currentPath === "/admin/account/citizens";
-  const isCollectorsActive = currentPath === "/admin/account/collectors";
+  const isCitizensActive =
+    currentPath === "/admin/account/citizens" ||
+    currentPath.startsWith("/admin/account/citizens/");
+  const isCollectorsActive =
+    currentPath === "/admin/account/collectors" ||
+    currentPath.startsWith("/admin/account/collectors/");
   const isRecyclingEnterprisesActive =
-    currentPath === "/admin/account/recycling-enterprises";
+    currentPath === "/admin/account/recycling-enterprises" ||
+    currentPath.startsWith("/admin/account/recycling-enterprises/");
   const isConfigActive = currentPath.startsWith("/admin/config/");
   const isWasteCategoryActive =
     currentPath === "/admin/config/waste-categories";

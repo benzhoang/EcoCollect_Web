@@ -6,6 +6,7 @@ import { FaPlus, FaSearch } from "react-icons/fa";
 const WasteCategoryListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleCreate = () => {
     setIsModalOpen(true);
@@ -54,11 +55,12 @@ const WasteCategoryListPage = () => {
         </div>
       </header>
 
-      <WasteCategoryList />
+      <WasteCategoryList refreshTrigger={refreshTrigger} />
 
       <CreateWasteCategoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={() => setRefreshTrigger((t) => t + 1)}
       />
     </div>
   );

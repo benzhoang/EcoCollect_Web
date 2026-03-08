@@ -3,7 +3,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
 import { getWasteCategories } from "../../service/api";
 
-const WasteCategoryList = () => {
+const WasteCategoryList = ({ refreshTrigger = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
@@ -32,7 +32,7 @@ const WasteCategoryList = () => {
       }
     };
     fetchCategories();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleEdit = (category) => {
     setEditingCategory(category);

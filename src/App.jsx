@@ -110,6 +110,18 @@ function App() {
       );
     }
 
+    if (
+      pathname.match(
+        /^\/admin\/account\/(citizens|collectors|recycling-enterprises)\/[^/]+$/
+      )
+    ) {
+      return (
+        <AdminLayout>
+          <AccountDetailPage />
+        </AdminLayout>
+      );
+    }
+
     switch (pathname) {
       case "/signin":
         return <Signin />;
@@ -221,12 +233,6 @@ function App() {
         return (
           <AdminLayout>
             <ComplaintDetailPage />
-          </AdminLayout>
-        );
-      case "/admin/account/detail":
-        return (
-          <AdminLayout>
-            <AccountDetailPage />
           </AdminLayout>
         );
       case "/admin/config/waste-categories":

@@ -10,6 +10,12 @@ const ROLE_LABELS = {
   ROLE_ENTERPRISE_MANAGER: "Doanh nghiệp tái chế",
 };
 
+const ROLE_TO_SEGMENT = {
+  ROLE_CITIZEN: "citizens",
+  ROLE_COLLECTOR: "collectors",
+  ROLE_ENTERPRISE_MANAGER: "recycling-enterprises",
+};
+
 const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAccountEmail, setSelectedAccountEmail] = useState("");
@@ -49,8 +55,13 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
     fetchUsers();
   }, [roleFilter, searchTerm]);
 
-  const handleView = () => {
-    window.history.pushState({}, "", `/admin/account/detail`);
+  const handleView = (accountId) => {
+    const segment = ROLE_TO_SEGMENT[roleFilter] ?? "citizens";
+    window.history.pushState(
+      {},
+      "",
+      `/admin/account/${segment}/${accountId}`
+    );
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
@@ -94,7 +105,7 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
 
   if (error) {
     return (
-      <div className="px-6 py-4 bg-red-50 border border-red-200 rounded-lg">
+      <div className="px-6 py-4 border border-red-200 rounded-lg bg-red-50">
         <p className="text-sm text-red-700">{error}</p>
       </div>
     );
@@ -128,7 +139,7 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase">
                   NGÀY TẠO
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase w-40">
+                <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase">
                   THAO TÁC
                 </th>
               </tr>
@@ -169,7 +180,7 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                         {account.phone ?? "—"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           account.status === "ACTIVE"
@@ -196,26 +207,26 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleView(account.id)}
-                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-blue-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-blue-50 shrink-0"
                           title="Xem chi tiết"
                         >
-                          <FaEye className="text-blue-600 text-sm" />
+                          <FaEye className="text-sm text-blue-600" />
                         </button>
                         <button
                           onClick={handleEdit}
-                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-yellow-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
                           title="Sửa"
                         >
-                          <FaEdit className="text-yellow-600 text-sm" />
+                          <FaEdit className="text-sm text-yellow-600" />
                         </button>
                         <button
                           onClick={() =>
                             handleDelete(account.id, account.email)
                           }
-                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-red-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
                           title="Xóa"
                         >
-                          <FaTrash className="text-red-600 text-sm" />
+                          <FaTrash className="text-sm text-red-600" />
                         </button>
                       </div>
                     </td>
