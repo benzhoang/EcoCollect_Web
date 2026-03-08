@@ -42,6 +42,7 @@ import AreaListPage from "./pages/Admin/AreaListPage";
 import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
 import WasteCapabilityListPage from "./pages/Admin/WasteCapabilityListPage";
 import RewardRuleListPage from "./pages/Admin/RewardRuleListPage";
+import ConfigVoucher from "./pages/Enterprise/ConfigVoucher";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -288,6 +289,8 @@ function App() {
         return <EnterpriseReport />;
       case "/enterprise/settings":
         return <EnterpriseSetting />;
+      case "/enterprise/vouchers":
+        return <ConfigVoucher />;
       case "/":
       default:
         return (

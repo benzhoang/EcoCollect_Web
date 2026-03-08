@@ -831,3 +831,75 @@ export const getAdminRewardRules = async () => {
     );
   }
 };
+
+/**
+ * Lấy danh sách quy tắc thưởng (Enterprise manager) - List reward rules
+ * GET /enterprise/reward-rules - No parameters
+ * @returns {Promise} Response từ API (200 OK)
+ */
+export const getEnterpriseRewardRules = async () => {
+  try {
+    const { data } = await api.get("/enterprise/reward-rules");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Upsert quy tắc thưởng theo danh mục rác (Enterprise manager)
+ * PUT /enterprise/reward-rules/{wasteCategoryId}
+ * @param {string} wasteCategoryId - ID danh mục rác (path param)
+ * @param {Object} body - Request body
+ * @param {number} body.pointsPerKg
+ * @param {number} body.bonusQualityPoints
+ * @param {number} body.bonusFastCompletePoints
+ * @param {string} body.effectiveFrom - ISO datetime
+ * @param {string} body.effectiveTo - ISO datetime
+ * @param {number} body.priority
+ * @returns {Promise} Response từ API
+ */
+export const upsertEnterpriseRewardRuleByWasteCategory = async (
+  wasteCategoryId,
+  body,
+) => {
+  try {
+    if (!wasteCategoryId) {
+      throw new Error("Thiếu wasteCategoryId để lưu quy tắc thưởng.");
+    }
+    const { data } = await api.put(
+      `/enterprise/reward-rules/${wasteCategoryId}`,
+      body,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lưu quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Bật/tắt trạng thái active của reward rule (Enterprise manager)
+ * PATCH /enterprise/reward-rules/{id}/toggle
+ * @param {string} id - ID reward rule (path param)
+ * @returns {Promise} Response từ API
+ */
+export const toggleEnterpriseRewardRule = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id để bật/tắt quy tắc thưởng.");
+    }
+    const { data } = await api.patch(`/enterprise/reward-rules/${id}/toggle`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi bật/tắt quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
