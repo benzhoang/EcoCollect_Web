@@ -1,10 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { getCitizenPointTransactions } from '../../service/api';
 
 const ScorePage = () => {
-    const [ecopoints, setEcopoints] = useState(2450);
+    const [ecopoints, setEcopoints] = useState(0);
     const [wasteCollected, setWasteCollected] = useState(124);
     const [co2Reduced, setCo2Reduced] = useState(38.5);
     const [ranking, setRanking] = useState(12);
+
+    useEffect(() => {
+        const fetchCurrentPoints = async () => {
+            try {
+                const response = await getCitizenPointTransactions(0, 20, ['createdAt,desc']);
+                const transactions = response?.data?.content || [];
+
+                const currentPoints = transactions.reduce((total, tx) => {
+                    const points = Number(tx?.points) || 0;
+                    const txType = String(tx?.txType || '').toUpperCase();
+
+                    if (txType === 'EARN') return total + points;
+                    if (txType === 'SPEND') return total - points;
+                    return total;
+                }, 0);
+
+                setEcopoints(Math.max(0, currentPoints));
+            } catch (error) {
+                console.error('Lỗi khi lấy số dư điểm hiện tại:', error);
+                setEcopoints(0);
+            }
+        };
+
+        fetchCurrentPoints();
+    }, []);
 
     const pointsHistory = [
         {
