@@ -351,6 +351,79 @@ export const createWasteCategory = async (body) => {
 };
 
 /**
+ * Lấy lịch sử giao dịch điểm của công dân hiện tại
+ * GET /citizen/points/transactions
+ * @param {number} page - Chỉ số trang (zero-based)
+ * @param {number} size - Kích thước trang
+ * @param {string[]} sort - Mảng sort dạng: ["createdAt,desc"]
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenPointTransactions = async (
+  page = 0,
+  size = 20,
+  sort = ["createdAt,desc"],
+) => {
+  try {
+    const params = { page, size };
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+    const { data } = await api.get("/citizen/points/transactions", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy lịch sử giao dịch điểm. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách thông báo của công dân hiện tại
+ * GET /citizen/notifications
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenNotifications = async () => {
+  try {
+    const { data } = await api.get("/citizen/notifications");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách thông báo. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Cập nhật trạng thái đã đọc cho thông báo của công dân
+ * PUT /citizen/notification?ids=<id>&ids=<id>
+ * @param {string[]} ids - Danh sách notification user id cần đánh dấu đã đọc
+ * @returns {Promise} Response từ API
+ */
+export const markCitizenNotificationsAsRead = async (ids = []) => {
+  try {
+    const normalizedIds = Array.isArray(ids)
+      ? ids.map((id) => String(id || "").trim()).filter(Boolean)
+      : [];
+
+    if (!normalizedIds.length) {
+      return { success: true, data: [] };
+    }
+
+    const { data } = await api.put("/citizen/notification", null, {
+      params: { ids: normalizedIds },
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật trạng thái đã đọc thông báo. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách báo cáo của công dân hiện tại
  * @param {number} page - Chỉ số trang (zero-based)
  * @param {number} size - Kích thước trang
