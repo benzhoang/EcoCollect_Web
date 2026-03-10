@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { getAdminWasteCapabilities } from "../../service/api";
 
-const WasteCapabilityList = ({ searchTerm = "" }) => {
+const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
@@ -33,17 +33,17 @@ const WasteCapabilityList = ({ searchTerm = "" }) => {
       }
     };
     fetchCapabilities();
-  }, []);
+  }, [refreshToken]);
 
   const filteredList = searchTerm
     ? capabilities.filter(
-        (item) => {
-          const name = item.wasteCategoryName ?? item.wasteType ?? "";
-          const code = item.wasteCategoryCode ?? item.wasteTypeId ?? "";
-          const term = searchTerm.toLowerCase();
-          return name.toString().toLowerCase().includes(term) || code.toString().toLowerCase().includes(term);
-        }
-      )
+      (item) => {
+        const name = item.wasteCategoryName ?? item.wasteType ?? "";
+        const code = item.wasteCategoryCode ?? item.wasteTypeId ?? "";
+        const term = searchTerm.toLowerCase();
+        return name.toString().toLowerCase().includes(term) || code.toString().toLowerCase().includes(term);
+      }
+    )
     : capabilities;
 
   const handleEdit = (item) => {
@@ -156,11 +156,10 @@ const WasteCapabilityList = ({ searchTerm = "" }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          (item.accepting ?? item.status) === true
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${(item.accepting ?? item.status) === true
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-600"
+                          }`}
                       >
                         {(item.accepting ?? item.status) === true ? "Có" : "Không"}
                       </span>

@@ -1,17 +1,26 @@
 import React, { useState } from "react";
 import WasteCapabilityList from "../../components/AdminComponent/WasteCapabiltyList";
+import WasteCapabilitiesModal from "../../components/AdminComponent/Modal/WasteCapabilitiesModal";
 import { FaPlus, FaSearch } from "react-icons/fa";
 
 const WasteCapabilityListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const handleCreate = () => {
-    // TODO: mở modal thêm công suất khi có CreateWasteCapabilityModal
+    setIsCreateModalOpen(true);
   };
 
   const handleSearch = () => {
     console.log("Search:", searchTerm);
     // TODO: truyền searchTerm xuống WasteCapabilityList hoặc refetch với filter
+  };
+
+  const handleSubmitCreate = (payload) => {
+    console.log("Create waste capability:", payload);
+    setIsCreateModalOpen(false);
+    setRefreshToken((prev) => prev + 1);
   };
 
   return (
@@ -52,7 +61,16 @@ const WasteCapabilityListPage = () => {
         </div>
       </header>
 
-      <WasteCapabilityList searchTerm={searchTerm} />
+      <WasteCapabilityList
+        searchTerm={searchTerm}
+        refreshToken={refreshToken}
+      />
+
+      <WasteCapabilitiesModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleSubmitCreate}
+      />
     </div>
   );
 };
