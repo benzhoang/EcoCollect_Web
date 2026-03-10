@@ -193,7 +193,12 @@ const Report = () => {
                 const uiReports = transformReportsFromApi(apiReports);
                 setReports(uiReports);
             } catch (err) {
-                setError(err.message || 'Không thể tải danh sách báo cáo');
+                const rawMessage = err?.message || '';
+                const isUnauthorized = rawMessage.toLowerCase().includes('unauthorized');
+                const friendlyMessage = isUnauthorized
+                    ? 'Vui lòng đăng nhập để xem báo cáo của bạn và theo dõi tình trạng xử lý.'
+                    : rawMessage || 'Không thể tải danh sách báo cáo';
+                setError(friendlyMessage);
             } finally {
                 setLoading(false);
             }
@@ -265,6 +270,11 @@ const Report = () => {
             report.wasteType.toLowerCase().includes(query);
     });
 
+    const totalReports = reports.length;
+    const pendingReports = reports.filter((r) => r.rawStatus === 'PENDING').length;
+    const collectedReports = reports.filter((r) => r.rawStatus === 'COLLECTED').length;
+    const rewardPoints = 0;
+
     return (
         <div className="min-h-screen w-full bg-green-50 m-0 p-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -297,7 +307,7 @@ const Report = () => {
                                 </svg>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">6</div>
+                                <div className="text-2xl font-bold text-gray-900">{totalReports}</div>
                                 <div className="text-xs text-gray-600">Tổng báo cáo</div>
                             </div>
                         </div>
@@ -310,7 +320,7 @@ const Report = () => {
                                 </svg>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">1</div>
+                                <div className="text-2xl font-bold text-gray-900">{pendingReports}</div>
                                 <div className="text-xs text-gray-600">Đang chờ</div>
                             </div>
                         </div>
@@ -323,7 +333,7 @@ const Report = () => {
                                 </svg>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">2</div>
+                                <div className="text-2xl font-bold text-gray-900">{collectedReports}</div>
                                 <div className="text-xs text-gray-600">Đã thu gom</div>
                             </div>
                         </div>
@@ -336,7 +346,7 @@ const Report = () => {
                                 </svg>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">65</div>
+                                <div className="text-2xl font-bold text-gray-900">{rewardPoints}</div>
                                 <div className="text-xs text-gray-600">Điểm thưởng</div>
                             </div>
                         </div>

@@ -840,6 +840,33 @@ export const getAdminWasteCapabilities = async () => {
 };
 
 /**
+ * Upsert waste capability theo danh mục rác (Admin)
+ * PUT /admin/waste-capabilities/{wasteCategoryId}
+ * @param {string} wasteCategoryId - ID danh mục rác (path param, required)
+ * @param {Object} body - Request body
+ * @param {number} body.dailyCapacityKg
+ * @param {boolean} body.accepting
+ * @returns {Promise} Response từ API
+ */
+export const upsertAdminWasteCapability = async (wasteCategoryId, body) => {
+  try {
+    if (!wasteCategoryId) {
+      throw new Error("Thiếu wasteCategoryId để thêm công suất.");
+    }
+    const { data } = await api.put(
+      `/admin/waste-capabilities/${wasteCategoryId}`,
+      body,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi thêm công suất. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách user (Admin)
  * GET /admin/users - Get list of user
  * @param {Object} options - Tham số query
