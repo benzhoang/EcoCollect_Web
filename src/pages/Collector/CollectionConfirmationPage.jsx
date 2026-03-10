@@ -3,12 +3,8 @@ import { FaArrowLeft } from "react-icons/fa";
 
 // Dữ liệu mẫu (có thể lấy từ route/context sau)
 const REQUEST_CODE = "YC-2024-001";
-const ASSIGNED_AT = "30/01/2025 - 08:00";
-const EXPECTED_WEIGHT = "~15 kg";
-const WASTE_TYPE = "Nhựa PET";
 
 const CollectionConfirmationPage = () => {
-  const [weight, setWeight] = useState("0.0");
   const [notes, setNotes] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
@@ -61,65 +57,6 @@ const CollectionConfirmationPage = () => {
       </header>
 
       <div className="flex flex-col flex-1 w-full min-h-0 gap-6 p-6 overflow-auto">
-        {/* Progress steps */}
-        <div className="w-full">
-          <div className="flex items-start w-full">
-            {/* Step 1 - Đã gán việc */}
-            <div className="flex flex-col items-center shrink-0">
-              <div className="flex items-center justify-center w-10 h-10 text-white bg-green-600 rounded-full">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <span className="mt-2 text-xs font-medium text-center text-gray-700">
-                Đã gán việc
-              </span>
-              <span className="text-xs text-gray-500 mt-0.5">
-                {ASSIGNED_AT}
-              </span>
-            </div>
-            <div className="flex-1 min-w-[60px] pt-5 px-1">
-              <div className="h-0.5 bg-gray-300" />
-            </div>
-            {/* Step 2 - Đang thu gom */}
-            <div className="flex flex-col items-center shrink-0">
-              <div className="flex items-center justify-center w-10 h-10 bg-white border-2 border-green-600 rounded-full">
-                <span className="relative flex w-2 h-2">
-                  <span className="absolute inline-flex w-full h-full bg-green-500 rounded-full opacity-75 animate-ping" />
-                  <span className="relative inline-flex w-2 h-2 bg-green-600 rounded-full" />
-                </span>
-              </div>
-              <span className="mt-2 text-xs font-medium text-center text-gray-700">
-                Đang thu gom
-              </span>
-              <span className="text-xs text-gray-500 mt-0.5">
-                Đang cập nhật...
-              </span>
-            </div>
-            <div className="flex-1 min-w-[60px] pt-5 px-1">
-              <div className="h-0.5 bg-gray-200" />
-            </div>
-            {/* Step 3 - Hoàn tất */}
-            <div className="flex flex-col items-center shrink-0">
-              <div className="flex items-center justify-center w-10 h-10 bg-white border-2 border-gray-300 rounded-full" />
-              <span className="mt-2 text-xs font-medium text-center text-gray-700">
-                Hoàn tất
-              </span>
-              <span className="text-xs text-gray-500 mt-0.5">Chờ xác nhận</span>
-            </div>
-          </div>
-        </div>
-
         {/* Ảnh xác nhận */}
         <div className="w-full">
           <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -181,27 +118,6 @@ const CollectionConfirmationPage = () => {
           </div>
           <p className="mt-2 text-xs text-gray-500">
             Vui lòng chụp ảnh rác thực tế sau khi đã thu gom.
-          </p>
-        </div>
-
-        {/* Khối lượng thực tế */}
-        <div className="w-full">
-          <h3 className="mb-2 text-sm font-semibold text-gray-900">
-            Khối lượng thực tế
-          </h3>
-          <div className="flex items-center w-full max-w-md gap-2">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            />
-            <span className="text-sm text-gray-600 shrink-0">kg</span>
-          </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Dự kiến: {EXPECTED_WEIGHT} ({WASTE_TYPE})
           </p>
         </div>
 

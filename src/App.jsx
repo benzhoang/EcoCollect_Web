@@ -62,7 +62,9 @@ function App() {
       if (link && link.href.startsWith(window.location.origin)) {
         e.preventDefault();
         const newPath = new URL(link.href).pathname;
-        window.history.pushState({}, "", newPath);
+        const stateJson = link.getAttribute("data-state");
+        const state = stateJson ? JSON.parse(stateJson) : {};
+        window.history.pushState(state, "", newPath);
         setPathname(newPath);
       }
     };

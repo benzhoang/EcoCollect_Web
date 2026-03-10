@@ -909,6 +909,35 @@ export const getCollectorAssignmentReportDetail = async (reportId) => {
 };
 
 /**
+ * Collector cập nhật trạng thái assignment
+ * PATCH /collector/assignments/{id}/status
+ * @param {string} id - ID assignment (path, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} body.status - Trạng thái (ASSIGNED | ON_THE_WAY | COLLECTED)
+ * @param {string} [body.note] - Ghi chú
+ * @param {number} [body.lastKnownLatitude=0] - Vĩ độ
+ * @param {number} [body.lastKnownLongitude=0] - Kinh độ
+ * @returns {Promise} Response từ API
+ */
+export const updateCollectorAssignmentStatus = async (
+  id,
+  { status, note = "", lastKnownLatitude = 0, lastKnownLongitude = 0 }
+) => {
+  try {
+    const { data } = await api.patch(
+      `/collector/assignments/${id}/status`,
+      { status, note, lastKnownLatitude, lastKnownLongitude }
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật trạng thái phân công. Vui lòng thử lại."
+    );
+  }
+};
+
+/**
  * Lấy danh sách waste capabilities (Admin)
  * GET /admin/waste-capabilities - List waste capabilities
  * @returns {Promise} Response từ API
