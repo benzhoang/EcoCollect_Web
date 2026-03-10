@@ -621,6 +621,92 @@ export const getEnterpriseReportsInbox = async (
 };
 
 /**
+ * Lấy danh sách voucher cho doanh nghiệp (enterprise list vouchers with paging)
+ * Endpoint: GET /enterprise/vouchers
+ * @param {Object} options - Tham số query
+ * @param {string} [options.keyword] - Từ khóa tìm kiếm
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc)
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseVouchers = async ({
+  keyword,
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = {};
+    if (keyword != null && keyword !== "") {
+      params.keyword = keyword;
+    }
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+
+    const { data } = await api.get("/enterprise/vouchers", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Tạo voucher cho doanh nghiệp (enterprise create voucher)
+ * Endpoint: POST /enterprise/vouchers
+ * @param {Object} body - Request body
+ * @param {string} body.code
+ * @param {string} body.title
+ * @param {string} body.description
+ * @param {number} body.pointsCost
+ * @param {number} body.stock
+ * @param {string} body.availableFrom - ISO datetime
+ * @param {string} body.availableTo - ISO datetime
+ * @param {boolean} body.isActive
+ * @param {string} body.imageUrl
+ * @returns {Promise} Response từ API
+ */
+export const createEnterpriseVoucher = async (body) => {
+  try {
+    const { data } = await api.post("/enterprise/vouchers", body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi tạo voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy chi tiết voucher cho doanh nghiệp (enterprise get voucher detail)
+ * Endpoint: GET /enterprise/vouchers/{id}
+ * @param {string} id - ID voucher
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseVoucherById = async (id) => {
+  try {
+    const { data } = await api.get(`/enterprise/vouchers/${id}`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy chi tiết voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách tất cả báo cáo cho doanh nghiệp (enterprise report list)
  * Endpoint: GET /enterprise/reports
  * @param {number} page - Chỉ số trang (zero-based, mặc định: 0)
