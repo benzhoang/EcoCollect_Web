@@ -43,6 +43,7 @@ import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
 import WasteCapabilityListPage from "./pages/Admin/WasteCapabilityListPage";
 import RewardRuleListPage from "./pages/Admin/RewardRuleListPage";
 import ConfigVoucher from "./pages/Enterprise/ConfigVoucher";
+import VoucherDetail from "./pages/Enterprise/VoucherDetail";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -93,6 +94,11 @@ function App() {
     if (pathname.startsWith("/enterprise/report/")) {
       return <ReportDetail />;
     }
+    // Check if path matches /enterprise/vouchers/:id
+    if (pathname.startsWith("/enterprise/voucher/")) {
+      return <VoucherDetail />;
+    }
+
     // Check if path matches /enterprise/follow-progress/:id
     if (pathname.startsWith("/enterprise/follow-progress/")) {
       return <FollowProgress />;
@@ -295,7 +301,7 @@ function App() {
         return <EnterpriseReport />;
       case "/enterprise/settings":
         return <EnterpriseSetting />;
-      case "/enterprise/vouchers":
+      case "/enterprise/voucher":
         return <ConfigVoucher />;
       case "/":
       default:
