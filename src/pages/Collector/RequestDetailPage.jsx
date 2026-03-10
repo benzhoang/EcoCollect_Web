@@ -1,30 +1,40 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 import {
   getCollectorAssignmentReportDetail,
   getWasteCategories,
+  updateCollectorAssignmentStatus,
 } from "../../service/api";
+import UpdateStatusModal from "../../components/CollectorComponent/UpdateStatusModal";
 
-const getStatusColor = (status) => {
-  if (!status) return "bg-gray-100 text-gray-700";
-  const s = String(status).toLowerCase();
-  if (s.includes("đã gán")) return "bg-green-100 text-green-700";
-  if (s.includes("đang trên đường") || s.includes("đang thực hiện"))
-    return "bg-amber-100 text-amber-700";
-  if (s.includes("hoàn thành")) return "bg-green-100 text-green-700";
-  return "bg-gray-100 text-gray-700";
+/** Trạng thái cho Collector: ASSIGNED, ON_THE_WAY, COMPLETED (hiển thị Đã thu gom) - đồng bộ với RequestList */
+const mapStatusToLabel = (status) => {
+  const s = status ? String(status).toUpperCase() : "";
+  switch (s) {
+    case "ASSIGNED":
+      return "Đã giao";
+    case "ON_THE_WAY":
+      return "Đang trên đường";
+    case "COMPLETED":
+      return "Đã thu gom";
+    default:
+      return status || "Không rõ";
+  }
 };
 
-const getWasteTypeColor = (wasteType) => {
-  if (!wasteType) return "bg-gray-100 text-gray-700";
-  const t = String(wasteType).toLowerCase();
-  if (t.includes("nhựa") || t.includes("pet"))
-    return "bg-blue-100 text-blue-700";
-  if (t.includes("điện tử")) return "bg-orange-100 text-orange-700";
-  if (t.includes("giấy") || t.includes("carton"))
-    return "bg-amber-100 text-amber-700";
-  if (t.includes("kim loại")) return "bg-gray-100 text-gray-700";
-  return "bg-gray-100 text-gray-700";
+const mapStatusToBadgeClass = (status) => {
+  const s = status ? String(status).toUpperCase() : "";
+  switch (s) {
+    case "ASSIGNED":
+      return "bg-blue-100 text-blue-800";
+    case "ON_THE_WAY":
+      return "bg-orange-100 text-orange-800";
+    case "COMPLETED":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
 };
 
 /** Map response API sang shape dùng trong UI */
@@ -75,10 +85,7 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
         ? [firstImage]
         : [],
     wasteType,
-    wasteTypeColor:
-      report?.wasteTypeColor ??
-      data?.wasteTypeColor ??
-      getWasteTypeColor(wasteType),
+    wasteTypeColor: "bg-blue-100 text-blue-700",
     estimatedWeight:
       report?.estimatedWeightKg != null
         ? `~${report.estimatedWeightKg} kg`
@@ -90,8 +97,7 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
     assignedAt:
       data?.assignedAt ?? report?.assignedAt ?? data?.createdAt ?? "-",
     status,
-    statusColor:
-      data?.statusColor ?? report?.statusColor ?? getStatusColor(status),
+    statusColor: mapStatusToBadgeClass(status),
     coordinates: { lat: Number(lat), lng: Number(lng) },
   };
 };
@@ -101,11 +107,18 @@ const RequestDetailPage = () => {
   const reportId =
     pathname.replace("/collector/request-list/", "").split("/")[0]?.trim() ||
     null;
+  const searchParams = new URLSearchParams(window.location.search || "");
+  const assignmentId =
+    searchParams.get("assignmentId") ||
+    window.history.state?.assignmentId ||
+    null;
 
   const [request, setRequest] = useState(null);
   const [categoryMap, setCategoryMap] = useState({});
   const [loading, setLoading] = useState(!!reportId);
   const [error, setError] = useState(null);
+  const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+  const [updateStatusInitial, setUpdateStatusInitial] = useState("ASSIGNED");
 
   const fetchDetail = useCallback(async () => {
     if (!reportId) {
@@ -155,6 +168,33 @@ const RequestDetailPage = () => {
   const handleBack = () => {
     window.history.pushState({}, "", "/collector/request-list");
     window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
+  const handleUpdateStatusSubmit = async (payload) => {
+    setShowUpdateStatusModal(false);
+    const statusId = assignmentId || reportId;
+    if (!statusId) {
+      toast.error("Thiếu thông tin phân công.");
+      setShowUpdateStatusModal(true);
+      return;
+    }
+    try {
+      await updateCollectorAssignmentStatus(statusId, {
+        status: payload.status,
+        note: payload.note,
+        lastKnownLatitude: payload.lastKnownLatitude ?? 0,
+        lastKnownLongitude: payload.lastKnownLongitude ?? 0,
+      });
+      toast.success("Đã cập nhật trạng thái.");
+      await fetchDetail();
+      if (payload.status === "COLLECTED") {
+        window.history.pushState({}, "", "/collector/collection-confirm");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
+    } catch {
+      toast.error("Không thể cập nhật trạng thái.");
+      setShowUpdateStatusModal(true);
+    }
   };
 
   if (loading) {
@@ -266,9 +306,9 @@ const RequestDetailPage = () => {
                 Thông tin yêu cầu
               </h2>
               <span
-                className={`px-3 py-1 rounded-lg text-sm font-semibold ${request.statusColor}`}
+                className={`px-3 py-1 rounded-full text-sm font-semibold ${request.statusColor}`}
               >
-                {request.status}
+                {mapStatusToLabel(request.status)}
               </span>
             </div>
 
@@ -277,9 +317,7 @@ const RequestDetailPage = () => {
                 <p className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                   Loại rác
                 </p>
-                <span
-                  className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${request.wasteTypeColor}`}
-                >
+                <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
                   {request.wasteType}
                 </span>
               </div>
@@ -467,16 +505,12 @@ const RequestDetailPage = () => {
               </svg>
               Báo cáo sự cố
             </button>
-            {request.status === "Đang trên đường" ? (
+            {request.status === "ON_THE_WAY" ? (
               <button
                 type="button"
                 onClick={() => {
-                  window.history.pushState(
-                    {},
-                    "",
-                    "/collector/collection-confirm",
-                  );
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  setUpdateStatusInitial("COLLECTED");
+                  setShowUpdateStatusModal(true);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
               >
@@ -498,6 +532,10 @@ const RequestDetailPage = () => {
             ) : (
               <button
                 type="button"
+                onClick={() => {
+                  setUpdateStatusInitial(request?.status || "ASSIGNED");
+                  setShowUpdateStatusModal(true);
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
               >
                 <svg
@@ -522,6 +560,12 @@ const RequestDetailPage = () => {
                 Bắt đầu di chuyển
               </button>
             )}
+            <UpdateStatusModal
+              show={showUpdateStatusModal}
+              onClose={() => setShowUpdateStatusModal(false)}
+              onSubmit={handleUpdateStatusSubmit}
+              initialStatus={updateStatusInitial}
+            />
           </div>
         </div>
       </div>
