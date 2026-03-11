@@ -20,13 +20,17 @@ const isValidLongitude = (value) => {
   return Number.isFinite(n) && n >= -180 && n <= 180;
 };
 
+/** Chuẩn hóa status từ API (COMPLETED -> COLLECTED) để khớp dropdown giống RequestDetailPage */
+const normalizeStatus = (s) =>
+  s === "COMPLETED" ? "COLLECTED" : s || "ASSIGNED";
+
 const UpdateStatusModal = ({
   show,
   onClose,
   onSubmit,
   initialStatus = "ASSIGNED",
 }) => {
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(() => normalizeStatus(initialStatus));
   const [note, setNote] = useState("");
   const [latitudeInput, setLatitudeInput] = useState("");
   const [longitudeInput, setLongitudeInput] = useState("");
@@ -85,16 +89,16 @@ const UpdateStatusModal = ({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             Cập nhật trạng thái
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 transition-colors rounded-lg hover:bg-gray-100"
           >
             <svg
               className="w-5 h-5 text-gray-600"
@@ -115,7 +119,7 @@ const UpdateStatusModal = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Status - Select */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Trạng thái <span className="text-red-500">*</span>
             </label>
             <select
@@ -134,9 +138,9 @@ const UpdateStatusModal = ({
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Ghi chú{" "}
-              <span className="text-gray-500 font-normal">(tùy chọn)</span>
+              <span className="font-normal text-gray-500">(tùy chọn)</span>
             </label>
             <textarea
               value={note}
@@ -149,10 +153,10 @@ const UpdateStatusModal = ({
 
           {/* Tọa độ vị trí: 2 ô nhập + Lấy vị trí hiện tại bên dưới */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Tọa độ vị trí
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 gap-3 mb-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-gray-700">
                   Vĩ độ
@@ -185,7 +189,7 @@ const UpdateStatusModal = ({
             <button
               type="button"
               onClick={handleGetCurrentLocation}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 bg-white w-full justify-center"
+              className="flex items-center justify-center w-full gap-2 px-3 py-2 text-sm font-medium text-blue-600 transition-colors bg-white border border-gray-200 rounded-lg hover:text-blue-700 hover:bg-blue-50"
             >
               <svg
                 className="w-4 h-4 shrink-0"

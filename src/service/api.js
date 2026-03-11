@@ -572,7 +572,10 @@ export const addImagesToCitizenReport = async (id, imageUrls) => {
     const { data } = await api.post(`/citizen/reports/${id}/images`, payload);
     return data;
   } catch (error) {
-    handleApiError(error, "Đã xảy ra lỗi khi bổ sung ảnh cho báo cáo. Vui lòng thử lại.");
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi bổ sung ảnh cho báo cáo. Vui lòng thử lại.",
+    );
   }
 };
 
@@ -670,11 +673,7 @@ export const getEnterpriseVouchers = async ({
  * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc)
  * @returns {Promise} Response từ API
  */
-export const getPublicVouchers = async ({
-  page = 0,
-  size = 20,
-  sort,
-} = {}) => {
+export const getPublicVouchers = async ({ page = 0, size = 20, sort } = {}) => {
   try {
     const params = {};
     if (page !== undefined && page !== null) {
@@ -717,10 +716,7 @@ export const createEnterpriseVoucher = async (body) => {
     const { data } = await api.post("/enterprise/vouchers", body);
     return data;
   } catch (error) {
-    handleApiError(
-      error,
-      "Đã xảy ra lỗi khi tạo voucher. Vui lòng thử lại.",
-    );
+    handleApiError(error, "Đã xảy ra lỗi khi tạo voucher. Vui lòng thử lại.");
   }
 };
 
@@ -757,9 +753,13 @@ export const toggleEnterpriseVoucher = async (id, active) => {
     if (typeof active !== "boolean") {
       throw new Error("Thiếu trạng thái active hợp lệ để bật/tắt voucher.");
     }
-    const { data } = await api.patch(`/enterprise/vouchers/${id}/toggle`, null, {
-      params: { active },
-    });
+    const { data } = await api.patch(
+      `/enterprise/vouchers/${id}/toggle`,
+      null,
+      {
+        params: { active },
+      },
+    );
     return data;
   } catch (error) {
     handleApiError(
@@ -946,7 +946,10 @@ export const assignEnterpriseReport = async (id, collectorId) => {
     });
     return data;
   } catch (error) {
-    handleApiError(error, "Đã xảy ra lỗi khi giao việc cho collector. Vui lòng thử lại.");
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi giao việc cho collector. Vui lòng thử lại.",
+    );
   }
 };
 
@@ -1011,18 +1014,49 @@ export const getCollectorAssignmentReportDetail = async (reportId) => {
  */
 export const updateCollectorAssignmentStatus = async (
   id,
-  { status, note = "", lastKnownLatitude = 0, lastKnownLongitude = 0 }
+  { status, note = "", lastKnownLatitude = 0, lastKnownLongitude = 0 },
 ) => {
   try {
-    const { data } = await api.patch(
-      `/collector/assignments/${id}/status`,
-      { status, note, lastKnownLatitude, lastKnownLongitude }
-    );
+    const { data } = await api.patch(`/collector/assignments/${id}/status`, {
+      status,
+      note,
+      lastKnownLatitude,
+      lastKnownLongitude,
+    });
     return data;
   } catch (error) {
     handleApiError(
       error,
-      "Đã xảy ra lỗi khi cập nhật trạng thái phân công. Vui lòng thử lại."
+      "Đã xảy ra lỗi khi cập nhật trạng thái phân công. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Collector upload bằng chứng sau khi đã thu gom (COLLECTED)
+ * POST /collector/assignments/{id}/proof
+ * @param {string} id - ID assignment (path, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string[]} body.proofUrls - Mảng URL ảnh bằng chứng
+ * @param {string} body.takenAt - Thời điểm chụp (ISO 8601, VD: "2026-03-11T10:29:49.473Z")
+ * @returns {Promise} Response từ API
+ */
+export const uploadCollectorAssignmentProof = async (
+  id,
+  { proofUrls, takenAt },
+) => {
+  try {
+    const { data } = await api.post(`/collector/assignments/${id}/proof`, {
+      proofUrls: Array.isArray(proofUrls)
+        ? proofUrls
+        : [proofUrls].filter(Boolean),
+      takenAt: takenAt || new Date().toISOString(),
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi tải bằng chứng thu gom. Vui lòng thử lại.",
     );
   }
 };

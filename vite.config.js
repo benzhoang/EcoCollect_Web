@@ -41,6 +41,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/admin/reward-rules": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        secure: false,
+      },
       // Proxy cho các API công dân (citizen) để tránh 404 trên Vite dev server
       "/citizen": {
         target: "http://localhost:8080",
