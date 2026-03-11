@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import VoucherModal from '../../components/Modal/VoucherModal';
 import UpdateVoucherModal from '../../components/Modal/UpdateVoucherModal';
-import { getEnterpriseVouchers } from '../../service/api';
+import ToggleVoucherModal from '../../components/Modal/ToggleVoucherModal';
+import { getEnterpriseVouchers, toggleEnterpriseVoucher } from '../../service/api';
 
 const ConfigVoucher = () => {
     const [isSidebarOpen] = useState(true);
     const [vouchers, setVouchers] = useState([]);
     const [showVoucherModal, setShowVoucherModal] = useState(false);
     const [editingVoucher, setEditingVoucher] = useState(null);
+    const [toggleVoucher, setToggleVoucher] = useState(null);
+    const [showToggleModal, setShowToggleModal] = useState(false);
     const [voucherFormData, setVoucherFormData] = useState({
         name: '',
         code: '',
@@ -144,12 +147,37 @@ const ConfigVoucher = () => {
         handleCloseVoucherModal();
     };
 
-    const handleToggleVoucherActive = (id) => {
-        setVouchers((prev) =>
-            prev.map((voucher) =>
-                voucher.id === id ? { ...voucher, isActive: !voucher.isActive } : voucher,
-            ),
-        );
+    const handleOpenToggleModal = (voucher) => {
+        setToggleVoucher(voucher);
+        setShowToggleModal(true);
+    };
+
+    const handleCloseToggleModal = () => {
+        setShowToggleModal(false);
+        setToggleVoucher(null);
+    };
+
+    const handleConfirmToggleVoucher = async () => {
+        if (!toggleVoucher) return;
+        const nextActive = !toggleVoucher.isActive;
+        try {
+            const response = await toggleEnterpriseVoucher(toggleVoucher.id, nextActive);
+            const payload = response?.data ?? response;
+            const updated = payload?.data ?? payload;
+            const updatedActive = typeof updated?.active === 'boolean' ? updated.active : nextActive;
+
+            setVouchers((prev) =>
+                prev.map((voucher) =>
+                    voucher.id === toggleVoucher.id
+                        ? { ...voucher, isActive: updatedActive }
+                        : voucher,
+                ),
+            );
+        } catch (error) {
+            console.error(error);
+        } finally {
+            handleCloseToggleModal();
+        }
     };
 
     const getVoucherTypeLabel = (type) => {
@@ -272,7 +300,7 @@ const ConfigVoucher = () => {
 
                                     <div className="flex items-center gap-2 justify-end">
                                         <button
-                                            onClick={() => handleToggleVoucherActive(voucher.id)}
+                                            onClick={() => handleOpenToggleModal(voucher)}
                                             className={`p-2 rounded-lg transition-colors ${voucher.isActive ? 'text-gray-600 hover:bg-gray-100' : 'text-green-600 hover:bg-green-50'}`}
                                             title={voucher.isActive ? 'Tạm dừng' : 'Kích hoạt'}
                                         >
@@ -326,6 +354,15 @@ const ConfigVoucher = () => {
                 onClose={handleCloseVoucherModal}
                 onSubmit={handleVoucherSubmit}
                 onInputChange={handleVoucherInputChange}
+                voucherId={editingVoucher?.id}
+                setFormData={setVoucherFormData}
+            />
+            <ToggleVoucherModal
+                show={showToggleModal}
+                onClose={handleCloseToggleModal}
+                onConfirm={handleConfirmToggleVoucher}
+                voucherName={toggleVoucher?.name}
+                isActive={toggleVoucher?.isActive}
             />
         </div>
     );

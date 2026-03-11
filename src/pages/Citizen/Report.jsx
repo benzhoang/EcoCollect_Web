@@ -63,6 +63,16 @@ const Report = () => {
                         </svg>
                     )
                 };
+            case 'ON_THE_WAY':
+                return {
+                    label: 'Đang trên đường',
+                    color: 'bg-purple-100 text-purple-700',
+                    icon: (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    )
+                };
             case 'COLLECTED':
                 return {
                     label: 'Đã thu gom',
@@ -207,7 +217,7 @@ const Report = () => {
         fetchReports();
     }, [sortBy, categoryMap]);
 
-    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Chấp thuận', 'Từ chối', 'Hủy bỏ', 'Thu gom'];
+    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Chấp thuận', 'Đã phân công', 'Đang trên đường', 'Từ chối', 'Hủy bỏ', 'Thu gom'];
 
     const openCancelModal = (id) => {
         setSelectedReportId(id);
@@ -256,6 +266,8 @@ const Report = () => {
         if (activeFilter === 'Tất cả') return true;
         if (activeFilter === 'Chờ xử lý') return report.status === 'Chờ xử lý';
         if (activeFilter === 'Chấp thuận') return report.status === 'Chấp thuận';
+        if (activeFilter === 'Đã phân công') return report.status === 'Đã phân công';
+        if (activeFilter === 'Đang trên đường') return report.status === 'Đang trên đường';
         if (activeFilter === 'Từ chối') return report.status === 'Từ chối';
         if (activeFilter === 'Hủy bỏ') return report.status === 'Hủy bỏ';
         if (activeFilter === 'Thu gom') return report.status === 'Đã thu gom';

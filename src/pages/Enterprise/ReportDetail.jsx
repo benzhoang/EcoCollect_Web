@@ -81,6 +81,10 @@ const ReportDetail = () => {
                         statusLabel = 'Đã giao';
                         statusColor = 'bg-blue-100 text-blue-700';
                         break;
+                    case 'ON_THE_WAY':
+                        statusLabel = 'Đang thực hiện';
+                        statusColor = 'bg-blue-100 text-blue-700';
+                        break;
                     default:
                         break;
                 }
@@ -564,7 +568,7 @@ const ReportDetail = () => {
                                     <h3 className="text-lg font-bold text-gray-900 mb-4">Thao tác</h3>
                                     <div className="space-y-3">
                                         {/* Nút giao việc - chỉ hiển thị khi status là ACCEPTED */}
-                                        {requestData.rawStatus === 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && (
+                                        {requestData.rawStatus === 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && requestData.rawStatus !== 'ON_THE_WAY' && (
                                             <button
                                                 onClick={handleOpenAssignModal}
                                                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -573,7 +577,7 @@ const ReportDetail = () => {
                                             </button>
                                         )}
                                         {/* Nút chấp nhận và từ chối - chỉ hiển thị khi status không phải REJECTED, không phải ACCEPTED và không phải CANCELLED */}
-                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && (
+                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && requestData.rawStatus !== 'ON_THE_WAY' && (
                                             <>
                                                 <button
                                                     onClick={handleAccept}

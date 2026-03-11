@@ -1,70 +1,72 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getCitizenPointTransactions, getPublicVouchers } from '../../service/api';
 
 const Trade = () => {
-    const userPoints = 2450;
+    const [userPoints, setUserPoints] = useState(0);
+    const [vouchers, setVouchers] = useState([]);
+    const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
+    const [isLoadingPoints, setIsLoadingPoints] = useState(false);
 
-    const vouchers = [
-        {
-            id: 1,
-            name: 'Voucher Highlands Coffee - 30.000₫',
-            code: 'ECO-HLC-30K',
-            cost: 500,
-            expires: '31/12/2024',
-            quantity: 120,
-            status: 'available',
-            description: 'Giảm 30.000₫ cho mọi hóa đơn tại Highlands Coffee.'
-        },
-        {
-            id: 2,
-            name: 'Túi Canvas EcoCollect',
-            code: 'ECO-BAG-1200',
-            cost: 1200,
-            expires: 'Không giới hạn',
-            quantity: 45,
-            status: 'available',
-            description: 'Túi canvas thân thiện môi trường, thiết kế bền đẹp.'
-        },
-        {
-            id: 3,
-            name: 'Voucher thuê xe điện 1 tháng',
-            code: 'ECO-EV-5000',
-            cost: 5000,
-            expires: '15/02/2025',
-            quantity: 12,
-            status: 'coming-soon',
-            description: 'Miễn phí 1 tháng thuê xe điện, áp dụng tại các điểm liên kết.'
-        },
-        {
-            id: 4,
-            name: 'Giảm 20% mua sắm xanh',
-            code: 'ECO-GREEN-20',
-            cost: 900,
-            expires: '30/11/2024',
-            quantity: 60,
-            status: 'available',
-            description: 'Giảm 20% cho hóa đơn tại các cửa hàng đối tác EcoCollect.'
-        },
-        {
-            id: 5,
-            name: 'Vé xem phim eco-day',
-            code: 'ECO-CINEMA-15',
-            cost: 1500,
-            expires: '20/12/2024',
-            quantity: 35,
-            status: 'available',
-            description: '01 vé xem phim cho sự kiện ngày xanh tại hệ thống CGV/BHD.'
-        },
-        {
-            id: 6,
-            name: 'Voucher mua sách',
-            code: 'ECO-BOOK-80',
-            cost: 800,
-            expires: '05/01/2025',
-            quantity: 80,
-            status: 'out',
-            description: 'Giảm 80.000₫ khi mua sách tại các hiệu sách đối tác.'
-        }
-    ];
+    useEffect(() => {
+        const fetchVouchers = async () => {
+            try {
+                setIsLoadingVouchers(true);
+                const response = await getPublicVouchers({ page: 0, size: 20, sort: ['createdAt,desc'] });
+                const payload = response?.data ?? response;
+                const pageData = payload?.data ?? payload;
+                const content = Array.isArray(pageData?.content) ? pageData.content : [];
+
+                const mapped = content.map((item) => ({
+                    id: item.id,
+                    name: item.title || item.code || 'Voucher',
+                    code: item.code || 'N/A',
+                    cost: Number(item.pointsCost) || 0,
+                    expires: item.availableTo ? new Date(item.availableTo).toLocaleDateString('vi-VN') : 'Không giới hạn',
+                    quantity: Number(item.stock) || 0,
+                    status: item.displayStatus === 'OPEN' || item.active ? 'available' : 'out',
+                    description: item.description || 'Voucher ưu đãi',
+                    canRedeem: Boolean(item.canRedeem),
+                }));
+
+                setVouchers(mapped);
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách voucher:', error);
+                setVouchers([]);
+            } finally {
+                setIsLoadingVouchers(false);
+            }
+        };
+
+        fetchVouchers();
+    }, []);
+
+    useEffect(() => {
+        const fetchUserPoints = async () => {
+            try {
+                setIsLoadingPoints(true);
+                const response = await getCitizenPointTransactions(0, 20, ['createdAt,desc']);
+                const transactions = response?.data?.content || [];
+
+                const currentPoints = transactions.reduce((total, tx) => {
+                    const points = Number(tx?.points) || 0;
+                    const txType = String(tx?.txType || '').toUpperCase();
+
+                    if (txType === 'EARN') return total + points;
+                    if (txType === 'SPEND') return total - points;
+                    return total;
+                }, 0);
+
+                setUserPoints(Math.max(0, currentPoints));
+            } catch (error) {
+                console.error('Lỗi khi lấy số dư điểm hiện tại:', error);
+                setUserPoints(0);
+            } finally {
+                setIsLoadingPoints(false);
+            }
+        };
+
+        fetchUserPoints();
+    }, []);
 
     const statusBadge = (status) => {
         switch (status) {
@@ -92,13 +94,21 @@ const Trade = () => {
                     </div>
                     <div className="bg-green-100 text-green-800 px-4 py-3 rounded-lg border border-green-200">
                         <div className="text-xs uppercase font-semibold tracking-wide">Điểm hiện có</div>
-                        <div className="text-2xl font-bold">{userPoints.toLocaleString()} pts</div>
+                        <div className="text-2xl font-bold">
+                            {isLoadingPoints ? 'Đang tải...' : `${userPoints.toLocaleString()} pts`}
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {isLoadingVouchers && (
+                        <div className="col-span-full text-sm text-gray-600">Đang tải danh sách voucher...</div>
+                    )}
+                    {!isLoadingVouchers && vouchers.length === 0 && (
+                        <div className="col-span-full text-sm text-gray-600">Chưa có voucher phù hợp.</div>
+                    )}
                     {vouchers.map((voucher) => {
-                        const canRedeem = voucher.status === 'available' && userPoints >= voucher.cost;
+                        const canRedeem = voucher.status === 'available' && userPoints >= voucher.cost && voucher.canRedeem;
                         const isDisabled = voucher.status !== 'available' || !canRedeem;
 
                         return (

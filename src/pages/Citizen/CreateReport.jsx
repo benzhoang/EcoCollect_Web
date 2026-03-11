@@ -118,31 +118,35 @@ const CreateReport = () => {
 
         const addressLower = addressText.toLowerCase().trim();
 
-        const searchArea = (areas, bestMatch = null) => {
-            if (!areas || !Array.isArray(areas)) return bestMatch;
+        const searchLeafArea = (areas) => {
+            if (!areas || !Array.isArray(areas)) return null;
 
             for (const area of areas) {
-                if (area.name) {
-                    const areaNameLower = area.name.toLowerCase();
-                    if (addressLower.includes(areaNameLower) || areaNameLower.includes(addressLower)) {
-                        if (area.children && area.children.length > 0) {
-                            const childMatch = searchArea(area.children, area.id);
-                            if (childMatch) return childMatch;
-                        }
-                        if (area.id) {
-                            bestMatch = area.id;
-                        }
+                const areaNameLower = String(area?.name || '').toLowerCase();
+                const hasChildren = Array.isArray(area?.children) && area.children.length > 0;
+                const isMatch = areaNameLower
+                    ? addressLower.includes(areaNameLower) || areaNameLower.includes(addressLower)
+                    : false;
+
+                if (isMatch) {
+                    if (hasChildren) {
+                        const childMatch = searchLeafArea(area.children);
+                        if (childMatch) return childMatch;
+                    }
+                    if (!hasChildren && area.id) {
+                        return area.id;
                     }
                 }
-                if (area.children && area.children.length > 0) {
-                    const childMatch = searchArea(area.children, bestMatch);
-                    if (childMatch) bestMatch = childMatch;
+
+                if (hasChildren) {
+                    const childMatch = searchLeafArea(area.children);
+                    if (childMatch) return childMatch;
                 }
             }
-            return bestMatch;
+            return null;
         };
 
-        const result = searchArea(Array.isArray(areaTree) ? areaTree : [areaTree]);
+        const result = searchLeafArea(Array.isArray(areaTree) ? areaTree : [areaTree]);
         return result;
     };
 

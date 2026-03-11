@@ -662,6 +662,42 @@ export const getEnterpriseVouchers = async ({
 };
 
 /**
+ * Lấy danh sách voucher công khai (Public voucher catalog)
+ * Endpoint: GET /vouchers
+ * @param {Object} options - Tham số query
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc)
+ * @returns {Promise} Response từ API
+ */
+export const getPublicVouchers = async ({
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = {};
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+
+    const { data } = await api.get("/vouchers", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy danh sách voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Tạo voucher cho doanh nghiệp (enterprise create voucher)
  * Endpoint: POST /enterprise/vouchers
  * @param {Object} body - Request body
@@ -702,6 +738,60 @@ export const getEnterpriseVoucherById = async (id) => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy chi tiết voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Bật/tắt trạng thái active của voucher (Enterprise manager)
+ * PATCH /enterprise/vouchers/{id}/toggle?active=true|false
+ * @param {string} id - ID voucher (path param)
+ * @param {boolean} active - Trạng thái active mới (query param, required)
+ * @returns {Promise} Response từ API
+ */
+export const toggleEnterpriseVoucher = async (id, active) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id voucher để bật/tắt.");
+    }
+    if (typeof active !== "boolean") {
+      throw new Error("Thiếu trạng thái active hợp lệ để bật/tắt voucher.");
+    }
+    const { data } = await api.patch(`/enterprise/vouchers/${id}/toggle`, null, {
+      params: { active },
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi bật/tắt voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Cập nhật voucher cho doanh nghiệp (enterprise update voucher)
+ * Endpoint: PUT /enterprise/vouchers/{id}
+ * @param {string} id - ID voucher
+ * @param {Object} body - Request body
+ * @param {string} body.title
+ * @param {string} body.description
+ * @param {number} body.pointsCost
+ * @param {number} body.stock
+ * @param {string} body.availableFrom - ISO datetime
+ * @param {string} body.availableTo - ISO datetime
+ * @param {boolean} body.isActive
+ * @param {string} body.imageUrl
+ * @returns {Promise} Response từ API
+ */
+export const updateEnterpriseVoucher = async (id, body) => {
+  try {
+    const { data } = await api.put(`/enterprise/vouchers/${id}`, body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật voucher. Vui lòng thử lại.",
     );
   }
 };
