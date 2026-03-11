@@ -5,10 +5,12 @@ import {
   getCollectorAssignmentReportDetail,
   getWasteCategories,
   updateCollectorAssignmentStatus,
+  uploadCollectorAssignmentProof,
 } from "../../service/api";
 import UpdateStatusModal from "../../components/CollectorComponent/UpdateStatusModal";
+import UploadProofModal from "../../components/CollectorComponent/UploadProofModal";
 
-/** Trạng thái cho Collector: ASSIGNED, ON_THE_WAY, COMPLETED (hiển thị Đã thu gom) - đồng bộ với RequestList */
+/** Trạng thái cho Collector: ASSIGNED, ON_THE_WAY, COLLECTED (hiển thị Đã thu gom) - đồng bộ với RequestList */
 const mapStatusToLabel = (status) => {
   const s = status ? String(status).toUpperCase() : "";
   switch (s) {
@@ -16,7 +18,7 @@ const mapStatusToLabel = (status) => {
       return "Đã giao";
     case "ON_THE_WAY":
       return "Đang trên đường";
-    case "COMPLETED":
+    case "COLLECTED":
       return "Đã thu gom";
     default:
       return status || "Không rõ";
@@ -30,7 +32,7 @@ const mapStatusToBadgeClass = (status) => {
       return "bg-blue-100 text-blue-800";
     case "ON_THE_WAY":
       return "bg-orange-100 text-orange-800";
-    case "COMPLETED":
+    case "COLLECTED":
       return "bg-green-100 text-green-800";
     default:
       return "bg-gray-100 text-gray-700";
@@ -118,6 +120,7 @@ const RequestDetailPage = () => {
   const [loading, setLoading] = useState(!!reportId);
   const [error, setError] = useState(null);
   const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+  const [showUploadProofModal, setShowUploadProofModal] = useState(false);
   const [updateStatusInitial, setUpdateStatusInitial] = useState("ASSIGNED");
 
   const fetchDetail = useCallback(async () => {
@@ -185,12 +188,11 @@ const RequestDetailPage = () => {
         lastKnownLatitude: payload.lastKnownLatitude ?? 0,
         lastKnownLongitude: payload.lastKnownLongitude ?? 0,
       });
-      toast.success("Đã cập nhật trạng thái.");
+      toast.success("Cập nhật trạng thái thành công.");
       await fetchDetail();
-      if (payload.status === "COLLECTED") {
-        window.history.pushState({}, "", "/collector/collection-confirm");
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
+      // if (payload.status === "COLLECTED") {
+      //   setShowUploadProofModal(true);
+      // }
     } catch {
       toast.error("Không thể cập nhật trạng thái.");
       setShowUpdateStatusModal(true);
@@ -200,7 +202,7 @@ const RequestDetailPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col w-full h-full min-h-0">
-        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+        <header className="flex items-center w-full px-6 py-4 bg-white border-b border-gray-200 shrink-0">
           <button
             type="button"
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
@@ -210,7 +212,7 @@ const RequestDetailPage = () => {
             <span>Quay lại</span>
           </button>
         </header>
-        <div className="flex flex-1 items-center justify-center p-6">
+        <div className="flex items-center justify-center flex-1 p-6">
           <p className="text-gray-500">Đang tải chi tiết yêu cầu...</p>
         </div>
       </div>
@@ -220,7 +222,7 @@ const RequestDetailPage = () => {
   if (error) {
     return (
       <div className="flex flex-col w-full h-full min-h-0">
-        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+        <header className="flex items-center w-full px-6 py-4 bg-white border-b border-gray-200 shrink-0">
           <button
             type="button"
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
@@ -230,7 +232,7 @@ const RequestDetailPage = () => {
             <span>Quay lại</span>
           </button>
         </header>
-        <div className="flex flex-1 items-center justify-center p-6">
+        <div className="flex items-center justify-center flex-1 p-6">
           <p className="text-red-600">{error}</p>
         </div>
       </div>
@@ -240,7 +242,7 @@ const RequestDetailPage = () => {
   if (!request) {
     return (
       <div className="flex flex-col w-full h-full min-h-0">
-        <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center shrink-0">
+        <header className="flex items-center w-full px-6 py-4 bg-white border-b border-gray-200 shrink-0">
           <button
             type="button"
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
@@ -250,7 +252,7 @@ const RequestDetailPage = () => {
             <span>Quay lại</span>
           </button>
         </header>
-        <div className="flex flex-1 items-center justify-center p-6">
+        <div className="flex items-center justify-center flex-1 p-6">
           <p className="text-gray-500">Không tìm thấy yêu cầu.</p>
         </div>
       </div>
@@ -264,7 +266,7 @@ const RequestDetailPage = () => {
   return (
     <div className="flex flex-col w-full h-full min-h-0">
       {/* Page Header */}
-      <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
+      <header className="flex items-center justify-between w-full px-6 py-4 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -283,7 +285,7 @@ const RequestDetailPage = () => {
         </div>
       </header>
 
-      <div className="flex flex-col flex-1 gap-6 p-6 min-h-0">
+      <div className="flex flex-col flex-1 min-h-0 gap-6 p-6">
         {/* Two cards: Thông tin yêu cầu + Bản đồ */}
         <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
           {/* Card 1: Thông tin yêu cầu */}
@@ -317,7 +319,7 @@ const RequestDetailPage = () => {
                 <p className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                   Loại rác
                 </p>
-                <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
+                <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-100 rounded-full">
                   {request.wasteType}
                 </span>
               </div>
@@ -509,7 +511,7 @@ const RequestDetailPage = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setUpdateStatusInitial("COLLECTED");
+                  setUpdateStatusInitial(request?.status || "ON_THE_WAY");
                   setShowUpdateStatusModal(true);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
@@ -561,10 +563,32 @@ const RequestDetailPage = () => {
               </button>
             )}
             <UpdateStatusModal
+              key={
+                showUpdateStatusModal
+                  ? `status-${updateStatusInitial}`
+                  : "status-closed"
+              }
               show={showUpdateStatusModal}
               onClose={() => setShowUpdateStatusModal(false)}
               onSubmit={handleUpdateStatusSubmit}
-              initialStatus={updateStatusInitial}
+              initialStatus={
+                updateStatusInitial === "COMPLETED"
+                  ? "COLLECTED"
+                  : updateStatusInitial
+              }
+            />
+            <UploadProofModal
+              show={showUploadProofModal}
+              onClose={() => {
+                setShowUploadProofModal(false);
+                setShowUpdateStatusModal(true);
+              }}
+              onSubmit={async (payload) => {
+                await uploadCollectorAssignmentProof(assignmentId, payload);
+                toast.success("Tải bằng chứng thu gom thành công");
+                setShowUploadProofModal(false);
+                await fetchDetail();
+              }}
             />
           </div>
         </div>

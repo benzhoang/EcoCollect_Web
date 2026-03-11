@@ -1,39 +1,22 @@
-import React, { useState, useRef } from "react";
+import React, { useMemo } from "react";
 import { FaArrowLeft } from "react-icons/fa";
+import UploadProofModal from "../../components/CollectorComponent/UploadProofModal";
 
-// Dữ liệu mẫu (có thể lấy từ route/context sau)
-const REQUEST_CODE = "YC-2024-001";
+/** Lấy assignmentId từ history state (khi chuyển từ RequestDetailPage) */
+const getAssignmentId = () => {
+  const state = window.history.state;
+  return state?.assignmentId ?? null;
+};
 
 const CollectionConfirmationPage = () => {
-  const [notes, setNotes] = useState("");
-  const [previewImage, setPreviewImage] = useState(null);
-  const fileInputRef = useRef(null);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPreviewImage(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  const assignmentId = useMemo(() => getAssignmentId(), []);
 
   const handleBack = () => {
     window.history.back();
   };
 
-  const handleCancel = () => {
-    window.history.back();
-  };
-
-  const handleComplete = () => {
-    // TODO: gửi API xác nhận hoàn tất
-    window.history.back();
-  };
-
   return (
     <div className="flex flex-col w-full h-full min-h-0">
-      {/* Page Header */}
       <header className="flex items-center justify-between w-full px-6 py-4 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-4">
           <button
@@ -49,138 +32,17 @@ const CollectionConfirmationPage = () => {
               Xác nhận hoàn tất thu gom
             </h1>
             <p className="text-sm text-gray-600">
-              Yêu cầu mã:{" "}
-              <span className="font-medium text-cyan-600">{REQUEST_CODE}</span>
+              Collector uploads proof after COLLECTED — Gửi bằng chứng thu gom
             </p>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-col flex-1 w-full min-h-0 gap-6 p-6 overflow-auto">
-        {/* Ảnh xác nhận */}
-        <div className="w-full">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">
-            Ảnh xác nhận
-          </h3>
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center w-full max-w-[200px] h-[140px] border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-            >
-              <svg
-                className="w-10 h-10 mb-2 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 13v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7"
-                />
-              </svg>
-              <span className="text-sm text-gray-600">Tải lên ảnh</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageChange}
-              />
-            </button>
-            <div className="flex-1 max-w-[200px] h-[140px] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-              {previewImage ? (
-                <img
-                  src={previewImage}
-                  alt="Ảnh xác nhận"
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full text-sm text-gray-400">
-                  (Ảnh mẫu hoặc chưa tải)
-                </div>
-              )}
-            </div>
-          </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Vui lòng chụp ảnh rác thực tế sau khi đã thu gom.
-          </p>
-        </div>
-
-        {/* Ghi chú */}
-        <div className="w-full">
-          <h3 className="mb-2 text-sm font-semibold text-gray-900">Ghi chú</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Nhập ghi chú nếu có (ví dụ: rác chưa được phân loại kỹ, địa chỉ khó tìm...)"
-            rows={4}
-            className="w-full px-3 py-2 text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          />
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            Hủy bỏ
-          </button>
-          <button
-            type="button"
-            onClick={handleComplete}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Hoàn tất thu gom
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Lưu ý cho Collector */}
-        <div className="flex w-full gap-3 p-4 border rounded-xl bg-cyan-50 border-cyan-100">
-          <div className="flex items-center justify-center w-8 h-8 text-sm font-semibold rounded-full bg-cyan-200 text-cyan-700 shrink-0">
-            i
-          </div>
-          <div>
-            <p className="mb-1 text-sm font-semibold text-cyan-900">
-              Lưu ý cho Collector
-            </p>
-            <p className="text-sm text-cyan-800">
-              Sau khi bấm hoàn tất, hệ thống sẽ gửi thông báo cho chủ nguồn thải
-              xác nhận. Điểm EcoPoints sẽ được cộng vào tài khoản của bạn ngay
-              khi giao dịch được xác nhận thành công.
-            </p>
-          </div>
-        </div>
-      </div>
+      <UploadProofModal
+        show={true}
+        onClose={handleBack}
+        assignmentId={assignmentId}
+      />
     </div>
   );
 };
