@@ -52,7 +52,7 @@ const EnterpriseSidebar = ({ isOpen }) => {
         { id: 'requests', label: 'Quản lý yêu cầu', icon: 'document', path: '/enterprise' },
         // { id: 'dispatch', label: 'Điều phối & Theo dõi', icon: 'truck', path: '/enterprise/dispatch' },
         { id: 'rewards', label: 'Cấu hình điểm thưởng', icon: 'gift', path: '/enterprise/rewards' },
-        { id: 'vouchers', label: 'Cấu hình voucher', icon: 'gift', path: '/enterprise/voucher' },
+        { id: 'vouchers', label: 'Cấu hình voucher', icon: 'ticket', path: '/enterprise/voucher' },
         { id: 'reports', label: 'Báo cáo thống kê', icon: 'chart', path: '/enterprise/reports' },
         { id: 'settings', label: 'Cài đặt doanh nghiệp', icon: 'building', path: '/enterprise/settings' }
     ];
@@ -88,6 +88,12 @@ const EnterpriseSidebar = ({ isOpen }) => {
                 return (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                );
+            case 'ticket':
+                return (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5h5v4a2 2 0 010 4v4h-5m-6 0H4v-4a2 2 0 010-4V5h5m6 0v14m-6 0v-4a2 2 0 010-4V5" />
                     </svg>
                 );
             case 'building':

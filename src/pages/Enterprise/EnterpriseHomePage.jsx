@@ -35,6 +35,8 @@ const EnterpriseHomePage = () => {
                 return 'Đã hủy';
             case 'ASSIGNED':
                 return 'Đã giao';
+            case 'ON_THE_WAY':
+                return 'Đang thực hiện';
             case 'COMPLETED':
                 return 'Đã hoàn thành';
             default:

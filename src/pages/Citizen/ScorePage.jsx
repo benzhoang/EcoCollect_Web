@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenPointTransactions } from '../../service/api';
+import { getCitizenPointTransactions, getPublicVouchers } from '../../service/api';
 
 const ScorePage = () => {
     const [ecopoints, setEcopoints] = useState(0);
     const [wasteCollected, setWasteCollected] = useState(124);
     const [co2Reduced, setCo2Reduced] = useState(38.5);
     const [ranking, setRanking] = useState(12);
+    const [rewards, setRewards] = useState([]);
+    const [isRewardsLoading, setIsRewardsLoading] = useState(false);
 
     useEffect(() => {
         const fetchCurrentPoints = async () => {
@@ -30,6 +32,36 @@ const ScorePage = () => {
         };
 
         fetchCurrentPoints();
+    }, []);
+
+    useEffect(() => {
+        const fetchRewards = async () => {
+            try {
+                setIsRewardsLoading(true);
+                const response = await getPublicVouchers({ page: 0, size: 6, sort: ['createdAt,desc'] });
+                const payload = response?.data ?? response;
+                const pageData = payload?.data ?? payload;
+                const content = Array.isArray(pageData?.content) ? pageData.content : [];
+
+                const mapped = content.map((item) => ({
+                    id: item.id,
+                    name: item.title || item.code || 'Voucher',
+                    description: item.description || 'Voucher ưu đãi',
+                    cost: Number(item.pointsCost) || 0,
+                    imageUrl: item.imageUrl || '',
+                    canRedeem: Boolean(item.canRedeem),
+                }));
+
+                setRewards(mapped);
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách voucher:', error);
+                setRewards([]);
+            } finally {
+                setIsRewardsLoading(false);
+            }
+        };
+
+        fetchRewards();
     }, []);
 
     const pointsHistory = [
@@ -71,32 +103,6 @@ const ScorePage = () => {
         }
     ];
 
-    const rewards = [
-        {
-            id: 1,
-            name: 'Voucher Highlands Coffee',
-            description: 'Giảm giá 30.000₫ cho hóa đơn bất kỳ',
-            cost: 500,
-            icon: 'coffee',
-            canRedeem: true
-        },
-        {
-            id: 2,
-            name: 'Túi Canvas EcoCollect',
-            description: 'Chất liệu 100% tự nhiên bền đẹp',
-            cost: 1200,
-            icon: 'bag',
-            canRedeem: true
-        },
-        {
-            id: 3,
-            name: 'Voucher thuê xe điện',
-            description: 'Miễn phí 1 tháng thuê xe điện',
-            cost: 5000,
-            icon: 'scooter',
-            canRedeem: false
-        }
-    ];
 
     const getActivityIcon = (iconType) => {
         switch (iconType) {
@@ -144,7 +150,11 @@ const ScorePage = () => {
                     </svg>
                 );
             default:
-                return null;
+                return (
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                    </svg>
+                );
         }
     };
 
@@ -171,7 +181,7 @@ const ScorePage = () => {
                                 <div className="text-xl font-medium opacity-90">EcoPoints</div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <a 
+                                <a
                                     href="/trade"
                                     className="flex-1 bg-white text-green-700 font-semibold py-3 px-4 rounded-lg hover:bg-green-50 transition-all duration-200 flex items-center justify-center gap-2 text-center"
                                 >
@@ -180,7 +190,7 @@ const ScorePage = () => {
                                     </svg>
                                     Đổi quà ngay
                                 </a>
-                                <a 
+                                <a
                                     href="/point-guide"
                                     className="flex-1 bg-green-900 bg-opacity-50 text-white font-semibold py-3 px-4 rounded-lg hover:bg-opacity-70 transition-all duration-200 text-center"
                                 >
@@ -277,14 +287,28 @@ const ScorePage = () => {
                         <div className="bg-white rounded-xl shadow-md p-6">
                             <h2 className="text-xl font-bold text-gray-800 mb-4">Đổi quà hấp dẫn</h2>
                             <div className="space-y-4 mb-4">
+                                {isRewardsLoading && (
+                                    <div className="text-sm text-gray-600">Đang tải danh sách voucher...</div>
+                                )}
+                                {!isRewardsLoading && rewards.length === 0 && (
+                                    <div className="text-sm text-gray-600">Chưa có voucher phù hợp.</div>
+                                )}
                                 {rewards.map((reward) => {
                                     const pointsNeeded = reward.cost - ecopoints;
-                                    const canRedeem = ecopoints >= reward.cost;
+                                    const canRedeem = ecopoints >= reward.cost && reward.canRedeem;
                                     return (
                                         <div key={reward.id} className="bg-green-50 rounded-lg p-4 border border-green-200">
                                             <div className="flex items-start gap-4">
-                                                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-green-600">
-                                                    {getRewardIcon(reward.icon)}
+                                                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-green-600 overflow-hidden">
+                                                    {reward.imageUrl ? (
+                                                        <img
+                                                            src={reward.imageUrl}
+                                                            alt={reward.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        getRewardIcon('')
+                                                    )}
                                                 </div>
                                                 <div className="flex-1">
                                                     <h3 className="font-semibold text-gray-800 mb-1">{reward.name}</h3>
@@ -292,7 +316,7 @@ const ScorePage = () => {
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-sm font-semibold text-green-700">{formatNumber(reward.cost)} pts</span>
                                                         <span className={`text-xs font-medium ${canRedeem ? 'text-green-600' : 'text-orange-600'}`}>
-                                                            {canRedeem ? 'Cần thêm 0 pts' : `Thiếu ${formatNumber(pointsNeeded)} pts`}
+                                                            {canRedeem ? 'Cần thêm 0 pts' : `Thiếu ${formatNumber(Math.max(pointsNeeded, 0))} pts`}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -301,7 +325,7 @@ const ScorePage = () => {
                                     );
                                 })}
                             </div>
-                            <a 
+                            <a
                                 href="/trade"
                                 className="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-all duration-200 flex items-center justify-center gap-2 text-center"
                             >
