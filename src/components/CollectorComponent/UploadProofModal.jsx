@@ -3,6 +3,8 @@ import { toast } from "react-hot-toast";
 import { uploadCollectorAssignmentProof } from "../../service/api";
 
 const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 /** Format datetime-local value từ Date */
 const toDatetimeLocal = (date) => {
@@ -11,37 +13,99 @@ const toDatetimeLocal = (date) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
+const isFileValid = (file) => {
+  if (!file || !file.type) return false;
+  if (file.size > MAX_FILE_SIZE_BYTES) return false;
+  return ACCEPTED_TYPES.includes(file.type.toLowerCase());
+};
+
+/** Validate URL ảnh (http/https) giống CreateReport */
+const validateProofUrl = (value) => {
+  const raw = (value || "").trim();
+  if (!raw) return { ok: false, message: "Vui lòng nhập URL ảnh." };
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      return { ok: false, message: "URL ảnh phải bắt đầu bằng http:// hoặc https://." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "URL ảnh không hợp lệ." };
+  }
+};
+
 const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
-  const [proofUrls, setProofUrls] = useState([]);
+  const [proofMode, setProofMode] = useState("upload"); // 'upload' | 'url'
+  const [proofUrls, setProofUrls] = useState([]); // base64 khi upload
+  const [proofUrlInput, setProofUrlInput] = useState(""); // link khi chế độ url
   const [takenAt, setTakenAt] = useState(toDatetimeLocal(new Date()));
   const [submitting, setSubmitting] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   const fileInputRef = useRef(null);
 
-  const processFiles = (fileList) => {
-    const files = Array.from(fileList || []).filter((file) => {
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) return false;
-      return /^image\/(png|jpeg|jpg)$/i.test(file.type);
-    });
-    if (!files.length) return;
-    let done = 0;
-    const newUrls = [];
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newUrls.push(reader.result);
-        done += 1;
-        if (done === files.length) {
-          setProofUrls((prev) => [...prev, ...newUrls]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+  /** Có ảnh hợp lệ (giống hasImage trong CreateReport) */
+  const hasValidProof =
+    proofMode === "upload"
+      ? proofUrls.length > 0
+      : validateProofUrl(proofUrlInput).ok;
+  /** Mảng URL cuối cùng gửi API: upload → base64, url → [link] */
+  const getPayloadProofUrls = () => {
+    if (proofMode === "url") {
+      const url = proofUrlInput.trim();
+      return url ? [url] : [];
+    }
+    return Array.isArray(proofUrls) ? proofUrls : [proofUrls].filter(Boolean);
+  };
+  /** Mảng URL để hiển thị thumbnail + lightbox (upload hoặc url) */
+  const displayUrlsForPreview =
+    proofMode === "upload"
+      ? proofUrls
+      : validateProofUrl(proofUrlInput).ok
+        ? [proofUrlInput.trim()]
+        : [];
+
+  const processFiles = async (fileList) => {
+    const raw = Array.from(fileList || []);
+    const valid = raw.filter(isFileValid);
+    const skipped = raw.length - valid.length;
+    if (skipped > 0) {
+      toast.error(
+        `${skipped} file không hợp lệ hoặc vượt ${MAX_FILE_SIZE_MB}MB. Chỉ dùng PNG, JPG tối đa ${MAX_FILE_SIZE_MB}MB.`,
+      );
+    }
+    if (!valid.length) return;
+    setUploadingFiles(true);
+    try {
+      const dataUrls = await Promise.all(
+        valid.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+      setProofUrls((prev) => [...prev, ...dataUrls]);
+    } catch {
+      toast.error("Đọc file ảnh thất bại. Vui lòng thử lại.");
+    } finally {
+      setUploadingFiles(false);
+    }
   };
 
   const handleImageChange = (e) => {
     processFiles(e.target.files);
-    e.target.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
   };
 
   const handleDragOver = (e) => {
@@ -49,10 +113,18 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
     e.stopPropagation();
   };
 
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    processFiles(e.dataTransfer?.files);
+    setIsDragging(false);
+    const files = e.dataTransfer?.files;
+    if (files?.length) processFiles(files);
   };
 
   const removeProofImage = (index) => {
@@ -61,8 +133,12 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!proofUrls.length) {
-      toast.error("Vui lòng tải lên ít nhất một ảnh bằng chứng.");
+    if (!hasValidProof) {
+      toast.error(
+        proofMode === "upload"
+          ? "Vui lòng tải lên ít nhất một ảnh bằng chứng."
+          : "Vui lòng nhập URL ảnh hợp lệ.",
+      );
       return;
     }
     if (!assignmentId && !onSubmit) {
@@ -71,24 +147,35 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
       );
       return;
     }
+    const payloadProofUrls = getPayloadProofUrls();
+    if (!payloadProofUrls.length) {
+      toast.error("Vui lòng cung cấp ít nhất một ảnh bằng chứng.");
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
-        proofUrls,
+        proofUrls: payloadProofUrls,
         takenAt: new Date(takenAt).toISOString(),
       };
       if (onSubmit) {
         await onSubmit(payload);
       } else {
         await uploadCollectorAssignmentProof(assignmentId, payload);
+        toast.success("Tải bằng chứng thu gom thành công.");
         window.history.pushState({}, "", "/collector/request-list");
         window.dispatchEvent(new PopStateEvent("popstate"));
       }
       onClose();
     } catch (err) {
-      toast.error(
-        err?.message ?? "Gửi bằng chứng thất bại. Vui lòng thử lại.",
-      );
+      const msg = err?.message ?? "";
+      if (msg.toLowerCase().includes("conflict") || msg === "Conflict") {
+        toast.error(
+          "Công việc đã có bằng chứng hoặc trạng thái không cho phép tải bằng chứng. Vui lòng kiểm tra lại.",
+        );
+      } else {
+        toast.error(msg || "Gửi bằng chứng thất bại. Vui lòng thử lại.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -128,30 +215,88 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
           onSubmit={handleSubmit}
           className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0"
         >
-          {/* Ảnh bằng chứng (proofUrls) */}
+          {/* Ảnh bằng chứng (proofUrls) - logic giống imageUrls trong CreateReport */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ảnh bằng chứng <span className="text-red-500">*</span>
             </label>
+            {/* Chế độ: Tải file | Nhập URL */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setProofMode("upload");
+                  setProofUrlInput("");
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  proofMode === "upload"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                Tải file
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setProofMode("url");
+                  setProofUrls([]);
+                  setPreviewIndex(null);
+                }}
+                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  proofMode === "url"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                Nhập URL
+              </button>
+            </div>
+            {proofMode === "url" && (
+              <div className="mb-2">
+                <input
+                  type="url"
+                  value={proofUrlInput}
+                  onChange={(e) => setProofUrlInput(e.target.value)}
+                  placeholder="https://example.com/anh.jpg"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Hỗ trợ URL ảnh http/https (PNG, JPG).
+                </p>
+              </div>
+            )}
+            {/* Vùng kéo thả (chỉ khi chế độ Tải file) - giữ nguyên UI như hình */}
+            {proofMode === "upload" && (
             <div
               role="button"
               tabIndex={0}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (!uploadingFiles) fileInputRef.current?.click();
+              }}
               onKeyDown={(e) =>
-                e.key === "Enter" && fileInputRef.current?.click()
+                e.key === "Enter" &&
+                !uploadingFiles &&
+                fileInputRef.current?.click()
               }
+              onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-200 ${
-                proofUrls.length > 0
-                  ? "border-blue-300 bg-blue-50 hover:border-blue-400"
-                  : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
+              className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
+                uploadingFiles
+                  ? "cursor-wait border-blue-300 bg-blue-50"
+                  : proofUrls.length > 0
+                    ? "cursor-pointer border-blue-300 bg-blue-50 hover:border-blue-400"
+                    : isDragging
+                      ? "cursor-copy border-blue-400 bg-blue-50"
+                      : "cursor-pointer border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
               }`}
             >
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
                   <svg
-                    className="w-6 h-6 text-blue-600"
+                    className={`w-6 h-6 text-blue-600 ${uploadingFiles ? "animate-pulse" : ""}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -166,7 +311,9 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    Tải lên hình ảnh rác thải
+                    {uploadingFiles
+                      ? "Đang tải ảnh..."
+                      : "Tải lên hình ảnh rác thải"}
                   </p>
                   <p className="text-xs text-gray-500">
                     Kéo thả hoặc nhấn để chọn file (PNG, JPG tối đa 10MB)
@@ -182,40 +329,42 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
                 onChange={handleImageChange}
               />
             </div>
-            {proofUrls.length > 0 && (
+            )}
+            {displayUrlsForPreview.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
-                {proofUrls.map((url, index) => (
-                  <div
-                    key={index}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setPreviewIndex(index)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && setPreviewIndex(index)
-                    }
-                    className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 hover:opacity-90 transition-opacity"
-                  >
-                    <img
-                      src={url}
-                      alt={`Bằng chứng ${index + 1}`}
-                      className="object-cover w-full h-full pointer-events-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeProofImage(index);
-                        if (previewIndex === index) setPreviewIndex(null);
-                        else if (
-                          previewIndex !== null &&
-                          previewIndex > index
-                        )
-                          setPreviewIndex(previewIndex - 1);
-                      }}
-                      className="absolute top-0.5 right-0.5 w-6 h-6 flex items-center justify-center text-white text-xs bg-red-500 rounded-full hover:bg-red-600 transition-colors z-10"
+                {displayUrlsForPreview.map((url, index) => (
+                    <div
+                      key={index}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setPreviewIndex(index)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && setPreviewIndex(index)
+                      }
+                      className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 hover:opacity-90 transition-opacity"
                     >
-                      ×
-                    </button>
+                      <img
+                        src={url}
+                        alt={`Bằng chứng ${index + 1}`}
+                        className="object-cover w-full h-full pointer-events-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (proofMode === "url") setProofUrlInput("");
+                          else removeProofImage(index);
+                          if (previewIndex === index) setPreviewIndex(null);
+                          else if (
+                            previewIndex !== null &&
+                            previewIndex > index
+                          )
+                            setPreviewIndex(previewIndex - 1);
+                        }}
+                        className="absolute top-0.5 right-0.5 w-6 h-6 flex items-center justify-center text-white text-xs bg-red-500 rounded-full hover:bg-red-600 transition-colors z-10"
+                      >
+                        ×
+                      </button>
                   </div>
                 ))}
               </div>
@@ -249,7 +398,7 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
             </button>
             <button
               type="submit"
-              disabled={submitting || !proofUrls.length}
+              disabled={submitting || !hasValidProof}
               className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Đang gửi..." : "Hoàn tất"}
@@ -259,7 +408,7 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
       </div>
 
       {/* Lightbox xem ảnh */}
-      {previewIndex !== null && proofUrls[previewIndex] && (
+      {previewIndex !== null && displayUrlsForPreview[previewIndex] && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
           onClick={() => setPreviewIndex(null)}
@@ -288,13 +437,13 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
             </svg>
           </button>
           <img
-            src={proofUrls[previewIndex]}
+            src={displayUrlsForPreview[previewIndex]}
             alt={`Bằng chứng ${previewIndex + 1}`}
             className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
           <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
-            Ảnh {previewIndex + 1} / {proofUrls.length} — Nhấn ra ngoài để đóng
+            Ảnh {previewIndex + 1} / {displayUrlsForPreview.length} — Nhấn ra ngoài để đóng
           </p>
         </div>
       )}

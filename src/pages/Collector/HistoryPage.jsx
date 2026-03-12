@@ -62,19 +62,15 @@ const MOCK_HISTORY = [
 
 const HistoryPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Tất cả");
-
-  const statusOptions = ["Tất cả", "Đã hoàn thành", "Đã xác nhận"];
 
   const filteredHistory = MOCK_HISTORY.filter((item) => {
-    const matchSearch =
-      !searchQuery.trim() ||
-      item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.wasteType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus =
-      statusFilter === "Tất cả" || item.status === statusFilter;
-    return matchSearch && matchStatus;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      item.code.toLowerCase().includes(q) ||
+      item.wasteType.toLowerCase().includes(q) ||
+      item.address.toLowerCase().includes(q)
+    );
   });
 
   return (
@@ -98,24 +94,6 @@ const HistoryPage = () => {
           <FaSearch className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
         </div>
       </header>
-
-      {/* Bộ lọc trạng thái */}
-      <div className="flex flex-wrap gap-2 px-6">
-        {statusOptions.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setStatusFilter(option)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              statusFilter === option
-                ? "bg-green-100 text-green-700"
-                : "bg-white text-black hover:bg-gray-200"
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
 
       {/* Table: Thời gian thu gom, Loại rác, Khối lượng, Trạng thái xử lý */}
       <div className="flex-1 min-h-0 overflow-auto">
