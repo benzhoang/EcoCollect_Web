@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { cancelCitizenReport, getCitizenReports, getWasteCategories } from '../../service/api';
+import { cancelCitizenReport, getCitizenReports, getCitizenPointTransactions, getWasteCategories } from '../../service/api';
 import CancelModal from '../../components/CancelModal';
 
 const Report = () => {
@@ -11,9 +11,14 @@ const Report = () => {
     const [categoryMap, setCategoryMap] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 5;
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [selectedReportId, setSelectedReportId] = useState(null);
     const [cancelSubmitting, setCancelSubmitting] = useState(false);
+    const [rewardPoints, setRewardPoints] = useState(0);
+    const [rewardPointsLoading, setRewardPointsLoading] = useState(false);
 
     const getSortParam = (sortLabel) => {
         switch (sortLabel) {
@@ -197,11 +202,13 @@ const Report = () => {
             setError('');
             try {
                 const sortParam = getSortParam(sortBy);
-                const response = await getCitizenReports(0, 20, [sortParam]);
+                const response = await getCitizenReports(page, pageSize, [sortParam]);
                 const pageData = response?.data || {};
                 const apiReports = pageData.content || [];
                 const uiReports = transformReportsFromApi(apiReports);
                 setReports(uiReports);
+                const total = Number(pageData.totalPages ?? 1) || 1;
+                setTotalPages(total);
             } catch (err) {
                 const rawMessage = err?.message || '';
                 const isUnauthorized = rawMessage.toLowerCase().includes('unauthorized');
@@ -215,7 +222,35 @@ const Report = () => {
         };
 
         fetchReports();
-    }, [sortBy, categoryMap]);
+    }, [sortBy, categoryMap, page]);
+
+    useEffect(() => {
+        const fetchRewardPoints = async () => {
+            try {
+                setRewardPointsLoading(true);
+                const response = await getCitizenPointTransactions(0, 50, ['createdAt,desc']);
+                const transactions = response?.data?.content || [];
+
+                const currentPoints = transactions.reduce((total, tx) => {
+                    const points = Number(tx?.points) || 0;
+                    const txType = String(tx?.txType || '').toUpperCase();
+
+                    if (txType === 'EARN') return total + points;
+                    if (txType === 'SPEND') return total - points;
+                    return total;
+                }, 0);
+
+                setRewardPoints(Math.max(0, currentPoints));
+            } catch (err) {
+                console.error('Không thể tải điểm thưởng:', err);
+                setRewardPoints(0);
+            } finally {
+                setRewardPointsLoading(false);
+            }
+        };
+
+        fetchRewardPoints();
+    }, []);
 
     const filterTabs = ['Tất cả', 'Chờ xử lý', 'Chấp thuận', 'Đã phân công', 'Đang trên đường', 'Từ chối', 'Hủy bỏ', 'Thu gom'];
 
@@ -282,10 +317,12 @@ const Report = () => {
             report.wasteType.toLowerCase().includes(query);
     });
 
+    const hasPrevPage = page > 0;
+    const hasNextPage = page + 1 < totalPages;
+
     const totalReports = reports.length;
     const pendingReports = reports.filter((r) => r.rawStatus === 'PENDING').length;
     const collectedReports = reports.filter((r) => r.rawStatus === 'COLLECTED').length;
-    const rewardPoints = 0;
 
     return (
         <div className="min-h-screen w-full bg-green-50 m-0 p-0">
@@ -358,7 +395,9 @@ const Report = () => {
                                 </svg>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-gray-900">{rewardPoints}</div>
+                                <div className="text-2xl font-bold text-gray-900">
+                                    {rewardPointsLoading ? '...' : rewardPoints}
+                                </div>
                                 <div className="text-xs text-gray-600">Điểm thưởng</div>
                             </div>
                         </div>
@@ -377,14 +416,20 @@ const Report = () => {
                             type="text"
                             placeholder="Tìm kiếm theo địa chỉ hoặc loại rác..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setPage(0);
+                            }}
                             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                         />
                     </div>
                     <div className="relative">
                         <select
                             value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
+                            onChange={(e) => {
+                                setSortBy(e.target.value);
+                                setPage(0);
+                            }}
                             className="appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white cursor-pointer"
                         >
                             <option>Mới nhất</option>
@@ -405,7 +450,10 @@ const Report = () => {
                     {filterTabs.map((tab) => (
                         <button
                             key={tab}
-                            onClick={() => setActiveFilter(tab)}
+                            onClick={() => {
+                                setActiveFilter(tab);
+                                setPage(0);
+                            }}
                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeFilter === tab
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -509,6 +557,36 @@ const Report = () => {
                                     </svg>
                                 </div>
                                 <p className="text-gray-600">Không tìm thấy báo cáo nào</p>
+                            </div>
+                        )}
+
+                        {totalPages > 1 && !error && (
+                            <div className="flex items-center justify-between mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                                    disabled={!hasPrevPage}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium border ${hasPrevPage
+                                        ? 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+                                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        }`}
+                                >
+                                    Trang trước
+                                </button>
+                                <div className="text-sm text-gray-600">
+                                    Trang {page + 1} / {totalPages}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
+                                    disabled={!hasNextPage}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium border ${hasNextPage
+                                        ? 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+                                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        }`}
+                                >
+                                    Trang sau
+                                </button>
                             </div>
                         )}
                     </>
