@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenPointTransactions, getPublicVouchers } from '../../service/api';
+import { getCitizenPointTransactions, getPublicVouchers, getCitizenVoucherRedemptions } from '../../service/api';
 
 const ScorePage = () => {
     const [ecopoints, setEcopoints] = useState(0);
@@ -8,6 +8,8 @@ const ScorePage = () => {
     const [ranking, setRanking] = useState(12);
     const [rewards, setRewards] = useState([]);
     const [isRewardsLoading, setIsRewardsLoading] = useState(false);
+    const [redeemHistory, setRedeemHistory] = useState([]);
+    const [isRedeemHistoryLoading, setIsRedeemHistoryLoading] = useState(false);
 
     useEffect(() => {
         const fetchCurrentPoints = async () => {
@@ -64,44 +66,54 @@ const ScorePage = () => {
         fetchRewards();
     }, []);
 
-    const pointsHistory = [
-        {
-            id: 1,
-            activity: 'Thu gom rác nhựa định kỳ',
-            date: '20/10/2023',
-            quantity: '5.2 kg',
-            points: 52,
-            icon: 'truck',
-            iconColor: 'text-green-600'
-        },
-        {
-            id: 2,
-            activity: 'Báo cáo bãi rác tự phát',
-            date: '18/10/2023',
-            quantity: '--',
-            points: 100,
-            icon: 'warning',
-            iconColor: 'text-orange-600'
-        },
-        {
-            id: 3,
-            activity: 'Tái chế pin cũ',
-            date: '15/10/2023',
-            quantity: '12 chiếc',
-            points: 36,
-            icon: 'battery',
-            iconColor: 'text-blue-600'
-        },
-        {
-            id: 4,
-            activity: 'Thu gom giấy vụn',
-            date: '10/10/2023',
-            quantity: '10.0 kg',
-            points: 80,
-            icon: 'truck',
-            iconColor: 'text-green-600'
-        }
-    ];
+    useEffect(() => {
+        const fetchRedeemHistory = async () => {
+            try {
+                setIsRedeemHistoryLoading(true);
+                const response = await getCitizenVoucherRedemptions({
+                    page: 0,
+                    size: 10,
+                    sort: ['redeemedAt,desc'],
+                });
+                const payload = response?.data ?? response;
+                const pageData = payload?.data ?? payload;
+                const content = Array.isArray(pageData?.content) ? pageData.content : [];
+
+                const mapped = content.map((item) => {
+                    const redeemedAt = item.redeemedAt ? new Date(item.redeemedAt) : null;
+                    const dateText = redeemedAt
+                        ? redeemedAt.toLocaleString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                        })
+                        : '';
+
+                    return {
+                        id: item.redemptionId || item.voucherId || item.redeemCode || Math.random().toString(36).slice(2),
+                        activity: item.voucherTitle || item.voucherCode || 'Đổi voucher',
+                        date: dateText,
+                        code: item.redeemCode || '--',
+                        status: item.status || '',
+                    };
+                });
+
+                setRedeemHistory(mapped);
+            } catch (error) {
+                console.error('Lỗi khi lấy lịch sử đổi quà:', error);
+                setRedeemHistory([]);
+            } finally {
+                setIsRedeemHistoryLoading(false);
+            }
+        };
+
+        fetchRedeemHistory();
+    }, []);
+
+    const pointsHistory = redeemHistory;
 
 
     const getActivityIcon = (iconType) => {
@@ -202,8 +214,8 @@ const ScorePage = () => {
                         {/* Points History */}
                         <div className="bg-white rounded-xl shadow-md p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-gray-800">Lịch sử tích điểm</h2>
-                                <a href="#" className="text-green-600 hover:text-green-700 font-medium text-sm">
+                                <h2 className="text-xl font-bold text-gray-800">Lịch sử đổi quà</h2>
+                                <a href="/trade-history" className="text-green-600 hover:text-green-700 font-medium text-sm">
                                     Xem tất cả
                                 </a>
                             </div>
@@ -211,27 +223,41 @@ const ScorePage = () => {
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b border-gray-200">
-                                            <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">HOẠT ĐỘNG</th>
+                                            <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">VOUCHER</th>
                                             <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">NGÀY</th>
-                                            <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">SỐ LƯỢNG</th>
-                                            <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">ĐIỂM NHẬN</th>
+                                            <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">MÃ ĐỔI</th>
+                                            <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">TRẠNG THÁI</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pointsHistory.map((item) => (
+                                        {isRedeemHistoryLoading && (
+                                            <tr>
+                                                <td colSpan={4} className="py-3 px-2 text-sm text-gray-600">
+                                                    Đang tải lịch sử đổi quà...
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!isRedeemHistoryLoading && pointsHistory.length === 0 && (
+                                            <tr>
+                                                <td colSpan={4} className="py-3 px-2 text-sm text-gray-600">
+                                                    Chưa có lịch sử đổi quà.
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!isRedeemHistoryLoading && pointsHistory.map((item) => (
                                             <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                                 <td className="py-3 px-2">
                                                     <div className="flex items-center gap-2">
-                                                        <div className={`${item.iconColor}`}>
-                                                            {getActivityIcon(item.icon)}
+                                                        <div className="text-green-600">
+                                                            {getActivityIcon('truck')}
                                                         </div>
                                                         <span className="text-sm text-gray-700">{item.activity}</span>
                                                     </div>
                                                 </td>
                                                 <td className="py-3 px-2 text-sm text-gray-600">{item.date}</td>
-                                                <td className="py-3 px-2 text-sm text-gray-600">{item.quantity}</td>
+                                                <td className="py-3 px-2 text-sm text-gray-600">{item.code}</td>
                                                 <td className="py-3 px-2 text-right">
-                                                    <span className="text-sm font-semibold text-green-600">+{item.points} pts</span>
+                                                    <span className="text-sm font-semibold text-green-600">{item.status || '---'}</span>
                                                 </td>
                                             </tr>
                                         ))}

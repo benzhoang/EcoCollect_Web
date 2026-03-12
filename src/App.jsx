@@ -44,6 +44,7 @@ import WasteCapabilityListPage from "./pages/Admin/WasteCapabilityListPage";
 import RewardRuleListPage from "./pages/Admin/RewardRuleListPage";
 import ConfigVoucher from "./pages/Enterprise/ConfigVoucher";
 import VoucherDetail from "./pages/Enterprise/VoucherDetail";
+import TradeHistory from "./pages/Citizen/TradeHistory";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -172,6 +173,14 @@ function App() {
           <>
             <Navbar />
             <Trade />
+            <Footer />
+          </>
+        );
+      case "/trade-history":
+        return (
+          <>
+            <Navbar />
+            <TradeHistory />
             <Footer />
           </>
         );

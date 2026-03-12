@@ -697,6 +697,60 @@ export const getPublicVouchers = async ({ page = 0, size = 20, sort } = {}) => {
 };
 
 /**
+ * Lấy lịch sử đổi voucher của citizen
+ * Endpoint: GET /citizen/vouchers/redemptions
+ * @param {Object} options - Tham số query
+ * @param {number} [options.page=0] - Chỉ số trang (zero-based)
+ * @param {number} [options.size=20] - Kích thước trang
+ * @param {string[]} [options.sort] - Sắp xếp: property,(asc|desc)
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenVoucherRedemptions = async ({
+  page = 0,
+  size = 20,
+  sort,
+} = {}) => {
+  try {
+    const params = {};
+    if (page !== undefined && page !== null) {
+      params.page = page;
+    }
+    if (size !== undefined && size !== null) {
+      params.size = size;
+    }
+    if (Array.isArray(sort) && sort.length) {
+      params.sort = sort;
+    }
+
+    const { data } = await api.get("/citizen/vouchers/redemptions", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy lịch sử đổi voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Citizen đổi voucher
+ * Endpoint: POST /citizen/vouchers/{id}/redeem
+ * @param {string} id - ID voucher (path param, required)
+ * @returns {Promise} Response từ API
+ */
+export const redeemCitizenVoucher = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id voucher để đổi quà.");
+    }
+    const { data } = await api.post(`/citizen/vouchers/${id}/redeem`);
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi đổi voucher. Vui lòng thử lại.");
+  }
+};
+
+/**
  * Tạo voucher cho doanh nghiệp (enterprise create voucher)
  * Endpoint: POST /enterprise/vouchers
  * @param {Object} body - Request body

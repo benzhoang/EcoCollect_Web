@@ -131,12 +131,12 @@ const CreateReport = () => {
                 if (isMatch) {
                     if (hasChildren) {
                         const childMatch = searchLeafArea(area.children);
-                        if (childMatch) return childMatch;
-                    }
+                            if (childMatch) return childMatch;
+                        }
                     if (!hasChildren && area.id) {
                         return area.id;
+                        }
                     }
-                }
 
                 if (hasChildren) {
                     const childMatch = searchLeafArea(area.children);
