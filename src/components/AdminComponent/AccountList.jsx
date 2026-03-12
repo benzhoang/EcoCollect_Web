@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import ModalConfirm from "./Modal/ModalConfirm";
-import UpdateAccountModal from "./Modal/UpdateAccountModal";
+import { FaEye } from "react-icons/fa";
 import { getAdminUsers } from "../../service/api";
 
 const ROLE_LABELS = {
@@ -17,9 +15,6 @@ const ROLE_TO_SEGMENT = {
 };
 
 const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAccountEmail, setSelectedAccountEmail] = useState("");
-  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,21 +58,6 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
       `/admin/account/${segment}/${accountId}`
     );
     window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
-  const handleEdit = () => {
-    setIsModalUpdateOpen(true);
-  };
-
-  const handleDelete = (id, email) => {
-    setSelectedAccountEmail(email);
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    console.log("Delete account:", selectedAccountEmail);
-    setIsModalOpen(false);
-    setSelectedAccountEmail("");
   };
 
   const formatRoles = (roles) => {
@@ -212,22 +192,6 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                         >
                           <FaEye className="text-sm text-blue-600" />
                         </button>
-                        <button
-                          onClick={handleEdit}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
-                          title="Sửa"
-                        >
-                          <FaEdit className="text-sm text-yellow-600" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDelete(account.id, account.email)
-                          }
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
-                          title="Xóa"
-                        >
-                          <FaTrash className="text-sm text-red-600" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -237,21 +201,6 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
           </table>
         </div>
       </div>
-
-      <ModalConfirm
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedAccountEmail("");
-        }}
-        onConfirm={handleConfirmDelete}
-        accountEmail={selectedAccountEmail}
-      />
-
-      <UpdateAccountModal
-        isOpen={isModalUpdateOpen}
-        onClose={() => setIsModalUpdateOpen(false)}
-      />
     </>
   );
 };

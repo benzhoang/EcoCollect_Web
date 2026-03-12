@@ -190,9 +190,9 @@ const RequestDetailPage = () => {
       });
       toast.success("Cập nhật trạng thái thành công.");
       await fetchDetail();
-      // if (payload.status === "COLLECTED") {
-      //   setShowUploadProofModal(true);
-      // }
+      if (payload.status === "COLLECTED") {
+        setShowUploadProofModal(true);
+      }
     } catch {
       toast.error("Không thể cập nhật trạng thái.");
       setShowUpdateStatusModal(true);
