@@ -85,6 +85,10 @@ const ReportDetail = () => {
                         statusLabel = 'Đang thực hiện';
                         statusColor = 'bg-blue-100 text-blue-700';
                         break;
+                    case 'COLLECTED':
+                        statusLabel = 'Đã thu gom';
+                        statusColor = 'bg-purple-100 text-purple-700';
+                        break;
                     default:
                         break;
                 }
@@ -577,7 +581,7 @@ const ReportDetail = () => {
                                             </button>
                                         )}
                                         {/* Nút chấp nhận và từ chối - chỉ hiển thị khi status không phải REJECTED, không phải ACCEPTED và không phải CANCELLED */}
-                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && requestData.rawStatus !== 'ON_THE_WAY' && (
+                                        {requestData.rawStatus !== 'REJECTED' && requestData.rawStatus !== 'ACCEPTED' && requestData.rawStatus !== 'CANCELLED' && requestData.rawStatus !== 'ASSIGNED' && requestData.rawStatus !== 'ON_THE_WAY' && requestData.rawStatus !== 'COLLECTED' && (
                                             <>
                                                 <button
                                                     onClick={handleAccept}

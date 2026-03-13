@@ -1247,6 +1247,55 @@ export const getComplaints = async ({
 };
 
 /**
+ * Tạo khiếu nại (Citizen)
+ * POST /citizen/complaint
+ * @param {Object} body - Request body
+ * @param {string} body.reportId
+ * @param {string} body.category
+ * @param {string} body.description
+ * @param {number|null} body.latitude
+ * @param {number|null} body.longitude
+ * @param {string} body.status
+ * @returns {Promise} Response từ API
+ */
+export const createCitizenComplaint = async (body) => {
+  try {
+    const { data } = await api.post("/citizen/complaint", body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi tạo khiếu nại. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Cập nhật khiếu nại (Citizen)
+ * PUT /citizen/complaint/{id}
+ * @param {string} id - ID khiếu nại (uuid)
+ * @param {Object} body - Request body
+ * @param {string} body.reportId
+ * @param {string} body.category
+ * @param {string} body.description
+ * @param {number|null} body.latitude
+ * @param {number|null} body.longitude
+ * @param {string} body.status
+ * @returns {Promise} Response từ API
+ */
+export const updateCitizenComplaint = async (id, body) => {
+  try {
+    const { data } = await api.put(`/citizen/complaint/${id}`, body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật khiếu nại. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách quy tắc thưởng (Admin) - List reward rules
  * GET /admin/reward-rules - No parameters
  * @returns {Promise} Response từ API

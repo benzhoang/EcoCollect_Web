@@ -45,6 +45,7 @@ import RewardRuleListPage from "./pages/Admin/RewardRuleListPage";
 import ConfigVoucher from "./pages/Enterprise/ConfigVoucher";
 import VoucherDetail from "./pages/Enterprise/VoucherDetail";
 import TradeHistory from "./pages/Citizen/TradeHistory";
+import Complaints from "./pages/Citizen/Complaints";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -205,6 +206,14 @@ function App() {
           <>
             <Navbar />
             <Profile />
+            <Footer />
+          </>
+        );
+      case "/complaint":
+        return (
+          <>
+            <Navbar />
+            <Complaints />
             <Footer />
           </>
         );
