@@ -120,6 +120,7 @@ const Navbar = () => {
                                     {isUserMenuOpen && (
                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                                             <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setIsUserMenuOpen(false)}>Hồ sơ</a>
+                                            <a href="/complaint" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setIsUserMenuOpen(false)}>Khiếu nại</a>
                                             <a href="/setting" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={() => setIsUserMenuOpen(false)}>Cài đặt</a>
                                             <hr className="my-2 border-gray-200" />
                                             <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">Đăng xuất</button>
@@ -166,6 +167,7 @@ const Navbar = () => {
                                     <span className="text-gray-700 font-semibold">{username}</span>
                                 </div>
                                 <a href="/profile" className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200" onClick={() => setIsMenuOpen(false)}>Hồ sơ</a>
+                                <a href="/complaint" className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200" onClick={() => setIsMenuOpen(false)}>Khiếu nại</a>
                                 <a href="/setting" className="block px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-green-50 hover:text-green-700 transition-all duration-200" onClick={() => setIsMenuOpen(false)}>Cài đặt</a>
                                 <button
                                     onClick={() => {

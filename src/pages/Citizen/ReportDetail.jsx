@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getCitizenReportById, getWasteCategories } from '../../service/api';
 import AddImageModal from '../../components/AddImageModal';
+import ComplainModal from '../../components/Modal/ComplainModal';
 
 const ReportDetail = () => {
     const [reportId, setReportId] = useState(null);
@@ -8,6 +9,7 @@ const ReportDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAddImageModalOpen, setIsAddImageModalOpen] = useState(false);
+    const [isComplainModalOpen, setIsComplainModalOpen] = useState(false);
 
     const formatDateTime = (dateString) => {
         if (!dateString) return '';
@@ -25,6 +27,8 @@ const ReportDetail = () => {
                 return { label: 'Chờ xử lý', color: 'bg-orange-100 text-orange-700' };
             case 'ASSIGNED':
                 return { label: 'Đã phân công', color: 'bg-blue-100 text-blue-700' };
+            case 'ON_THE_WAY':
+                return { label: 'Đang trên đường', color: 'bg-purple-100 text-purple-700' };
             case 'COLLECTED':
                 return { label: 'Đã thu gom', color: 'bg-green-100 text-green-700' };
             case 'REJECTED':
@@ -127,6 +131,11 @@ const ReportDetail = () => {
         });
     };
 
+    const handleSubmitComplain = (payload) => {
+        console.log('Complain payload:', payload);
+        setIsComplainModalOpen(false);
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-green-50">
@@ -170,6 +179,9 @@ const ReportDetail = () => {
             </div>
         );
     }
+
+    const rawStatusUpper = String(reportData.rawStatus || '').toUpperCase();
+    const showComplainButton = ['REJECTED', 'COLLECTED', 'ON_THE_WAY'].includes(rawStatusUpper);
 
     return (
         <div className="min-h-screen bg-green-50">
@@ -338,6 +350,22 @@ const ReportDetail = () => {
                             </div>
                         </div>
 
+                        {showComplainButton && (
+                            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-3">Cần khiếu nại?</h3>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Nếu trạng thái báo cáo chưa đúng, bạn có thể gửi khiếu nại để được hỗ trợ.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsComplainModalOpen(true)}
+                                    className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                                >
+                                    Gửi khiếu nại
+                                </button>
+                            </div>
+                        )}
+
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <button
                                 onClick={handleBack}
@@ -355,6 +383,20 @@ const ReportDetail = () => {
                 onClose={() => setIsAddImageModalOpen(false)}
                 onSave={handleSaveImage}
                 reportId={reportData?.id}
+            />
+
+            <ComplainModal
+                isOpen={isComplainModalOpen}
+                onClose={() => setIsComplainModalOpen(false)}
+                onSubmit={handleSubmitComplain}
+                defaultData={{
+                    reportId: reportData?.id,
+                    category: 'MISSED_PICKUP',
+                    description: '',
+                    latitude: reportData?.latitude ?? '',
+                    longitude: reportData?.longitude ?? '',
+                    status: 'OPEN',
+                }}
             />
         </div>
     );

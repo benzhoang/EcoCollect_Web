@@ -1,56 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const Contact = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        type: 'feedback', // 'feedback' hoặc 'complaint'
-        priority: 'normal', // 'low', 'normal', 'high', 'urgent'
-        location: '',
-        subject: '',
-        message: '',
-        attachments: null
-    });
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleChange = (e) => {
-        const { name, value, type, files } = e.target;
-        if (type === 'file') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: files[0] || null
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        // Simulate form submission
-        setTimeout(() => {
-            const messageType = formData.type === 'feedback' ? 'phản hồi' : 'khiếu nại';
-            alert(`Cảm ơn bạn đã gửi ${messageType}! Chúng tôi đã tiếp nhận và sẽ xử lý trong thời gian sớm nhất. Mã số: #${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
-            setFormData({
-                name: '',
-                email: '',
-                phone: '',
-                type: 'feedback',
-                priority: 'normal',
-                location: '',
-                subject: '',
-                message: '',
-                attachments: null
-            });
-            setIsSubmitting(false);
-        }, 1000);
-    };
 
     const contactInfo = [
         {
@@ -111,10 +61,10 @@ const Contact = () => {
                 <div className="container mx-auto px-6 max-w-7xl">
                     <div className="text-center max-w-3xl mx-auto">
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                            Phản hồi và Khiếu nại
+                            Liên hệ & Hỗ trợ
                         </h1>
                         <p className="text-lg text-green-50 leading-relaxed">
-                            Chúng tôi cam kết lắng nghe và xử lý mọi phản hồi, khiếu nại của bạn một cách nhanh chóng và hiệu quả. Mọi ý kiến đóng góp đều được chúng tôi trân trọng.
+                            Tổng hợp thông tin liên hệ, hướng dẫn hỗ trợ và tài nguyên hữu ích để bạn sử dụng EcoCollect dễ dàng hơn.
                         </p>
                     </div>
                 </div>
@@ -210,205 +160,64 @@ const Contact = () => {
                         </div>
                     </div>
 
-                    {/* Contact Form - Right */}
+                    {/* Support Info - Right */}
                     <div className="lg:col-span-2">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
                             <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                                Biểu mẫu phản hồi và khiếu nại
+                                Trung tâm hỗ trợ
                             </h2>
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* Loại phản hồi */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Loại <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.type === 'feedback' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value="feedback"
-                                                checked={formData.type === 'feedback'}
-                                                onChange={handleChange}
-                                                className="mr-3 w-4 h-4 text-green-600 focus:ring-green-500"
-                                            />
-                                            <div>
-                                                <div className="font-semibold text-gray-900">Phản hồi</div>
-                                                <div className="text-sm text-gray-600">Góp ý, đề xuất cải thiện</div>
-                                            </div>
-                                        </label>
-                                        <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.type === 'complaint' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value="complaint"
-                                                checked={formData.type === 'complaint'}
-                                                onChange={handleChange}
-                                                className="mr-3 w-4 h-4 text-red-600 focus:ring-red-500"
-                                            />
-                                            <div>
-                                                <div className="font-semibold text-gray-900">Khiếu nại</div>
-                                                <div className="text-sm text-gray-600">Vấn đề cần xử lý</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {/* Thông tin cá nhân */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Họ và tên <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                            placeholder="Nhập họ và tên của bạn"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Email <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="email"
-                                            id="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                            placeholder="your.email@example.com"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Số điện thoại <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            id="phone"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                            placeholder="0123 456 789"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Mức độ ưu tiên <span className="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            id="priority"
-                                            name="priority"
-                                            value={formData.priority}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                        >
-                                            <option value="low">Thấp</option>
-                                            <option value="normal">Bình thường</option>
-                                            <option value="high">Cao</option>
-                                            <option value="urgent">Khẩn cấp</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Địa điểm xảy ra sự việc {formData.type === 'complaint' && <span className="text-red-500">*</span>}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="location"
-                                        name="location"
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        required={formData.type === 'complaint'}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                        placeholder="Ví dụ: 123 Đường ABC, Quận XYZ, TP.HCM"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Tiêu đề <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="subject"
-                                        name="subject"
-                                        value={formData.subject}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
-                                        placeholder={formData.type === 'complaint' ? 'Tóm tắt vấn đề khiếu nại' : 'Tóm tắt nội dung phản hồi'}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nội dung chi tiết <span className="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                        id="message"
-                                        name="message"
-                                        value={formData.message}
-                                        onChange={handleChange}
-                                        required
-                                        rows={6}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-none"
-                                        placeholder={formData.type === 'complaint' ? 'Mô tả chi tiết vấn đề, thời gian, địa điểm và các thông tin liên quan...' : 'Mô tả chi tiết ý kiến phản hồi của bạn...'}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="attachments" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Đính kèm tài liệu/hình ảnh (nếu có)
-                                    </label>
-                                    <input
-                                        type="file"
-                                        id="attachments"
-                                        name="attachments"
-                                        onChange={handleChange}
-                                        accept="image/*,.pdf,.doc,.docx"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                                    />
-                                    {formData.attachments && (
-                                        <p className="mt-2 text-sm text-gray-600">
-                                            Đã chọn: {formData.attachments.name}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <p className="text-sm text-blue-800">
-                                        <strong>Lưu ý:</strong> Chúng tôi cam kết xử lý mọi phản hồi và khiếu nại trong vòng 3-5 ngày làm việc.
-                                        Với các trường hợp khẩn cấp, chúng tôi sẽ ưu tiên xử lý trong vòng 24 giờ.
+                            <div className="space-y-6">
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+                                    <h3 className="text-lg font-semibold text-green-800 mb-2">Kênh hỗ trợ nhanh</h3>
+                                    <p className="text-sm text-green-700">
+                                        Nếu bạn cần hỗ trợ gấp, hãy gọi hotline hoặc gửi email để được phản hồi sớm nhất.
                                     </p>
+                                    <div className="mt-4 flex flex-wrap gap-3">
+                                        <a
+                                            href="tel:0123456789"
+                                            className="px-4 py-2 bg-white border border-green-200 text-green-700 rounded-lg text-sm font-semibold hover:bg-green-100"
+                                        >
+                                            Gọi hotline
+                                        </a>
+                                        <a
+                                            href="mailto:support@ecocollect.vn"
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                                        >
+                                            Gửi email
+                                        </a>
+                                    </div>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className={`w-full md:w-auto px-8 py-3 text-white font-semibold rounded-lg transition-colors shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed ${formData.type === 'complaint'
-                                        ? 'bg-red-600 hover:bg-red-700'
-                                        : 'bg-green-600 hover:bg-green-700'
-                                        }`}
-                                >
-                                    {isSubmitting ? 'Đang gửi...' : formData.type === 'complaint' ? 'Gửi khiếu nại' : 'Gửi phản hồi'}
-                                </button>
-                            </form>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="border border-gray-200 rounded-lg p-5">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Hướng dẫn sử dụng</h3>
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            Xem nhanh các bước báo cáo, tích điểm và đổi quà.
+                                        </p>
+                                        <a href="/point-guide" className="text-green-600 font-semibold text-sm hover:text-green-700">
+                                            Xem hướng dẫn
+                                        </a>
+                                    </div>
+                                    <div className="border border-gray-200 rounded-lg p-5">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Câu hỏi thường gặp</h3>
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            Tổng hợp các câu hỏi phổ biến về EcoCollect.
+                                        </p>
+                                        <a href="/faq" className="text-green-600 font-semibold text-sm hover:text-green-700">
+                                            Xem FAQ
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-lg p-5">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Cam kết phản hồi</h3>
+                                    <ul className="space-y-2 text-sm text-gray-600">
+                                        <li>• Phản hồi trong vòng 24 giờ làm việc với các yêu cầu gấp.</li>
+                                        <li>• Hỗ trợ qua email và điện thoại trong giờ hành chính.</li>
+                                        <li>• Ưu tiên xử lý các vấn đề liên quan đến thu gom và đổi quà.</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

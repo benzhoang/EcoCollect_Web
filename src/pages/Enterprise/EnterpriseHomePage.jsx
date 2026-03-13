@@ -37,8 +37,8 @@ const EnterpriseHomePage = () => {
                 return 'Đã giao';
             case 'ON_THE_WAY':
                 return 'Đang thực hiện';
-            case 'COMPLETED':
-                return 'Đã hoàn thành';
+            case 'COLLECTED':
+                return 'Đã thu gom';
             default:
                 return status || 'Không rõ';
         }
@@ -54,8 +54,8 @@ const EnterpriseHomePage = () => {
                 return 'bg-red-100 text-red-800';
             case 'ASSIGNED':
                 return 'bg-blue-100 text-blue-800';
-            case 'COMPLETED':
-                return 'bg-green-100 text-green-800';
+            case 'COLLECTED':
+                return 'bg-purple-100 text-purple-800';
             case 'CANCELLED':
                 return 'bg-gray-100 text-gray-800';
             default:
