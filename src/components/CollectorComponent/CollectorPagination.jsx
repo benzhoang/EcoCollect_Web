@@ -7,7 +7,6 @@ import React from 'react';
  * @param {(page: number) => void} props.onPageChange
  * @param {number} props.itemCount - Số item trên trang hiện tại (vd: reports.length)
  * @param {string} [props.itemLabel='yêu cầu'] - Nhãn cho loại item (vd: "yêu cầu", "báo cáo")
- * @param {string} [props.emptyMessage] - Khi totalElements === 0, hiển thị message này bên trái thay cho "Không có {itemLabel} nào"
  */
 const CollectorPagination = ({
     pageInfo,
@@ -15,7 +14,6 @@ const CollectorPagination = ({
     onPageChange,
     itemCount,
     itemLabel = 'yêu cầu',
-    emptyMessage,
 }) => {
     const totalPages = pageInfo?.totalPages ?? 1;
     const totalElements = pageInfo?.totalElements ?? 0;
@@ -35,7 +33,7 @@ const CollectorPagination = ({
                         {end} của {totalElements} {itemLabel}
                     </>
                 ) : (
-                    emptyMessage ?? `Không có ${itemLabel} nào`
+                    `Không có ${itemLabel} nào`
                 )}
             </div>
             <div className="flex items-center gap-2">

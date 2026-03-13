@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { getAdminWasteCapabilities } from "../../service/api";
+import AdminPagination from "./AdminPagination";
+
+const PAGE_SIZE = 5;
 
 const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
@@ -45,6 +48,28 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
       }
     )
     : capabilities;
+
+  const [page, setPage] = useState(0);
+  const pageInfo = useMemo(
+    () => ({
+      page,
+      size: PAGE_SIZE,
+      totalElements: filteredList.length,
+      totalPages: Math.max(1, Math.ceil(filteredList.length / PAGE_SIZE)),
+    }),
+    [page, filteredList.length],
+  );
+  const displayList = useMemo(
+    () => filteredList.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredList, page],
+  );
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm]);
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -126,14 +151,14 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
                   </td>
                 </tr>
               ) : (
-                filteredList.map((item, index) => (
+                displayList.map((item, index) => (
                   <tr
                     key={item.id}
                     className="transition-colors hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">
-                        {index + 1}
+                        {page * PAGE_SIZE + index + 1}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -188,6 +213,15 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
             </tbody>
           </table>
         </div>
+        {!loading && !error && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={displayList.length}
+            itemLabel="công suất"
+          />
+        )}
       </div>
 
       {/* Modal xác nhận xóa */}

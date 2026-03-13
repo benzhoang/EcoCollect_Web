@@ -72,11 +72,22 @@ const mapAssignmentToRow = (item, categoryMap = {}) => {
   };
 };
 
+/** Chỉ hiển thị assignment có status ASSIGNED hoặc ON_THE_WAY */
+const ALLOWED_STATUSES = ["ASSIGNED", "ON_THE_WAY"];
+
+const isAllowedStatus = (item) => {
+  const s = (item.currentStatus ?? item.status ?? item.report?.status ?? "")
+    .toString()
+    .toUpperCase();
+  return ALLOWED_STATUSES.includes(s);
+};
+
 /**
- * Danh sách yêu cầu thu gom (bảng). Gọi API getCollectorAssignments khi không truyền requests.
- * @param {{ requests?: Array, status?: string }} props - requests: dữ liệu tĩnh (không gọi API); status: lọc API
+ * Danh sách yêu cầu thu gom (bảng). Chỉ hiển thị trạng thái Đã giao và Đang trên đường.
+ * Gọi API getCollectorAssignments khi không truyền requests.
+ * @param {{ requests?: Array }} props - requests: dữ liệu tĩnh (không gọi API)
  */
-const RequestList = ({ requests: requestsProp, status }) => {
+const RequestList = ({ requests: requestsProp }) => {
   const useApi = requestsProp === undefined;
 
   const [list, setList] = useState(requestsProp ?? []);
@@ -97,17 +108,16 @@ const RequestList = ({ requests: requestsProp, status }) => {
       setError(null);
       try {
         const response = await getCollectorAssignments({
-          status: status || undefined,
           page: pageIndex,
           size: PAGE_SIZE,
           sort: ["assignedAt,desc"],
         });
 
-        // API có thể trả trực tiếp page object hoặc bọc trong response.data
         const pageData = response?.data ?? response;
         const content =
           pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
-        const mapped = content.map((item) =>
+        const filtered = content.filter(isAllowedStatus);
+        const mapped = filtered.map((item) =>
           mapAssignmentToRow(item, categoryMap),
         );
 
@@ -126,7 +136,7 @@ const RequestList = ({ requests: requestsProp, status }) => {
         setLoading(false);
       }
     },
-    [status, categoryMap],
+    [categoryMap],
   );
 
   useEffect(() => {
@@ -293,11 +303,6 @@ const RequestList = ({ requests: requestsProp, status }) => {
               onPageChange={handlePageChange}
               itemCount={list.length}
               itemLabel="yêu cầu"
-              emptyMessage={
-                displayList.length === 0
-                  ? `Hiển thị ${list.length} yêu cầu`
-                  : undefined
-              }
             />
           )}
         </div>

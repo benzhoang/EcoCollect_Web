@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
+import AdminPagination from "./AdminPagination";
 import { getWasteCategories } from "../../service/api";
+
+const PAGE_SIZE = 5;
 
 const WasteCategoryList = ({ refreshTrigger = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
@@ -11,6 +14,24 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+
+  const pageInfo = useMemo(
+    () => ({
+      page,
+      size: PAGE_SIZE,
+      totalElements: categories.length,
+      totalPages: Math.max(1, Math.ceil(categories.length / PAGE_SIZE)),
+    }),
+    [page, categories.length],
+  );
+  const displayList = useMemo(
+    () => categories.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [categories, page],
+  );
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -111,14 +132,14 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                   </td>
                 </tr>
               ) : (
-                categories.map((category, index) => (
+                displayList.map((category, index) => (
                   <tr
                     key={category.id}
                     className="transition-colors hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">
-                        {index + 1}
+                        {page * PAGE_SIZE + index + 1}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -166,6 +187,15 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
             </tbody>
           </table>
         </div>
+        {!loading && !error && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={displayList.length}
+            itemLabel="danh mục loại rác"
+          />
+        )}
       </div>
 
       {/* Modal xác nhận xóa danh mục */}

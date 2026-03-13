@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaEye } from "react-icons/fa";
 import { getAdminUsers } from "../../service/api";
+import AdminPagination from "./AdminPagination";
 
 const ROLE_LABELS = {
   ROLE_CITIZEN: "Dân cư",
@@ -14,49 +15,74 @@ const ROLE_TO_SEGMENT = {
   ROLE_ENTERPRISE_MANAGER: "recycling-enterprises",
 };
 
+const PAGE_SIZE = 5;
+
 const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageInfo, setPageInfo] = useState({
+    page: 0,
+    size: PAGE_SIZE,
+    totalElements: 0,
+    totalPages: 1,
+  });
 
-  useEffect(() => {
-    const fetchUsers = async () => {
+  const fetchUsers = useCallback(
+    async (pageIndex = 0) => {
       setLoading(true);
       setError(null);
       try {
         const response = await getAdminUsers({
           role: roleFilter || undefined,
           searchTerm: searchTerm || undefined,
-          page: 0,
-          size: 10,
+          page: pageIndex,
+          size: PAGE_SIZE,
         });
-        const list = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.content)
-            ? response.content
-            : Array.isArray(response?.data)
-              ? response.data
-              : Array.isArray(response?.data?.content)
-                ? response.data.content
+        const pageData = response?.data ?? response;
+        const list = Array.isArray(pageData)
+          ? pageData
+          : Array.isArray(pageData?.content)
+            ? pageData.content
+            : Array.isArray(response?.content)
+              ? response.content
+              : Array.isArray(response?.data)
+                ? response.data
                 : [];
         setAccounts(list);
+        setPageInfo({
+          page: pageData?.number ?? pageData?.page ?? pageIndex,
+          size: pageData?.size ?? PAGE_SIZE,
+          totalElements: pageData?.totalElements ?? list.length,
+          totalPages: pageData?.totalPages ?? 1,
+        });
       } catch (err) {
         setError(err?.message || "Không thể tải danh sách tài khoản.");
         setAccounts([]);
+        setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
       } finally {
         setLoading(false);
       }
-    };
-    fetchUsers();
+    },
+    [roleFilter, searchTerm],
+  );
+
+  useEffect(() => {
+    fetchUsers(page);
+  }, [page, fetchUsers]);
+
+  useEffect(() => {
+    setPage(0);
   }, [roleFilter, searchTerm]);
+
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
 
   const handleView = (accountId) => {
     const segment = ROLE_TO_SEGMENT[roleFilter] ?? "citizens";
-    window.history.pushState(
-      {},
-      "",
-      `/admin/account/${segment}/${accountId}`
-    );
+    window.history.pushState({}, "", `/admin/account/${segment}/${accountId}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
@@ -165,12 +191,16 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           account.status === "ACTIVE"
                             ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
+                            : account.status === "SUSPENDED"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-600"
                         }`}
                       >
                         {account.status === "ACTIVE"
                           ? "Hoạt động"
-                          : (account.status ?? "—")}
+                          : account.status === "SUSPENDED"
+                            ? "Đã đình chỉ"
+                            : "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -200,6 +230,16 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
             </tbody>
           </table>
         </div>
+
+        {!loading && !error && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={accounts.length}
+            itemLabel="tài khoản"
+          />
+        )}
       </div>
     </>
   );

@@ -1,6 +1,9 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { FaEye } from "react-icons/fa";
 import { getComplaints } from "../../service/api";
+import AdminPagination from "./AdminPagination";
+
+const PAGE_SIZE = 5;
 
 const formatDate = (iso) => {
   const d = new Date(iso);
@@ -24,32 +27,56 @@ const ComplaintList = ({
   const [complaintsRaw, setComplaintsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [pageInfo, setPageInfo] = useState({
+    page: 0,
+    size: PAGE_SIZE,
+    totalElements: 0,
+    totalPages: 1,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
+  const load = useCallback(
+    async (pageIndex = 0) => {
       setLoading(true);
       setLoadError(null);
       try {
         const res = await getComplaints({
           category: filterType || undefined,
           status: filterStatus || undefined,
+          page: pageIndex,
+          size: PAGE_SIZE,
         });
-        if (cancelled) return;
-        const list = res?.data?.content ?? [];
+        const data = res?.data ?? res;
+        const list = data?.content ?? (Array.isArray(data) ? data : []);
         setComplaintsRaw(Array.isArray(list) ? list : []);
+        setPageInfo({
+          page: data?.number ?? data?.page ?? pageIndex,
+          size: data?.size ?? PAGE_SIZE,
+          totalElements: data?.totalElements ?? 0,
+          totalPages: data?.totalPages ?? 1,
+        });
       } catch (err) {
-        if (!cancelled)
-          setLoadError(err?.message ?? "Không tải được danh sách khiếu nại.");
+        setLoadError(err?.message ?? "Không tải được danh sách khiếu nại.");
+        setComplaintsRaw([]);
+        setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
+    },
+    [filterType, filterStatus],
+  );
+
+  useEffect(() => {
+    load(page);
+  }, [page, load]);
+
+  useEffect(() => {
+    setPage(0);
   }, [filterType, filterStatus]);
+
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
 
   const complaints = useMemo(() => {
     let list = [...complaintsRaw];
@@ -122,7 +149,7 @@ const ComplaintList = ({
                 <tr key={c.id} className="transition-colors hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">
-                      {i + 1}
+                      {page * PAGE_SIZE + i + 1}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -172,6 +199,15 @@ const ComplaintList = ({
           </tbody>
         </table>
       </div>
+      {!loading && !loadError && (
+        <AdminPagination
+          pageInfo={pageInfo}
+          currentPage={page + 1}
+          onPageChange={handlePageChange}
+          itemCount={complaints.length}
+          itemLabel="khiếu nại"
+        />
+      )}
     </div>
   );
 };
