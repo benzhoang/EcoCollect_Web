@@ -1214,6 +1214,104 @@ export const getAdminUserDetail = async (userId) => {
 };
 
 /**
+ * Xóa khu vực làm việc (working area) của user (Admin)
+ * DELETE /admin/users/{userId}/working-area
+ * @param {string} userId - ID user (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const clearAdminUserWorkingArea = async (userId) => {
+  try {
+    if (!userId) {
+      throw new Error("Thiếu userId để xóa khu vực làm việc.");
+    }
+    const { data } = await api.delete(`/admin/users/${userId}/working-area`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi xóa khu vực làm việc của người dùng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Thăng cấp user thành collector và set working area (Admin)
+ * POST /admin/users/{userId}/promote-collector
+ * @param {string} userId - ID user (path parameter, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} body.areaId - ID khu vực làm việc
+ * @returns {Promise} Response từ API
+ */
+export const promoteAdminUserToCollector = async (userId, body) => {
+  try {
+    if (!userId) {
+      throw new Error("Thiếu userId để thăng cấp collector.");
+    }
+    const { data } = await api.post(
+      `/admin/users/${userId}/promote-collector`,
+      body,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi thăng cấp người dùng thành collector. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Cập nhật trạng thái user (Admin)
+ * PATCH /admin/users/{userId}/status
+ * @param {string} userId - ID user (path parameter, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} body.status - Trạng thái mới (vd: "ACTIVE", "INACTIVE")
+ * @param {string} body.reason - Lý do cập nhật
+ * @returns {Promise} Response từ API
+ */
+export const updateAdminUserStatus = async (userId, body) => {
+  try {
+    if (!userId) {
+      throw new Error("Thiếu userId để cập nhật trạng thái.");
+    }
+    const { data } = await api.patch(`/admin/users/${userId}/status`, body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật trạng thái người dùng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Gỡ bỏ role khỏi user (Admin)
+ * DELETE /admin/users/{userId}/roles/{roleCode}
+ * @param {string} userId - ID user (path parameter, bắt buộc)
+ * @param {string} roleCode - Mã role cần xóa (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const removeAdminUserRole = async (userId, roleCode) => {
+  try {
+    if (!userId) {
+      throw new Error("Thiếu userId để xóa role.");
+    }
+    if (!roleCode) {
+      throw new Error("Thiếu roleCode để xóa role khỏi người dùng.");
+    }
+    const { data } = await api.delete(
+      `/admin/users/${userId}/roles/${roleCode}`,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi xóa role khỏi người dùng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách khiếu nại đang hoạt động (List active complaints)
  * GET /complaints
  * @param {Object} options - Tham số query

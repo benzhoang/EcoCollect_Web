@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { getAdminRewardRules, getWasteCategories } from "../../service/api";
+import AdminPagination from "./AdminPagination";
+
+const PAGE_SIZE = 5;
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";
@@ -26,6 +29,7 @@ const RewardRuleList = ({ searchTerm = "" }) => {
   const [categoryNameMap, setCategoryNameMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +76,28 @@ const RewardRuleList = ({ searchTerm = "" }) => {
       return String(name).toLowerCase().includes(term);
     });
   }, [rules, searchTerm, categoryNameMap]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm]);
+
+  const pageInfo = useMemo(
+    () => ({
+      page,
+      size: PAGE_SIZE,
+      totalElements: filteredList.length,
+      totalPages: Math.max(1, Math.ceil(filteredList.length / PAGE_SIZE)),
+    }),
+    [page, filteredList.length],
+  );
+  const displayList = useMemo(
+    () => filteredList.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filteredList, page],
+  );
+
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
 
   const handleEdit = (item) => {
     setEditingItem(item);
@@ -161,7 +187,7 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                     {loadError}
                   </td>
                 </tr>
-              ) : filteredList.length === 0 ? (
+              ) : displayList.length === 0 ? (
                 <tr>
                   <td
                     colSpan={10}
@@ -171,14 +197,14 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                   </td>
                 </tr>
               ) : (
-                filteredList.map((item, index) => (
+                displayList.map((item, index) => (
                   <tr
                     key={item.id}
                     className="transition-colors hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">
-                        {index + 1}
+                        {page * PAGE_SIZE + index + 1}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -259,6 +285,15 @@ const RewardRuleList = ({ searchTerm = "" }) => {
             </tbody>
           </table>
         </div>
+        {!loading && !loadError && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={displayList.length}
+            itemLabel="quy tắc thưởng"
+          />
+        )}
       </div>
 
       {/* Modal xác nhận xóa */}

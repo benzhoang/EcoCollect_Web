@@ -1,22 +1,15 @@
 import React, { useState, useEffect } from "react";
 import {
   FaArrowLeft,
-  FaInfoCircle,
-  FaFileAlt,
   FaCheckCircle,
-  FaExclamationTriangle,
-  FaCircle,
   FaCalendarAlt,
-  FaChevronDown,
-  FaUserShield,
-  FaLock,
-  FaUnlock,
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaCheckSquare,
+  FaBan,
 } from "react-icons/fa";
 import { getAdminUserDetail, getAreas } from "../../service/api";
+import UpdateStatusModal from "../../components/AdminComponent/Modal/UpdateStatusModal";
+import PromoteCollectorModal from "../../components/AdminComponent/Modal/PromoteCollectorModal";
+import DeleteRoleModal from "../../components/AdminComponent/Modal/DeleteRoleModal";
+import toast from "react-hot-toast";
 
 /**
  * Chuyển cây khu vực -> danh sách phẳng chỉ leaf (giống AreaList).
@@ -42,26 +35,13 @@ const buildAreaOptions = (nodes, parentName = "") => {
 };
 
 const AccountDetailPage = () => {
-  // Permission Management States
-  const [selectedRoles, setSelectedRoles] = useState(["citizen"]);
-  const [permissions, setPermissions] = useState({
-    view: true,
-    edit: false,
-    delete: false,
-    approve: false,
-  });
-  const [revokeType, setRevokeType] = useState("temporary"); // temporary or permanent
-  const [revokeDuration, setRevokeDuration] = useState("7");
-
-  // Suspend/Unsuspend States
-  const [suspendReason, setSuspendReason] = useState("");
-  const [suspendJustification, setSuspendJustification] = useState("");
-  const [isSuspended, setIsSuspended] = useState(false);
-
-  // User detail from API
   const [userDetail, setUserDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [areaOptions, setAreaOptions] = useState([]);
+  const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+  const [showPromoteCollectorModal, setShowPromoteCollectorModal] =
+    useState(false);
+  const [showDeleteRoleModal, setShowDeleteRoleModal] = useState(false);
 
   const pathParts =
     typeof window !== "undefined" ? window.location.pathname.split("/") : [];
@@ -78,7 +58,6 @@ const AccountDetailPage = () => {
       const data = await getAdminUserDetail(userId);
       if (!cancelled && data?.data) {
         setUserDetail(data.data);
-        setIsSuspended(data.data.status === "SUSPENDED");
       }
       if (!cancelled) setLoading(false);
     };
@@ -94,11 +73,17 @@ const AccountDetailPage = () => {
       const response = await getAreas();
       if (cancelled) return;
       const rawData = response?.data ?? response;
-      const rootNodes = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+      const rootNodes = Array.isArray(rawData)
+        ? rawData
+        : rawData
+          ? [rawData]
+          : [];
       setAreaOptions(buildAreaOptions(rootNodes));
     };
     fetchAreas();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getWorkingAreaName = (workingAreaId) => {
@@ -111,10 +96,9 @@ const AccountDetailPage = () => {
     if (!roles?.length) return "—";
     const role = roles[0];
     const map = {
-      ROLE_CITIZEN: "Công dân",
-      ROLE_COLLECTOR: "Nhân viên thu gom",
-      ROLE_ENTERPRISE: "Doanh nghiệp tái chế",
-      ROLE_ADMIN: "Quản trị viên",
+      ROLE_CITIZEN: "Dân cư",
+      ROLE_COLLECTOR: "Người thu gom",
+      ROLE_ENTERPRISE_MANAGER: "Doanh nghiệp tái chế",
     };
     return map[role] || role;
   };
@@ -132,137 +116,45 @@ const AccountDetailPage = () => {
     }
   };
 
-  // Fallback for sections that still need user-like object
-  const user = {
-    name: userDetail?.fullName ?? "—",
-    username: "@johndoe123",
-    id: userId ?? "",
-    joinedDate: formatJoinedDate(userDetail?.createdAt),
-    status:
-      userDetail?.status === "SUSPENDED" ? "Đã khóa" : "Tài khoản hoạt động",
-    email: userDetail?.email ?? "—",
-    tokens: "450",
-    pendingRequests: 2,
-    currentRoles: userDetail?.roles ?? [],
+  const refetchUser = async () => {
+    if (!userId) return;
+    const data = await getAdminUserDetail(userId);
+    if (data?.data) setUserDetail(data.data);
   };
 
-  const availableRoles = [
-    { value: "citizen", label: "Công dân" },
-    { value: "collector", label: "Nhân viên thu gom" },
-    { value: "enterprise", label: "Doanh nghiệp tái chế" },
-    { value: "admin", label: "Quản trị viên" },
-  ];
-
-  const suspendReasons = [
-    { value: "point_fraud", label: "Gian lận điểm thưởng" },
-    {
-      value: "false_report",
-      label: "Báo cáo rác không đúng sự thật (spam/phishing)",
-    },
-    {
-      value: "wrong_verification",
-      label: "Xác minh sai trạng thái thu gom (Collector/Enterprise)",
-    },
-    { value: "policy_violation", label: "Vi phạm chính sách" },
-    { value: "other", label: "Khác" },
-  ];
-
-  const history = [
-    {
-      type: "warning",
-      title: "Đã phát cảnh báo",
-      date: "2 ngày trước",
-      description:
-        "Khối lượng nhựa tái chế báo cáo trong 2 giờ cao bất thường.",
-      admin: "MINH NGUYỄN",
-      adminInitials: "MN",
-    },
-    {
-      type: "verified",
-      title: "Tài khoản đã xác minh",
-      date: "14/10/2022",
-      description: "Giấy tờ tùy thân đã được phê duyệt thủ công.",
-      subDescription: "Quy trình xác minh chuẩn",
-    },
-    {
-      type: "created",
-      title: "Tài khoản được tạo",
-      date: "12/10/2022",
-      description: "Không có ghi chú bổ sung.",
-    },
-  ];
-
-  const getHistoryIcon = (type) => {
-    switch (type) {
-      case "warning":
-        return <FaExclamationTriangle className="text-orange-500" />;
-      case "verified":
-        return <FaCheckCircle className="text-green-500" />;
-      case "created":
-        return <FaCircle className="text-blue-500" />;
-      case "suspended":
-        return <FaLock className="text-red-500" />;
-      case "unsuspended":
-        return <FaUnlock className="text-green-500" />;
-      default:
-        return <FaCircle className="text-gray-500" />;
-    }
-  };
-
-  const handleRoleToggle = (roleValue) => {
-    setSelectedRoles((prev) =>
-      prev.includes(roleValue)
-        ? prev.filter((r) => r !== roleValue)
-        : [...prev, roleValue],
-    );
-  };
-
-  const handlePermissionChange = (permission) => {
-    setPermissions((prev) => ({
-      ...prev,
-      [permission]: !prev[permission],
-    }));
-  };
-
-  const handleSavePermissions = () => {
-    // TODO: Gọi API lưu quyền
-    console.log({
-      userId: user.id,
-      roles: selectedRoles,
-      permissions,
-      revokeType,
-      revokeDuration: revokeType === "temporary" ? revokeDuration : null,
-    });
-    alert("Đã lưu quyền thành công!");
-  };
-
-  const handleSuspendAccount = () => {
-    if (!suspendReason || !suspendJustification.trim()) {
-      alert("Vui lòng nhập đầy đủ lý do và giải thích!");
+  const handlePromoteToCollector = () => {
+    if (!userId) return;
+    if (!areaOptions.length) {
+      toast.error("Chưa có khu vực nào. Vui lòng tạo khu vực trước.");
       return;
     }
-    // TODO: Gọi API suspend account
-    console.log({
-      userId: user.id,
-      reason: suspendReason,
-      justification: suspendJustification,
-    });
-    setIsSuspended(true);
-    alert(
-      "Đã khóa tài khoản thành công! Hệ thống đã ghi log và gửi thông báo cho người dùng.",
-    );
+    setShowPromoteCollectorModal(true);
   };
 
-  const handleUnsuspendAccount = () => {
-    // TODO: Gọi API unsuspend account
-    console.log({
-      userId: user.id,
-      action: "unsuspend",
-    });
-    setIsSuspended(false);
-    setSuspendReason("");
-    setSuspendJustification("");
-    alert("Đã mở khóa tài khoản thành công!");
+  const handleUpdateStatus = () => {
+    setShowUpdateStatusModal(true);
+  };
+
+  // const handleClearWorkingArea = async () => {
+  //   if (!userId) return;
+  //   if (!window.confirm("Xóa khu vực làm việc của người dùng này?")) return;
+  //   try {
+  //     await clearAdminUserWorkingArea(userId);
+  //     toast.success("Đã xóa khu vực làm việc.");
+  //     refetchUser();
+  //   } catch (e) {
+  //     toast.error(e?.message || "Thao tác thất bại.");
+  //   }
+  // };
+
+  const handleRemoveRole = () => {
+    if (!userId) return;
+    const roles = userDetail?.roles ?? [];
+    if (roles.length === 0) {
+      toast.error("Người dùng không có vai trò nào để xóa.");
+      return;
+    }
+    setShowDeleteRoleModal(true);
   };
 
   return (
@@ -323,11 +215,27 @@ const AccountDetailPage = () => {
                     <p className="mb-3 text-sm font-medium text-green-600">
                       {getRoleLabel(userDetail.roles)}
                     </p>
-                    <div className="flex flex-col gap-1 mb-3 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
+                    <div className="flex flex-col gap-1 text-sm text-gray-600">
+                      <span className="flex items-center gap-1 mb-3">
                         <FaCalendarAlt className="text-xs" />
                         Tham gia {formatJoinedDate(userDetail.createdAt)}
                       </span>
+                      {userDetail.email != null && userDetail.email !== "" && (
+                        <span className="flex items-center gap-1 mb-3">
+                          Email:{" "}
+                          <span className="font-medium">
+                            {userDetail.email}
+                          </span>
+                        </span>
+                      )}
+                      {userDetail.phone != null && userDetail.phone !== "" && (
+                        <span className="flex items-center gap-1">
+                          Số điện thoại:{" "}
+                          <span className="font-medium">
+                            {userDetail.phone}
+                          </span>
+                        </span>
+                      )}
                       {userDetail.workingAreaId != null &&
                         userDetail.workingAreaId !== "" && (
                           <span className="flex items-center gap-1 mt-3">
@@ -337,6 +245,14 @@ const AccountDetailPage = () => {
                             </span>
                           </span>
                         )}
+                      {userDetail.status === "SUSPENDED" && (
+                        <span className="flex items-center gap-1 mt-3">
+                          Lý do bị đình chỉ:{" "}
+                          <span className="font-medium">
+                            {userDetail.suspendedReason || "—"}
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -353,331 +269,92 @@ const AccountDetailPage = () => {
                       }`}
                     >
                       {userDetail.status === "SUSPENDED" ? (
-                        <FaLock className="text-xs" />
+                        <FaBan className="text-xs" />
                       ) : (
                         <FaCheckCircle className="text-xs" />
                       )}
                       {userDetail.status === "SUSPENDED"
-                        ? "Đã khóa"
-                        : "Tài khoản hoạt động"}
+                        ? "Đã đình chỉ"
+                        : "Hoạt động"}
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Role & Permission Management Section */}
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <FaUserShield className="text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Quản lý quyền
-                </h3>
-              </div>
-              <p className="mb-6 text-sm text-gray-600">
-                Gán nhiều vai trò và cấu hình quyền chi tiết cho người dùng.
-              </p>
-
-              {/* Roles Selection */}
-              <div className="mb-6">
-                <label className="block mb-3 text-xs font-semibold text-gray-700 uppercase">
-                  Vai trò (có thể chọn nhiều)
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {availableRoles.map((role) => (
-                    <label
-                      key={role.value}
-                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedRoles.includes(role.value)
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedRoles.includes(role.value)}
-                        onChange={() => handleRoleToggle(role.value)}
-                        className="text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm font-medium text-gray-900">
-                        {role.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Permissions Configuration */}
-              <div className="mb-6">
-                <label className="block mb-3 text-xs font-semibold text-gray-700 uppercase">
-                  Cấu hình quyền chi tiết
-                </label>
-                <div className="space-y-2">
-                  {[
-                    { key: "view", label: "Xem", icon: FaEye },
-                    { key: "edit", label: "Sửa", icon: FaEdit },
-                    { key: "delete", label: "Xóa", icon: FaTrash },
-                    { key: "approve", label: "Phê duyệt", icon: FaCheckSquare },
-                  ].map((item) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <label
-                        key={item.key}
-                        className="flex items-center gap-3 p-3 transition-colors border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={permissions[item.key]}
-                          onChange={() => handlePermissionChange(item.key)}
-                          className="text-green-600 focus:ring-green-500"
-                        />
-                        <IconComponent className="text-gray-600" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {item.label}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Revoke Permission */}
-              <div className="p-4 mb-6 border rounded-lg bg-amber-50 border-amber-200">
-                <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
-                  Thu hồi quyền
-                </label>
-                <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => setRevokeType("temporary")}
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      revokeType === "temporary"
-                        ? "bg-amber-600 text-white"
-                        : "bg-white border border-amber-300 text-gray-700 hover:bg-amber-50"
-                    }`}
-                  >
-                    Tạm thời
-                  </button>
-                  <button
-                    onClick={() => setRevokeType("permanent")}
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      revokeType === "permanent"
-                        ? "bg-amber-600 text-white"
-                        : "bg-white border border-amber-300 text-gray-700 hover:bg-amber-50"
-                    }`}
-                  >
-                    Vĩnh viễn
-                  </button>
-                </div>
-                {revokeType === "temporary" && (
-                  <div>
-                    <label className="block mb-1 text-xs text-gray-600">
-                      Thời hạn (ngày)
-                    </label>
-                    <input
-                      type="number"
-                      value={revokeDuration}
-                      onChange={(e) => setRevokeDuration(e.target.value)}
-                      min="1"
-                      className="w-full max-w-xs px-3 py-2 border rounded-md border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Save Button */}
-              <button
-                onClick={handleSavePermissions}
-                className="w-full px-4 py-2 font-medium text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700"
-              >
-                Lưu quyền
-              </button>
-            </div>
-
-            {/* Suspend/Unsuspend Account Section */}
-            <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                {isSuspended ? (
-                  <>
-                    <FaUnlock className="text-green-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Mở khóa tài khoản
-                    </h3>
-                  </>
-                ) : (
-                  <>
-                    <FaLock className="text-red-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Tạm khóa tài khoản
-                    </h3>
-                  </>
-                )}
-              </div>
-              <p className="mb-6 text-sm text-gray-600">
-                {isSuspended
-                  ? "Mở khóa tài khoản để người dùng có thể tiếp tục sử dụng hệ thống."
-                  : "Khóa tài khoản khi có dấu hiệu gian lận, báo cáo sai hoặc vi phạm chính sách."}
-              </p>
-
-              {!isSuspended ? (
-                <>
-                  {/* Suspend Reason */}
-                  <div className="mb-5">
-                    <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
-                      Lý do khóa tài khoản
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={suspendReason}
-                        onChange={(e) => setSuspendReason(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      >
-                        <option value="">Chọn lý do...</option>
-                        {suspendReasons.map((reason) => (
-                          <option key={reason.value} value={reason.value}>
-                            {reason.label}
-                          </option>
-                        ))}
-                      </select>
-                      <FaChevronDown className="absolute text-sm text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-                    </div>
-                  </div>
-
-                  {/* Justification */}
-                  <div className="mb-5">
-                    <label className="block mb-2 text-xs font-semibold text-gray-700 uppercase">
-                      Giải thích chi tiết
-                    </label>
-                    <textarea
-                      value={suspendJustification}
-                      onChange={(e) => setSuspendJustification(e.target.value)}
-                      placeholder="Nhập giải thích chi tiết về lý do khóa tài khoản... Hệ thống sẽ ghi log và gửi thông báo cho người dùng."
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Impact Analysis */}
-                  <div className="p-4 mb-5 border border-red-200 rounded-lg bg-red-50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FaInfoCircle className="text-red-600" />
-                      <h4 className="text-sm font-semibold text-gray-900">
-                        Tác động khi khóa
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Khóa tài khoản sẽ ngay lập tức đóng băng{" "}
-                      <span className="font-semibold text-orange-600">
-                        {user.tokens} ECO-tokens
-                      </span>{" "}
-                      và hủy {user.pendingRequests} yêu cầu thu gom đang chờ.
-                      Người dùng sẽ nhận thông báo qua email: {user.email}
-                    </p>
-                  </div>
-
-                  {/* Suspend Button */}
-                  <button
-                    onClick={handleSuspendAccount}
-                    disabled={!suspendReason || !suspendJustification.trim()}
-                    className="w-full px-4 py-2 font-medium text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Khóa tài khoản
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="p-4 mb-5 border border-green-200 rounded-lg bg-green-50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FaInfoCircle className="text-green-600" />
-                      <h4 className="text-sm font-semibold text-gray-900">
-                        Tài khoản đang bị khóa
-                      </h4>
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      Tài khoản này hiện đang bị khóa. Mở khóa để người dùng có
-                      thể tiếp tục sử dụng hệ thống.
-                    </p>
-                  </div>
-
-                  {/* Unsuspend Button */}
-                  <button
-                    onClick={handleUnsuspendAccount}
-                    className="w-full px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-md hover:bg-green-700"
-                  >
-                    Mở khóa tài khoản
-                  </button>
-                </>
               )}
             </div>
           </div>
 
           {/* Right Column - 1/3 width */}
           <div className="lg:col-span-1">
-            {/* Administrative History Section */}
             <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <FaFileAlt className="text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Lịch sử quản trị
-                  </h3>
-                </div>
-                <button className="text-xs font-medium text-gray-600 hover:text-gray-900">
-                  TẢI BÁO CÁO
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handlePromoteToCollector}
+                  className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 border border-green-600 rounded-md hover:bg-green-700 hover:border-green-700"
+                >
+                  Chuyển thành người thu gom
                 </button>
-              </div>
-
-              {/* History Timeline */}
-              <div className="space-y-6">
-                {history.map((item, index) => (
-                  <div key={index} className="relative pl-8">
-                    {/* Timeline Line */}
-                    {index < history.length - 1 && (
-                      <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-gray-200"></div>
-                    )}
-
-                    {/* Icon */}
-                    <div className="absolute top-0 left-0 flex items-center justify-center w-6 h-6">
-                      {getHistoryIcon(item.type)}
-                    </div>
-
-                    {/* Content */}
-                    <div>
-                      <h4 className="mb-1 font-semibold text-gray-900">
-                        {item.title}
-                      </h4>
-                      <p className="mb-2 text-xs text-gray-500">{item.date}</p>
-                      <p className="mb-2 text-sm text-gray-700">
-                        {item.description}
-                      </p>
-                      {item.subDescription && (
-                        <div className="flex items-center gap-1 text-sm text-green-600">
-                          <FaCheckCircle className="text-xs" />
-                          <span>{item.subDescription}</span>
-                        </div>
-                      )}
-                      {item.admin && (
-                        <div className="flex items-center gap-2 mt-3">
-                          <div className="flex items-center justify-center w-6 h-6 text-xs font-semibold text-gray-700 bg-gray-300 rounded-full">
-                            {item.adminInitials}
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            QV: {item.admin}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* End of History */}
-                <div className="pt-4 text-xs text-center text-gray-400">
-                  KẾT THÚC NHẬT KÝ
-                </div>
+                <button
+                  type="button"
+                  onClick={handleUpdateStatus}
+                  className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 hover:border-blue-700"
+                >
+                  Cập nhật trạng thái người dùng
+                </button>
+                {/* <button
+                  type="button"
+                  onClick={handleClearWorkingArea}
+                  className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-red-600 rounded-md hover:bg-red-700 hover:border-red-700"
+                >
+                  Xóa khu vực làm việc
+                </button> */}
+                <button
+                  type="button"
+                  onClick={handleRemoveRole}
+                  className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-red-600 rounded-md hover:bg-red-700 hover:border-red-700"
+                >
+                  Xóa vai trò
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <UpdateStatusModal
+        key={
+          showUpdateStatusModal && userDetail?.status
+            ? `open-${userDetail.status}`
+            : "closed"
+        }
+        isOpen={showUpdateStatusModal}
+        onClose={() => setShowUpdateStatusModal(false)}
+        userId={userId}
+        onSuccess={refetchUser}
+        initialStatus={userDetail?.status || "ACTIVE"}
+      />
+
+      <PromoteCollectorModal
+        key={
+          showPromoteCollectorModal && userDetail?.workingAreaId
+            ? `promote-${userDetail.workingAreaId}`
+            : "promote-closed"
+        }
+        isOpen={showPromoteCollectorModal}
+        onClose={() => setShowPromoteCollectorModal(false)}
+        userId={userId}
+        areaOptions={areaOptions}
+        onSuccess={refetchUser}
+        initialAreaId={userDetail?.workingAreaId || ""}
+      />
+
+      <DeleteRoleModal
+        isOpen={showDeleteRoleModal}
+        onClose={() => setShowDeleteRoleModal(false)}
+        userId={userId}
+        roles={userDetail?.roles ?? []}
+        onSuccess={refetchUser}
+      />
     </div>
   );
 };

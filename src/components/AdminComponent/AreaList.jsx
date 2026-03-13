@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import UpdateAreaModal from "./Modal/UpdateAreaModal";
+import AdminPagination from "./AdminPagination";
 import { getAreas } from "../../service/api";
+
+const PAGE_SIZE = 5;
 
 /**
  * Chuyển cây khu vực -> danh sách phẳng chỉ leaf (giống RankPage buildAreaOptions).
@@ -29,10 +32,25 @@ const buildAreaOptions = (nodes, parentName = "") => {
 const AreaList = () => {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
   const [editingArea, setEditingArea] = useState(null);
+
+  const pageInfo = useMemo(
+    () => ({
+      page,
+      size: PAGE_SIZE,
+      totalElements: areas.length,
+      totalPages: Math.max(1, Math.ceil(areas.length / PAGE_SIZE)),
+    }),
+    [page, areas.length],
+  );
+  const displayAreas = useMemo(
+    () => areas.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [areas, page],
+  );
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -87,6 +105,10 @@ const AreaList = () => {
     setEditingArea(null);
   };
 
+  const handlePageChange = (nextPage) => {
+    setPage(Math.max(0, nextPage - 1));
+  };
+
   return (
     <>
       {/* mr-6: chừa chỗ bên phải để thanh scroll của layout nằm ngoài bảng */}
@@ -131,14 +153,14 @@ const AreaList = () => {
                 </td>
               </tr>
             ) : (
-              areas.map((area, index) => (
+              displayAreas.map((area, index) => (
                 <tr
                   key={area.id}
                   className="transition-colors hover:bg-gray-50"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">
-                      {index + 1}
+                      {page * PAGE_SIZE + index + 1}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -169,6 +191,15 @@ const AreaList = () => {
             )}
           </tbody>
         </table>
+        {!loading && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={displayAreas.length}
+            itemLabel="khu vực"
+          />
+        )}
       </div>
 
       {/* Modal xác nhận xóa khu vực */}
