@@ -34,7 +34,13 @@ const validateProofUrl = (value) => {
   }
 };
 
-const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
+/**
+ * @param {boolean} show
+ * @param {() => void} onClose
+ * @param {string} [assignmentId] - ID phân công để gọi API tải bằng chứng
+ * @param {() => void | Promise<void>} [onSuccess] - gọi sau khi tải bằng chứng thành công (vd. refetch)
+ */
+const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
   const [proofMode, setProofMode] = useState("upload"); // 'upload' | 'url'
   const [proofUrls, setProofUrls] = useState([]); // base64 khi upload
   const [proofUrlInput, setProofUrlInput] = useState(""); // link khi chế độ url
@@ -141,7 +147,7 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
       );
       return;
     }
-    if (!assignmentId && !onSubmit) {
+    if (!assignmentId) {
       toast.error(
         "Thiếu thông tin phân công. Vui lòng vào trang từ chi tiết công việc.",
       );
@@ -158,15 +164,10 @@ const UploadProofModal = ({ show, onClose, onSubmit, assignmentId }) => {
         proofUrls: payloadProofUrls,
         takenAt: new Date(takenAt).toISOString(),
       };
-      if (onSubmit) {
-        await onSubmit(payload);
-      } else {
-        await uploadCollectorAssignmentProof(assignmentId, payload);
-        toast.success("Tải bằng chứng thu gom thành công.");
-        window.history.pushState({}, "", "/collector/request-list");
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
-      onClose();
+      await uploadCollectorAssignmentProof(assignmentId, payload);
+      toast.success("Tải bằng chứng thu gom thành công");
+      onClose?.();
+      await onSuccess?.();
     } catch (err) {
       const msg = err?.message ?? "";
       if (msg.toLowerCase().includes("conflict") || msg === "Conflict") {
