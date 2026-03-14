@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa";
-import { toast } from "react-hot-toast";
 import {
   getCollectorAssignmentReportDetail,
   getWasteCategories,
-  updateCollectorAssignmentStatus,
-  uploadCollectorAssignmentProof,
 } from "../../service/api";
 import UpdateStatusModal from "../../components/CollectorComponent/UpdateStatusModal";
 import UploadProofModal from "../../components/CollectorComponent/UploadProofModal";
@@ -50,9 +47,8 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
   const lat = report?.latitude ?? data?.latitude ?? 10.7769;
   const lng = report?.longitude ?? data?.longitude ?? 106.7009;
 
-  const imageUrlsFromMedia = Array.isArray(report?.media)
-    ? report.media.map((m) => m?.url).filter(Boolean)
-    : [];
+  const mediaList = Array.isArray(report?.media) ? report.media : [];
+  const imageUrlsFromMedia = mediaList.map((m) => m?.url).filter(Boolean);
   const imageUrls =
     imageUrlsFromMedia.length > 0
       ? imageUrlsFromMedia
@@ -62,6 +58,25 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
     Array.isArray(imageUrls) && imageUrls.length > 0
       ? imageUrls[0]
       : (report?.image ?? "");
+
+  const isCollectedProof = (m) =>
+    String(m?.mediaType ?? "").toUpperCase() === "COLLECTED_PROOF";
+  const fieldImages = mediaList.length
+    ? mediaList
+        .filter((m) => !isCollectedProof(m))
+        .map((m) => m?.url)
+        .filter(Boolean)
+    : Array.isArray(imageUrls)
+      ? imageUrls
+      : firstImage
+        ? [firstImage]
+        : [];
+  const proofImages = mediaList.length
+    ? mediaList
+        .filter(isCollectedProof)
+        .map((m) => m?.url)
+        .filter(Boolean)
+    : [];
 
   const status =
     report?.currentStatus ??
@@ -101,6 +116,8 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
     status,
     statusColor: mapStatusToBadgeClass(status),
     coordinates: { lat: Number(lat), lng: Number(lng) },
+    fieldImages: Array.isArray(fieldImages) ? fieldImages : [],
+    proofImages: Array.isArray(proofImages) ? proofImages : [],
   };
 };
 
@@ -173,32 +190,6 @@ const RequestDetailPage = () => {
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
-  const handleUpdateStatusSubmit = async (payload) => {
-    setShowUpdateStatusModal(false);
-    const statusId = assignmentId || reportId;
-    if (!statusId) {
-      toast.error("Thiếu thông tin phân công.");
-      setShowUpdateStatusModal(true);
-      return;
-    }
-    try {
-      await updateCollectorAssignmentStatus(statusId, {
-        status: payload.status,
-        note: payload.note,
-        lastKnownLatitude: payload.lastKnownLatitude ?? 0,
-        lastKnownLongitude: payload.lastKnownLongitude ?? 0,
-      });
-      toast.success("Cập nhật trạng thái thành công.");
-      await fetchDetail();
-      if (payload.status === "COLLECTED") {
-        setShowUploadProofModal(true);
-      }
-    } catch {
-      toast.error("Không thể cập nhật trạng thái.");
-      setShowUpdateStatusModal(true);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col w-full h-full min-h-0">
@@ -259,9 +250,9 @@ const RequestDetailPage = () => {
     );
   }
 
-  const images = request.images || [request.image];
-  const mapEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${request.coordinates.lng - 0.01}%2C${request.coordinates.lat - 0.01}%2C${request.coordinates.lng + 0.01}%2C${request.coordinates.lat + 0.01}&layer=mapnik&marker=${request.coordinates.lat}%2C${request.coordinates.lng}`;
-  const googleMapsUrl = `https://www.google.com/maps?q=${request.coordinates.lat},${request.coordinates.lng}`;
+  const { lat, lng } = request.coordinates;
+  const mapEmbedUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1234567890123!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f5c8c8c8c8d%3A0x8c8c8c8c8c8c8c8c!2sHo%20Chi%20Minh%20City!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s`;
+  const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
 
   return (
     <div className="flex flex-col w-full h-full min-h-0">
@@ -389,21 +380,70 @@ const RequestDetailPage = () => {
                   Ảnh hiện trường (từ người dân)
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {images.slice(0, 4).map((img, i) => (
-                    <div
-                      key={i}
-                      className="h-40 overflow-hidden bg-gray-100 border border-gray-200 rounded-lg"
-                    >
-                      <img
-                        src={img}
-                        alt=""
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ))}
-                  {images.length > 4 && (
+                  {request.fieldImages?.length > 0 ? (
+                    <>
+                      {request.fieldImages.slice(0, 4).map((img, i) => (
+                        <div
+                          key={i}
+                          className="h-40 overflow-hidden bg-gray-100 border border-gray-200 rounded-lg"
+                        >
+                          <img
+                            src={img}
+                            alt=""
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      ))}
+                      {request.fieldImages.length > 4 && (
+                        <div className="flex items-center justify-center h-40 text-sm text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
+                          +{request.fieldImages.length - 4} ảnh
+                        </div>
+                      )}
+                    </>
+                  ) : (
                     <div className="flex items-center justify-center h-40 text-sm text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
-                      +{images.length - 4} ảnh
+                      Không có ảnh
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                  Ảnh bằng chứng (từ người thu gom)
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {request.proofImages?.length > 0 ? (
+                    <>
+                      {request.proofImages.slice(0, 4).map((img, i) => (
+                        <div
+                          key={i}
+                          className="h-40 overflow-hidden bg-gray-100 border border-gray-200 rounded-lg"
+                        >
+                          <img
+                            src={img}
+                            alt=""
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      ))}
+                      {request.proofImages.length > 4 && (
+                        <div className="flex items-center justify-center h-40 text-sm text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
+                          +{request.proofImages.length - 4} ảnh
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-sm text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
+                      <span>Không có ảnh</span>
+                      {String(request.status).toUpperCase() === "COLLECTED" && (
+                        <button
+                          type="button"
+                          onClick={() => setShowUploadProofModal(true)}
+                          className="font-medium text-blue-600 cursor-pointer hover:underline"
+                        >
+                          Thêm ảnh
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -431,9 +471,12 @@ const RequestDetailPage = () => {
             </h2>
             <div className="relative h-64 overflow-hidden border border-gray-200 rounded-lg">
               <iframe
-                title="Vị trí thu gom"
+                title="Bản đồ vị trí"
                 src={mapEmbedUrl}
-                className="w-full h-full border-0"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -441,11 +484,11 @@ const RequestDetailPage = () => {
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="absolute p-2 bg-white border border-gray-200 rounded-lg shadow bottom-3 right-3 hover:bg-gray-50"
-                aria-label="Mở Google Maps"
+                className="absolute inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-200 rounded-lg shadow top-3 left-3 hover:bg-gray-50"
+                aria-label="Mở trong Google Maps"
               >
                 <svg
-                  className="w-5 h-5 text-gray-600"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -454,46 +497,21 @@ const RequestDetailPage = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
+                Mở trong Google Maps
               </a>
             </div>
           </div>
         </div>
 
-        {/* Card 3: Sẵn sàng bắt đầu? */}
-        <div className="p-5 bg-white border border-gray-200 rounded-xl">
-          <h2 className="flex items-center gap-2 mb-2 text-lg font-semibold text-gray-900">
-            <svg
-              className="w-5 h-5 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-            Sẵn sàng bắt đầu?
-          </h2>
-          <p className="mb-4 text-gray-600">
-            Bắt đầu di chuyển tới điểm tập kết ngay bây giờ.
-          </p>
-          <div className="flex flex-wrap justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                window.history.pushState({}, "", "/collector/incident-report");
-                window.dispatchEvent(new PopStateEvent("popstate"));
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-800 font-medium rounded-lg hover:bg-gray-200"
-            >
+        {/* Card 3: Sẵn sàng bắt đầu? / Đang trên đường — ẩn khi đã thu gom */}
+        {String(request.status).toUpperCase() !== "COLLECTED" && (
+          <div className="p-5 bg-white border border-gray-200 rounded-xl">
+            <h2 className="flex items-center gap-2 mb-2 text-lg font-semibold text-gray-900">
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5 text-green-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -502,96 +520,132 @@ const RequestDetailPage = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              Báo cáo sự cố
-            </button>
-            {request.status === "ON_THE_WAY" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setUpdateStatusInitial(request?.status || "ON_THE_WAY");
-                  setShowUpdateStatusModal(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {String(request.status).toUpperCase() === "ON_THE_WAY"
+                ? "Đang trên đường"
+                : "Sẵn sàng bắt đầu?"}
+            </h2>
+            <p className="mb-4 text-gray-600">
+              {String(request.status).toUpperCase() === "ON_THE_WAY"
+                ? "Khi hoàn thành hãy xác nhận thu gom hoặc báo cáo sự cố nếu cần."
+                : "Bắt đầu di chuyển tới điểm tập kết ngay bây giờ."}
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              {String(request.status).toUpperCase() === "ON_THE_WAY" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.history.pushState(
+                        {},
+                        "",
+                        "/collector/incident-report",
+                      );
+                      window.dispatchEvent(new PopStateEvent("popstate"));
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-800 font-medium rounded-lg hover:bg-gray-200"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    Báo cáo sự cố
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUpdateStatusInitial(request?.status || "ON_THE_WAY");
+                      setShowUpdateStatusModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Xác nhận thu gom
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpdateStatusInitial(request?.status || "ASSIGNED");
+                    setShowUpdateStatusModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Xác nhận thu gom
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setUpdateStatusInitial(request?.status || "ASSIGNED");
-                  setShowUpdateStatusModal(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Bắt đầu di chuyển
-              </button>
-            )}
-            <UpdateStatusModal
-              key={
-                showUpdateStatusModal
-                  ? `status-${updateStatusInitial}`
-                  : "status-closed"
-              }
-              show={showUpdateStatusModal}
-              onClose={() => setShowUpdateStatusModal(false)}
-              onSubmit={handleUpdateStatusSubmit}
-              initialStatus={
-                updateStatusInitial === "COMPLETED"
-                  ? "COLLECTED"
-                  : updateStatusInitial
-              }
-            />
-            <UploadProofModal
-              show={showUploadProofModal}
-              onClose={() => {
-                setShowUploadProofModal(false);
-                setShowUpdateStatusModal(true);
-              }}
-              onSubmit={async (payload) => {
-                await uploadCollectorAssignmentProof(assignmentId, payload);
-                toast.success("Tải bằng chứng thu gom thành công");
-                setShowUploadProofModal(false);
-                await fetchDetail();
-              }}
-            />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Bắt đầu di chuyển
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        <UpdateStatusModal
+          key={
+            showUpdateStatusModal
+              ? `status-${updateStatusInitial}`
+              : "status-closed"
+          }
+          show={showUpdateStatusModal}
+          onClose={() => setShowUpdateStatusModal(false)}
+          statusId={assignmentId || reportId}
+          onSuccess={fetchDetail}
+          onCollected={() => setShowUploadProofModal(true)}
+          initialStatus={
+            updateStatusInitial === "COMPLETED"
+              ? "COLLECTED"
+              : updateStatusInitial
+          }
+        />
+        <UploadProofModal
+          show={showUploadProofModal}
+          onClose={() => {
+            setShowUploadProofModal(false);
+          }}
+          assignmentId={assignmentId}
+          onSuccess={fetchDetail}
+        />
       </div>
     </div>
   );

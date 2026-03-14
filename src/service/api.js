@@ -351,6 +351,26 @@ export const createWasteCategory = async (body) => {
 };
 
 /**
+ * Cập nhật danh mục loại rác (Admin) - Update waste category
+ * PUT /admin/waste-categories/{id}
+ * @param {string} id - UUID danh mục (path parameter, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} body.name - Tên danh mục
+ * @returns {Promise} Response từ API
+ */
+export const updateWasteCategory = async (id, body) => {
+  try {
+    const { data } = await api.put(`/admin/waste-categories/${id}`, body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật danh mục loại rác. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy lịch sử giao dịch điểm của công dân hiện tại
  * GET /citizen/points/transactions
  * @param {number} page - Chỉ số trang (zero-based)
@@ -1214,27 +1234,6 @@ export const getAdminUserDetail = async (userId) => {
 };
 
 /**
- * Xóa khu vực làm việc (working area) của user (Admin)
- * DELETE /admin/users/{userId}/working-area
- * @param {string} userId - ID user (path parameter, bắt buộc)
- * @returns {Promise} Response từ API
- */
-export const clearAdminUserWorkingArea = async (userId) => {
-  try {
-    if (!userId) {
-      throw new Error("Thiếu userId để xóa khu vực làm việc.");
-    }
-    const { data } = await api.delete(`/admin/users/${userId}/working-area`);
-    return data;
-  } catch (error) {
-    handleApiError(
-      error,
-      "Đã xảy ra lỗi khi xóa khu vực làm việc của người dùng. Vui lòng thử lại.",
-    );
-  }
-};
-
-/**
  * Thăng cấp user thành collector và set working area (Admin)
  * POST /admin/users/{userId}/promote-collector
  * @param {string} userId - ID user (path parameter, bắt buộc)
@@ -1361,10 +1360,7 @@ export const createCitizenComplaint = async (body) => {
     const { data } = await api.post("/citizen/complaint", body);
     return data;
   } catch (error) {
-    handleApiError(
-      error,
-      "Đã xảy ra lỗi khi tạo khiếu nại. Vui lòng thử lại.",
-    );
+    handleApiError(error, "Đã xảy ra lỗi khi tạo khiếu nại. Vui lòng thử lại.");
   }
 };
 

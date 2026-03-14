@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
+import { updateCollectorAssignmentStatus } from "../../service/api";
 
 const STATUS_OPTIONS = [
   { value: "ASSIGNED", label: "Đã giao" },
@@ -24,16 +25,28 @@ const isValidLongitude = (value) => {
 const normalizeStatus = (s) =>
   s === "COMPLETED" ? "COLLECTED" : s || "ASSIGNED";
 
+/**
+ * Modal cập nhật trạng thái assignment. Gọi API trong modal, toast và callbacks khi xong.
+ * @param {boolean} show
+ * @param {() => void} onClose
+ * @param {string} [initialStatus]
+ * @param {string} [statusId] - assignmentId hoặc reportId để gọi API
+ * @param {() => void | Promise<void>} [onSuccess] - sau khi cập nhật thành công (vd. refetch)
+ * @param {() => void} [onCollected] - gọi khi chọn trạng thái COLLECTED thành công (vd. mở UploadProofModal)
+ */
 const UpdateStatusModal = ({
   show,
   onClose,
-  onSubmit,
   initialStatus = "ASSIGNED",
+  statusId,
+  onSuccess,
+  onCollected,
 }) => {
   const [status, setStatus] = useState(() => normalizeStatus(initialStatus));
   const [note, setNote] = useState("");
   const [latitudeInput, setLatitudeInput] = useState("");
   const [longitudeInput, setLongitudeInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -56,8 +69,12 @@ const UpdateStatusModal = ({
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!statusId) {
+      toast.error("Thiếu thông tin phân công.");
+      return;
+    }
     const hasLat = latitudeInput.trim() !== "";
     const hasLng = longitudeInput.trim() !== "";
     if (hasLat && !isValidLatitude(latitudeInput)) {
@@ -74,16 +91,30 @@ const UpdateStatusModal = ({
     }
     const lastKnownLatitude = hasLat ? Number(latitudeInput) : 0;
     const lastKnownLongitude = hasLng ? Number(longitudeInput) : 0;
-    onSubmit({
+    const payload = {
       status,
       note: note.trim() || "",
       lastKnownLatitude,
       lastKnownLongitude,
-    });
-    setNote("");
-    setLatitudeInput("");
-    setLongitudeInput("");
-    onClose();
+    };
+
+    setSubmitting(true);
+    try {
+      await updateCollectorAssignmentStatus(statusId, payload);
+      onClose?.();
+      toast.success("Cập nhật trạng thái thành công.");
+      await onSuccess?.();
+      if (payload.status === "COLLECTED") {
+        onCollected?.();
+      }
+      setNote("");
+      setLatitudeInput("");
+      setLongitudeInput("");
+    } catch {
+      toast.error("Không thể cập nhật trạng thái.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!show) return null;
@@ -224,9 +255,10 @@ const UpdateStatusModal = ({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+              disabled={submitting}
+              className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cập nhật
+              {submitting ? "Đang xử lý..." : "Cập nhật"}
             </button>
           </div>
         </form>

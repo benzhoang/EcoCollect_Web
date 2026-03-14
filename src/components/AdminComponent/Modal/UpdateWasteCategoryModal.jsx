@@ -1,31 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { updateWasteCategory } from "../../../service/api";
 
+/**
+ * Modal cập nhật danh mục loại rác. PUT /admin/waste-categories/{id}, body: { name }.
+ * @param {boolean} isOpen
+ * @param {() => void} onClose
+ * @param {{ id: string, name?: string }} [category] - Danh mục đang sửa (id bắt buộc)
+ * @param {(updated?: object) => void} [onSuccess] - Gọi sau khi cập nhật thành công
+ */
 const UpdateWasteCategoryModal = ({ isOpen, onClose, category, onSuccess }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (category) {
-      setFormData({
-        name: category.name || "",
-        description: category.description || "",
-      });
+      setName(category.name || "");
     }
   }, [category]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const updated = { ...category, ...formData };
-    onSuccess?.(updated);
-    onClose?.();
+    if (!category?.id) {
+      toast.error("Thiếu thông tin danh mục.");
+      return;
+    }
+    const trimmedName = (name || "").trim();
+    if (!trimmedName) {
+      toast.error("Vui lòng nhập tên danh mục.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await updateWasteCategory(category.id, {
+        name: trimmedName,
+      });
+      onClose?.();
+      toast.success("Cập nhật danh mục loại rác thành công.");
+      onSuccess?.(result ?? { id: category.id, name: trimmedName });
+      setTimeout(() => window.location.reload(), 600);
+    } catch {
+      toast.error("Không thể cập nhật danh mục. Vui lòng thử lại.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -53,27 +72,13 @@ const UpdateWasteCategoryModal = ({ isOpen, onClose, category, onSuccess }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
-              Tên loại rác
+              Tên danh mục <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Nhập tên loại rác"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Mô tả
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Nhập mô tả loại rác"
-              rows={3}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nhập tên danh mục"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
@@ -81,9 +86,10 @@ const UpdateWasteCategoryModal = ({ isOpen, onClose, category, onSuccess }) => {
           <div className="flex justify-center pt-4">
             <button
               type="submit"
-              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors"
+              disabled={submitting}
+              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cập nhật
+              {submitting ? "Đang xử lý..." : "Cập nhật"}
             </button>
           </div>
         </form>
