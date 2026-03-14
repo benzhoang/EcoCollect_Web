@@ -5,6 +5,13 @@ const TradeHistory = () => {
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageInfo, setPageInfo] = useState({
+        page: 0,
+        size: 11,
+        totalElements: 0,
+        totalPages: 1,
+    });
 
     const getStatusBadge = (status) => {
         const normalized = String(status || '').toUpperCase();
@@ -28,8 +35,8 @@ const TradeHistory = () => {
                 setIsLoading(true);
                 setError('');
                 const response = await getCitizenVoucherRedemptions({
-                    page: 0,
-                    size: 20,
+                    page: currentPage - 1,
+                    size: 11,
                     sort: ['redeemedAt,desc'],
                 });
                 const payload = response?.data ?? response;
@@ -60,6 +67,12 @@ const TradeHistory = () => {
                 });
 
                 setHistory(mapped);
+                setPageInfo({
+                    page: pageData?.page ?? (currentPage - 1),
+                    size: pageData?.size ?? 11,
+                    totalElements: pageData?.totalElements ?? mapped.length,
+                    totalPages: pageData?.totalPages ?? 1,
+                });
             } catch (err) {
                 console.error('Lỗi khi lấy lịch sử đổi quà:', err);
                 setError('Không thể tải lịch sử đổi quà. Vui lòng thử lại.');
@@ -70,7 +83,7 @@ const TradeHistory = () => {
         };
 
         fetchHistory();
-    }, []);
+    }, [currentPage]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-white">
@@ -91,7 +104,7 @@ const TradeHistory = () => {
                         </div>
                         <div>
                             <div className="text-xs text-gray-500">Tổng lượt đổi</div>
-                            <div className="text-lg font-semibold text-gray-900">{history.length}</div>
+                            <div className="text-lg font-semibold text-gray-900">{pageInfo.totalElements}</div>
                         </div>
                     </div>
                 </div>
@@ -134,38 +147,66 @@ const TradeHistory = () => {
                         )}
 
                         {!isLoading && history.length > 0 && (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wide">
-                                            <th className="text-left py-3 px-2 font-semibold">Voucher</th>
-                                            <th className="text-left py-3 px-2 font-semibold">Ngày đổi</th>
-                                            <th className="text-left py-3 px-2 font-semibold">Mã đổi</th>
-                                            <th className="text-right py-3 px-2 font-semibold">Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {history.map((item) => (
-                                            <tr key={item.id} className="border-b border-gray-100 hover:bg-green-50/40 transition-colors">
-                                                <td className="py-4 px-2">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-semibold text-gray-900">{item.title}</span>
-                                                        {item.note && (
-                                                            <span className="text-xs text-gray-500 mt-1">{item.note}</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-2 text-sm text-gray-600">{item.redeemedAt}</td>
-                                                <td className="py-4 px-2 text-sm text-gray-600 font-medium">{item.redeemCode}</td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadge(item.status)}`}>
-                                                        {item.status || '---'}
-                                                    </span>
-                                                </td>
+                            <div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wide">
+                                                <th className="text-left py-3 px-2 font-semibold">Voucher</th>
+                                                <th className="text-left py-3 px-2 font-semibold">Ngày đổi</th>
+                                                <th className="text-left py-3 px-2 font-semibold">Mã đổi</th>
+                                                <th className="text-right py-3 px-2 font-semibold">Trạng thái</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {history.map((item) => (
+                                                <tr key={item.id} className="border-b border-gray-100 hover:bg-green-50/40 transition-colors">
+                                                    <td className="py-4 px-2">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-semibold text-gray-900">{item.title}</span>
+                                                            {item.note && (
+                                                                <span className="text-xs text-gray-500 mt-1">{item.note}</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-2 text-sm text-gray-600">{item.redeemedAt}</td>
+                                                    <td className="py-4 px-2 text-sm text-gray-600 font-medium">{item.redeemCode}</td>
+                                                    <td className="py-4 px-2 text-right">
+                                                        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadge(item.status)}`}>
+                                                            {item.status || '---'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                                    <div>
+                                        {pageInfo.totalElements > 0
+                                            ? `Hiển thị ${pageInfo.page * pageInfo.size + 1}-${pageInfo.page * pageInfo.size + history.length} của ${pageInfo.totalElements} mục`
+                                            : 'Không có dữ liệu'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Trang trước
+                                        </button>
+                                        <span className="text-sm text-gray-600">Trang {currentPage} / {pageInfo.totalPages}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPage((prev) => Math.min(pageInfo.totalPages, prev + 1))}
+                                            disabled={currentPage >= pageInfo.totalPages}
+                                            className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Trang sau
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

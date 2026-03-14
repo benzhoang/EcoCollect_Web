@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { createEnterpriseVoucher } from '../../service/api';
 
 const VoucherModal = ({
@@ -34,9 +35,12 @@ const VoucherModal = ({
             };
 
             await createEnterpriseVoucher(payload);
+            toast.success('Tạo voucher thành công!', { duration: 2500 });
             onSubmit(e);
         } catch (error) {
-            setSubmitError(error?.message || 'Tạo voucher thất bại. Vui lòng thử lại.');
+            const message = error?.message || 'Tạo voucher thất bại. Vui lòng thử lại.';
+            toast.error(message, { duration: 3500 });
+            setSubmitError(message);
         } finally {
             setIsSubmitting(false);
         }

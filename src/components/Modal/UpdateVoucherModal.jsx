@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { getEnterpriseVoucherById, updateEnterpriseVoucher } from '../../service/api';
 
 const UpdateVoucherModal = ({
@@ -67,10 +68,15 @@ const UpdateVoucherModal = ({
             };
 
             await updateEnterpriseVoucher(voucherId, payload);
+            toast.success('Cập nhật voucher thành công!', { duration: 2500 });
             onSubmit(e);
-            window.location.reload();
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
         } catch (error) {
-            setSubmitError(error?.message || 'Cập nhật voucher thất bại. Vui lòng thử lại.');
+            const message = error?.message || 'Cập nhật voucher thất bại. Vui lòng thử lại.';
+            toast.error(message, { duration: 3500 });
+            setSubmitError(message);
         } finally {
             setIsSubmitting(false);
         }

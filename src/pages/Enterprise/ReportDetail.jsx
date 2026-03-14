@@ -223,11 +223,6 @@ const ReportDetail = () => {
             }
 
             showToast('Yêu cầu đã được chấp nhận và đưa vào điều phối!', 'success');
-
-            // Sau một khoảng thời gian ngắn, quay lại trang trước (danh sách)
-            setTimeout(() => {
-                handleBack();
-            }, 1500);
         } catch (err) {
             console.error(err);
             const msg = err?.message || '';

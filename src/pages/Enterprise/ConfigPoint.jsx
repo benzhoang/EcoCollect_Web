@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import ConfigPointModal from '../../components/Modal/ConfigPointModal';
 import CancelRewardModal from '../../components/CancelRewardModal';
@@ -177,9 +178,10 @@ const ConfigPoint = () => {
 
             await upsertEnterpriseRewardRuleByWasteCategory(wasteCategoryId, payload);
             await loadRewardRules({ value: false });
+            toast.success(editingRule ? 'Cập nhật quy tắc thành công!' : 'Tạo quy tắc thành công!', { duration: 2500 });
             handleCloseModal();
         } catch (err) {
-            alert(err?.message || 'Lưu quy tắc thất bại. Vui lòng thử lại.');
+            toast.error(err?.message || 'Lưu quy tắc thất bại. Vui lòng thử lại.', { duration: 3500 });
         }
     };
 
