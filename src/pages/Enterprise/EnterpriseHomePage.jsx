@@ -5,7 +5,7 @@ import { getEnterpriseReports, getWasteCategories } from '../../service/api';
 
 const EnterpriseHomePage = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [activeTab, setActiveTab] = useState('pending');
+    const [activeTab, setActiveTab] = useState('Tất cả');
     const [currentPage, setCurrentPage] = useState(1);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [filterAreaId, setFilterAreaId] = useState('');
@@ -23,43 +23,26 @@ const EnterpriseHomePage = () => {
 
     const itemsPerPage = 5;
 
-    const mapStatusToLabel = (status) => {
-        switch (status) {
+    const getStatusConfig = (status) => {
+        const upperStatus = (status || '').toUpperCase();
+        switch (upperStatus) {
             case 'PENDING':
-                return 'Chờ xử lý';
+                return { label: 'Chờ xử lý', color: 'bg-orange-100 text-orange-700' };
             case 'ACCEPTED':
-                return 'Đã chấp nhận';
-            case 'REJECTED':
-                return 'Đã từ chối';
-            case 'CANCELLED':
-                return 'Đã hủy';
+                return { label: 'Chấp thuận', color: 'bg-green-100 text-green-700' };
             case 'ASSIGNED':
-                return 'Đã giao';
+                return { label: 'Đã phân công', color: 'bg-blue-100 text-blue-700' };
             case 'ON_THE_WAY':
-                return 'Đang thực hiện';
+                return { label: 'Đang trên đường', color: 'bg-purple-100 text-purple-700' };
             case 'COLLECTED':
-                return 'Đã thu gom';
-            default:
-                return status || 'Không rõ';
-        }
-    };
-
-    const mapStatusToBadgeClass = (status) => {
-        switch (status) {
-            case 'PENDING':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'ACCEPTED':
-                return 'bg-green-100 text-green-800';
+                return { label: 'Đã thu gom', color: 'bg-green-100 text-green-700' };
             case 'REJECTED':
-                return 'bg-red-100 text-red-800';
-            case 'ASSIGNED':
-                return 'bg-blue-100 text-blue-800';
-            case 'COLLECTED':
-                return 'bg-purple-100 text-purple-800';
+                return { label: 'Từ chối', color: 'bg-red-100 text-red-700' };
             case 'CANCELLED':
-                return 'bg-gray-100 text-gray-800';
+            case 'CANCELED':
+                return { label: 'Hủy bỏ', color: 'bg-gray-100 text-gray-700' };
             default:
-                return 'bg-gray-100 text-gray-700';
+                return { label: status || 'Không rõ', color: 'bg-gray-100 text-gray-700' };
         }
     };
 
@@ -103,11 +86,21 @@ const EnterpriseHomePage = () => {
                 // API dùng page index 0-based, còn UI dùng 1-based
                 const res = await getEnterpriseReports(currentPage - 1, itemsPerPage, ['createdAt,desc']);
                 const pageData = res?.data || {};
-                setReports(pageData.content || []);
+                const list = Array.isArray(pageData.content) ? pageData.content : [];
+                const mapped = list.map((report) => {
+                    const statusConfig = getStatusConfig(report.currentStatus);
+                    return {
+                        ...report,
+                        statusLabel: statusConfig.label,
+                        statusColor: statusConfig.color,
+                        rawStatus: (report.currentStatus || '').toUpperCase(),
+                    };
+                });
+                setReports(mapped);
                 setPageInfo({
                     page: pageData.page ?? (currentPage - 1),
                     size: pageData.size ?? itemsPerPage,
-                    totalElements: pageData.totalElements ?? (pageData.content ? pageData.content.length : 0),
+                    totalElements: pageData.totalElements ?? list.length,
                     totalPages: pageData.totalPages ?? 1,
                 });
             } catch (err) {
@@ -135,8 +128,42 @@ const EnterpriseHomePage = () => {
     const handleFilterApply = (filters) => {
         setFilterAreaId(filters.areaId || '');
         setFilterStatus(filters.status || '');
-        console.log('应用过滤器:', filters);
     };
+
+    const summaryStats = reports.reduce(
+        (acc, report) => {
+            if (report.rawStatus === 'PENDING') acc.pending += 1;
+            if (['ACCEPTED', 'ASSIGNED', 'ON_THE_WAY', 'COLLECTED'].includes(report.rawStatus)) {
+                acc.received += 1;
+            }
+            const weightValue = Number(report.estimatedWeightKg ?? report.actualWeightKg ?? 0) || 0;
+            acc.totalWeightKg += weightValue;
+            return acc;
+        },
+        { pending: 0, received: 0, totalWeightKg: 0 }
+    );
+
+    const formatWeightDisplay = (kg) => {
+        if (!kg) return '0 kg';
+        if (kg >= 1000) {
+            return `${(kg / 1000).toFixed(1)}t`;
+        }
+        return `${kg.toFixed(0)} kg`;
+    };
+
+    const filterTabs = ['Tất cả', 'Chờ xử lý', 'Chấp thuận', 'Đã phân công', 'Đang trên đường', 'Từ chối', 'Hủy bỏ', 'Thu gom'];
+
+    const filteredReports = reports.filter((report) => {
+        if (activeTab === 'Tất cả') return true;
+        if (activeTab === 'Chờ xử lý') return report.statusLabel === 'Chờ xử lý';
+        if (activeTab === 'Chấp thuận') return report.statusLabel === 'Chấp thuận';
+        if (activeTab === 'Đã phân công') return report.statusLabel === 'Đã phân công';
+        if (activeTab === 'Đang trên đường') return report.statusLabel === 'Đang trên đường';
+        if (activeTab === 'Từ chối') return report.statusLabel === 'Từ chối';
+        if (activeTab === 'Hủy bỏ') return report.statusLabel === 'Hủy bỏ';
+        if (activeTab === 'Thu gom') return report.statusLabel === 'Đã thu gom';
+        return true;
+    });
 
     return (
         <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
@@ -179,41 +206,21 @@ const EnterpriseHomePage = () => {
                     <div className="flex-1 overflow-y-auto p-6">
                         {/* Tabs */}
                         <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-2 border-b border-gray-200">
-                                <button
-                                    onClick={() => setActiveTab('pending')}
-                                    className={`px-4 py-2 font-medium text-sm relative ${activeTab === 'pending'
-                                        ? 'text-green-600 border-b-2 border-green-600'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                >
-                                    Chờ xử lý
-                                    {activeTab === 'pending' && (
-                                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                            24
-                                        </span>
-                                    )}
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('in-progress')}
-                                    className={`px-4 py-2 font-medium text-sm ${activeTab === 'in-progress'
-                                        ? 'text-green-600 border-b-2 border-green-600'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                >
-                                    Đang thực hiện
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('completed')}
-                                    className={`px-4 py-2 font-medium text-sm ${activeTab === 'completed'
-                                        ? 'text-green-600 border-b-2 border-green-600'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                        }`}
-                                >
-                                    Đã hoàn thành
-                                </button>
+                            <div className="flex flex-wrap gap-2">
+                                {filterTabs.map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === tab
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
                             </div>
-                            <button
+                            {/* <button
                                 onClick={() => setIsFilterModalOpen(true)}
                                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
@@ -221,7 +228,7 @@ const EnterpriseHomePage = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                 </svg>
                                 <span className="text-sm font-medium text-gray-700">Lọc dữ liệu</span>
-                            </button>
+                            </button> */}
                         </div>
 
                         {/* Request Table */}
@@ -252,14 +259,14 @@ const EnterpriseHomePage = () => {
                                                 </td>
                                             </tr>
                                         )}
-                                        {!loading && !error && reports.length === 0 && (
+                                        {!loading && !error && filteredReports.length === 0 && (
                                             <tr>
                                                 <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                                                     Không có báo cáo nào.
                                                 </td>
                                             </tr>
                                         )}
-                                        {!loading && !error && reports.map((report) => (
+                                        {!loading && !error && filteredReports.map((report) => (
                                             <tr key={report.reportId} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
@@ -283,8 +290,8 @@ const EnterpriseHomePage = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${mapStatusToBadgeClass(report.currentStatus)}`}>
-                                                        {mapStatusToLabel(report.currentStatus)}
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${report.statusColor}`}>
+                                                        {report.statusLabel}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -307,7 +314,7 @@ const EnterpriseHomePage = () => {
                                         <>
                                             Hiển thị {pageInfo.page * pageInfo.size + 1}
                                             -
-                                            {pageInfo.page * pageInfo.size + reports.length} của {pageInfo.totalElements} yêu cầu
+                                            {pageInfo.page * pageInfo.size + filteredReports.length} của {pageInfo.totalElements} yêu cầu
                                         </>
                                     ) : (
                                         'Không có yêu cầu nào'
@@ -353,14 +360,14 @@ const EnterpriseHomePage = () => {
                     <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto p-6 space-y-6">
                         {/* Today's Overview */}
                         <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">TỔNG QUAN HÔM NAY</h3>
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">TỔNG QUAN</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-white rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-gray-900 mb-1">14</div>
-                                    <div className="text-xs text-gray-600">Yêu cầu đã nhận</div>
+                                    <div className="text-2xl font-bold text-gray-900 mb-1">{pageInfo.totalElements}</div>
+                                    <div className="text-xs text-gray-600">Tổng yêu cầu</div>
                                 </div>
                                 <div className="bg-white rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-gray-900 mb-1">3.2t</div>
+                                    <div className="text-2xl font-bold text-gray-900 mb-1">{formatWeightDisplay(summaryStats.totalWeightKg)}</div>
                                     <div className="text-xs text-gray-600">Ước tính khối lượng</div>
                                 </div>
                             </div>

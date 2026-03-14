@@ -72,7 +72,7 @@ const ScorePage = () => {
                 setIsRedeemHistoryLoading(true);
                 const response = await getCitizenVoucherRedemptions({
                     page: 0,
-                    size: 10,
+                    size: 5,
                     sort: ['redeemedAt,desc'],
                 });
                 const payload = response?.data ?? response;
