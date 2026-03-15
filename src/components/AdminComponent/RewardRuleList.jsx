@@ -212,21 +212,21 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                         {getCategoryName(item.wasteCategoryId)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.pointsPerKg === "number"
                           ? item.pointsPerKg
                           : (item.pointsPerKg ?? "—")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.bonusQualityPoints === "number"
                           ? item.bonusQualityPoints
                           : (item.bonusQualityPoints ?? "—")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.bonusFastCompletePoints === "number"
                           ? item.bonusFastCompletePoints
@@ -243,14 +243,14 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                         {formatDate(item.effectiveTo)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.priority === "number"
                           ? item.priority
                           : (item.priority ?? "—")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           item.active
@@ -265,14 +265,14 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(item)}
-                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-yellow-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
                           title="Sửa"
                         >
                           <FaEdit className="text-sm text-yellow-600" />
                         </button>
                         <button
                           onClick={() => handleDelete(item)}
-                          className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-red-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
                           title="Xóa"
                         >
                           <FaTrash className="text-sm text-red-600" />
@@ -352,13 +352,13 @@ const RewardRuleList = ({ searchTerm = "" }) => {
           }}
         >
           <div
-            className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl p-6"
+            className="relative w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">
               Sửa quy tắc thưởng
             </h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="mb-4 text-sm text-gray-600">
               Modal cập nhật quy tắc thưởng sẽ được thêm sau.
             </p>
             <div className="flex justify-end gap-2">

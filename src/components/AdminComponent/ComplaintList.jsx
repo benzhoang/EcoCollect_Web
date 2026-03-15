@@ -5,6 +5,30 @@ import AdminPagination from "./AdminPagination";
 
 const PAGE_SIZE = 5;
 
+const CATEGORY_OPTIONS = [
+  { value: "", label: "Tất cả" },
+  { value: "MISSED_PICKUP", label: "Bỏ sót thu gom" },
+  { value: "WRONG_WASTE_TYPE", label: "Sai loại rác" },
+  { value: "INVALID_PROOF", label: "Bằng chứng không hợp lệ" },
+  { value: "POINTS_WRONG", label: "Điểm thưởng sai" },
+  { value: "OTHER", label: "Khác" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "", label: "Tất cả" },
+  { value: "OPEN", label: "Đang mở" },
+  { value: "IN_REVIEW", label: "Đang xem xét" },
+  { value: "RESOLVED", label: "Đã giải quyết" },
+  { value: "REJECTED", label: "Từ chối" },
+];
+
+const STATUS_STYLES = {
+  OPEN: "bg-orange-100 text-orange-700",
+  IN_REVIEW: "bg-blue-100 text-blue-700",
+  RESOLVED: "bg-green-100 text-green-700",
+  REJECTED: "bg-red-100 text-red-700",
+};
+
 const formatDate = (iso) => {
   const d = new Date(iso);
   return d.toLocaleDateString("vi-VN", {
@@ -20,7 +44,7 @@ const ComplaintList = ({
   filterType = "",
   filterStatus = "",
   searchTerm = "",
-  onViewDetail,
+  // onViewDetail,
   complaintTypes = {},
   statusMap = {},
 }) => {
@@ -114,9 +138,9 @@ const ComplaintList = ({
               <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
                 NGÀY XỬ LÝ
               </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase w-40 whitespace-nowrap">
+              {/* <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
                 THAO TÁC
-              </th>
+              </th> */}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -154,10 +178,14 @@ const ComplaintList = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-700">
-                      {complaintTypes[c.category] ?? c.category ?? "—"}
+                      {complaintTypes[c.category] ??
+                        CATEGORY_OPTIONS.find((o) => o.value === c.category)
+                          ?.label ??
+                        c.category ??
+                        "—"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 max-w-xs">
+                  <td className="max-w-xs px-6 py-4">
                     <span className="text-sm text-gray-700 line-clamp-2">
                       {c.description ?? "—"}
                     </span>
@@ -166,10 +194,15 @@ const ComplaintList = ({
                     <span
                       className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
                         statusMap[c.status]?.color ||
+                        STATUS_STYLES[c.status] ||
                         "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {statusMap[c.status]?.label ?? c.status ?? "—"}
+                      {statusMap[c.status]?.label ??
+                        STATUS_OPTIONS.find((o) => o.value === c.status)
+                          ?.label ??
+                        c.status ??
+                        "—"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -182,17 +215,17 @@ const ComplaintList = ({
                       {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => onViewDetail?.(c.id)}
-                        className="flex items-center justify-center w-9 h-9 transition-colors border border-gray-300 rounded-lg hover:bg-blue-50 shrink-0"
+                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-blue-50 shrink-0"
                         title="Xem chi tiết"
                       >
-                        <FaEye className="text-blue-600 text-sm" />
+                        <FaEye className="text-sm text-blue-600" />
                       </button>
                     </div>
-                  </td>
+                  </td> */}
                 </tr>
               ))
             )}

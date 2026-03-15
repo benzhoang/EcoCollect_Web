@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import toast from "react-hot-toast";
 import UpdateAreaModal from "./Modal/UpdateAreaModal";
+import ModalConfirm from "./Modal/ModalConfirm";
 import AdminPagination from "./AdminPagination";
-import { getAreas } from "../../service/api";
+import { getAreas, deactivateArea } from "../../service/api";
 
 const PAGE_SIZE = 5;
 
@@ -29,12 +31,13 @@ const buildAreaOptions = (nodes, parentName = "") => {
   return result;
 };
 
-const AreaList = () => {
+const AreaList = ({ userId = null }) => {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
   const [editingArea, setEditingArea] = useState(null);
 
@@ -85,24 +88,42 @@ const AreaList = () => {
     setIsModalDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedArea) {
-      setAreas((prev) => prev.filter((a) => a.id !== selectedArea.id));
+  const handleCloseDeleteModal = () => {
+    if (!deleteLoading) {
       setIsModalDeleteOpen(false);
       setSelectedArea(null);
     }
   };
 
-  const handleUpdateSuccess = (updatedArea) => {
-    setAreas((prev) =>
-      prev.map((a) =>
-        a.id === updatedArea.id
-          ? { id: a.id, name: updatedArea.name ?? a.name }
-          : a,
-      ),
-    );
+  const handleConfirmDelete = async () => {
+    if (!selectedArea?.id) return;
+    setDeleteLoading(true);
+    try {
+      await deactivateArea(selectedArea.id);
+      const response = await getAreas();
+      const rawData = response?.data ?? response;
+      const rootNodes = rawData ? (Array.isArray(rawData) ? rawData : [rawData]) : [];
+      setAreas(buildAreaOptions(rootNodes));
+      handleCloseDeleteModal();
+      toast.success("Đã vô hiệu hóa khu vực.");
+    } catch {
+      toast.error("Không thể vô hiệu hóa khu vực. Vui lòng thử lại.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleUpdateSuccess = async () => {
     setIsModalUpdateOpen(false);
     setEditingArea(null);
+    try {
+      const response = await getAreas();
+      const rawData = response?.data ?? response;
+      const rootNodes = rawData ? (Array.isArray(rawData) ? rawData : [rawData]) : [];
+      setAreas(buildAreaOptions(rootNodes));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePageChange = (nextPage) => {
@@ -180,7 +201,7 @@ const AreaList = () => {
                       <button
                         onClick={() => handleDelete(area)}
                         className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
-                        title="Xóa"
+                        title="Vô hiệu hóa"
                       >
                         <FaTrash className="text-sm text-red-600" />
                       </button>
@@ -202,51 +223,19 @@ const AreaList = () => {
         )}
       </div>
 
-      {/* Modal xác nhận xóa khu vực */}
-      {isModalDeleteOpen && selectedArea && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setIsModalDeleteOpen(false);
-            setSelectedArea(null);
-          }}
-        >
-          <div
-            className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 pt-6 pb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Xác nhận xóa
-              </h2>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-gray-700">
-                Bạn có chắc muốn xóa khu vực &quot;{selectedArea.name}&quot;?
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4">
-              <button
-                onClick={() => {
-                  setIsModalDeleteOpen(false);
-                  setSelectedArea(null);
-                }}
-                type="button"
-                className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                type="button"
-                className="px-4 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalConfirm
+        isOpen={isModalDeleteOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận vô hiệu hóa"
+        message={
+          selectedArea
+            ? `Bạn có chắc muốn vô hiệu hóa khu vực "${selectedArea.name}"?`
+            : "Bạn có chắc chắn muốn vô hiệu hóa khu vực này?"
+        }
+        confirmText="Vô hiệu hóa"
+        isLoading={deleteLoading}
+      />
 
       <UpdateAreaModal
         isOpen={isModalUpdateOpen}
@@ -256,6 +245,7 @@ const AreaList = () => {
         }}
         area={editingArea}
         onSuccess={handleUpdateSuccess}
+        userId={userId}
       />
     </>
   );

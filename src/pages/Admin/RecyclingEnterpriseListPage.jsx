@@ -1,15 +1,9 @@
 import React, { useState } from "react";
 import AccountList from "../../components/AdminComponent/AccountList";
-import CreateAccountModal from "../../components/AdminComponent/Modal/CreateAccountModal";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 
 const RecyclingEnterpriseListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleCreate = () => {
-    setIsModalOpen(true);
-  };
 
   const handleSearch = () => {
     console.log("Search:", searchTerm);
@@ -44,24 +38,12 @@ const RecyclingEnterpriseListPage = () => {
             />
             <FaSearch className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
           </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 shrink-0"
-          >
-            <FaPlus className="text-white" />
-            <span>Tạo tài khoản mới</span>
-          </button>
         </div>
       </header>
 
       <AccountList
         roleFilter="ROLE_ENTERPRISE_MANAGER"
         searchTerm={searchTerm}
-      />
-
-      <CreateAccountModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
       />
     </div>
   );
