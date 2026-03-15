@@ -5,6 +5,22 @@ import CollectorPagination from "../../components/CollectorComponent/CollectorPa
 
 const PAGE_SIZE = 5;
 
+const formatDate = (iso) => {
+  if (iso == null || iso === "" || iso === "-") return iso ?? "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+};
+
 const mapStatusToLabel = (status) => {
   const s = status ? String(status).toUpperCase() : "";
   switch (s) {
@@ -254,7 +270,7 @@ const HistoryPage = () => {
                         {page * PAGE_SIZE + index + 1}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {item.collectedAt}
+                        {formatDate(item.collectedAt)}
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 bg-blue-100">

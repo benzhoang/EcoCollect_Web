@@ -1,15 +1,9 @@
 import React, { useState } from "react";
 import AccountList from "../../components/AdminComponent/AccountList";
-import CreateAccountModal from "../../components/AdminComponent/Modal/CreateAccountModal";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 
 const CollectorListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleCreate = () => {
-    setIsModalOpen(true);
-  };
 
   const handleSearch = () => {
     console.log("Search:", searchTerm);
@@ -19,7 +13,7 @@ const CollectorListPage = () => {
   return (
     <div className="flex flex-col w-full h-full gap-6">
       {/* Page Header */}
-      <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
+      <header className="flex items-center justify-between w-full px-6 py-4 bg-white border-b border-gray-200">
         <div>
           <h1 className="text-2xl font-bold text-black">
             Danh sách người thu gom
@@ -44,22 +38,10 @@ const CollectorListPage = () => {
             />
             <FaSearch className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
           </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 shrink-0"
-          >
-            <FaPlus className="text-white" />
-            <span>Tạo tài khoản mới</span>
-          </button>
         </div>
       </header>
 
       <AccountList roleFilter="ROLE_COLLECTOR" searchTerm={searchTerm} />
-
-      <CreateAccountModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 };

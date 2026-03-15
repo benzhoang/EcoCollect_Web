@@ -315,12 +315,56 @@ export const createArea = async (body) => {
 };
 
 /**
- * Lấy danh sách danh mục loại rác (List waste categories)
+ * Cập nhật khu vực (Admin) - Update area
+ * PUT /admin/areas/{id}
+ * @param {string} id - UUID khu vực (path parameter, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} [body.parentId] - ID khu vực cha
+ * @param {string} [body.name] - Tên khu vực
  * @returns {Promise} Response từ API
  */
-export const getWasteCategories = async () => {
+export const updateArea = async (id, body) => {
   try {
-    const { data } = await api.get("/waste-categories");
+    const { data } = await api.put(`/admin/areas/${id}`, body);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi cập nhật khu vực. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Vô hiệu hóa khu vực (Admin) - Deactivate area
+ * PATCH /admin/areas/{id}/deactivate
+ * @param {string} id - UUID khu vực (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const deactivateArea = async (id) => {
+  try {
+    const { data } = await api.patch(`/admin/areas/${id}/deactivate`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi vô hiệu hóa khu vực. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy danh sách danh mục loại rác (List waste categories)
+ * @param {Object} [options] - Tùy chọn
+ * @param {boolean} [options.includeInactive=false] - Bao gồm danh mục không hoạt động (admin only)
+ * @returns {Promise} Response từ API
+ */
+export const getWasteCategories = async (options = {}) => {
+  try {
+    const { includeInactive = false } = options;
+    const { data } = await api.get("/waste-categories", {
+      params: { includeInactive },
+    });
     return data;
   } catch (error) {
     handleApiError(
@@ -366,6 +410,26 @@ export const updateWasteCategory = async (id, body) => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi cập nhật danh mục loại rác. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Vô hiệu hóa danh mục loại rác (Admin) - Deactivate waste category
+ * PATCH /admin/waste-categories/{id}/deactivate
+ * @param {string} id - UUID danh mục (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const deactivateWasteCategory = async (id) => {
+  try {
+    const { data } = await api.patch(
+      `/admin/waste-categories/${id}/deactivate`,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi vô hiệu hóa danh mục loại rác. Vui lòng thử lại.",
     );
   }
 };
@@ -1175,6 +1239,26 @@ export const upsertAdminWasteCapability = async (wasteCategoryId, body) => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi thêm công suất. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Bật/tắt cờ tiếp nhận (Admin) - Toggle accepting flag
+ * PATCH /admin/waste-capabilities/{wasteCategoryId}/toggle
+ * @param {string} wasteCategoryId - UUID danh mục rác (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const toggleAdminWasteCapability = async (wasteCategoryId) => {
+  try {
+    const { data } = await api.patch(
+      `/admin/waste-capabilities/${wasteCategoryId}/toggle`,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi bật/tắt tiếp nhận. Vui lòng thử lại.",
     );
   }
 };

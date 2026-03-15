@@ -287,13 +287,15 @@ const AccountDetailPage = () => {
           <div className="lg:col-span-1">
             <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
               <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handlePromoteToCollector}
-                  className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 border border-green-600 rounded-md hover:bg-green-700 hover:border-green-700"
-                >
-                  Chuyển thành người thu gom
-                </button>
+                {userDetail?.roles?.includes("ROLE_CITIZEN") && (
+                  <button
+                    type="button"
+                    onClick={handlePromoteToCollector}
+                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 border border-green-600 rounded-md hover:bg-green-700 hover:border-green-700"
+                  >
+                    Chuyển thành người thu gom
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleUpdateStatus}

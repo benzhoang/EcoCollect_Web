@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import toast from "react-hot-toast";
 import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
+import ModalConfirm from "./Modal/ModalConfirm";
 import AdminPagination from "./AdminPagination";
-import { getWasteCategories } from "../../service/api";
+import { getWasteCategories, deactivateWasteCategory } from "../../service/api";
 
 const PAGE_SIZE = 5;
 
 const WasteCategoryList = ({ refreshTrigger = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -65,11 +68,29 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
     setIsModalDeleteOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedCategory) {
-      setCategories((prev) => prev.filter((c) => c.id !== selectedCategory.id));
+  const handleCloseDeleteModal = () => {
+    if (!deleteLoading) {
       setIsModalDeleteOpen(false);
       setSelectedCategory(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedCategory?.id) return;
+    setDeleteLoading(true);
+    try {
+      await deactivateWasteCategory(selectedCategory.id);
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === selectedCategory.id ? { ...c, active: false } : c,
+        ),
+      );
+      handleCloseDeleteModal();
+      toast.success("Đã vô hiệu hóa  danh mục loại rác.");
+    } catch {
+      toast.error("Không thể vô hiệu hóa danh mục. Vui lòng thử lại.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -91,7 +112,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
 
   if (error) {
     return (
-      <div className="px-6 py-4 bg-red-50 border border-red-200 rounded-lg">
+      <div className="px-6 py-4 border border-red-200 rounded-lg bg-red-50">
         <p className="text-sm text-red-700">{error}</p>
       </div>
     );
@@ -152,7 +173,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                         {category.name ?? "—"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           category.active
@@ -160,7 +181,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {category.active ? "Hoạt động" : "Ẩn"}
+                        {category.active ? "Hoạt động" : "Vô hiệu hóa"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -175,7 +196,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                         <button
                           onClick={() => handleDelete(category)}
                           className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
-                          title="Xóa"
+                          title="Vô hiệu hóa"
                         >
                           <FaTrash className="text-sm text-red-600" />
                         </button>
@@ -198,52 +219,19 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
         )}
       </div>
 
-      {/* Modal xác nhận xóa danh mục */}
-      {isModalDeleteOpen && selectedCategory && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setIsModalDeleteOpen(false);
-            setSelectedCategory(null);
-          }}
-        >
-          <div
-            className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 pt-6 pb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Xác nhận xóa
-              </h2>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-gray-700">
-                Bạn có chắc muốn xóa danh mục &quot;{selectedCategory.name}
-                &quot;?
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4">
-              <button
-                onClick={() => {
-                  setIsModalDeleteOpen(false);
-                  setSelectedCategory(null);
-                }}
-                type="button"
-                className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                type="button"
-                className="px-4 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalConfirm
+        isOpen={isModalDeleteOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận vô hiệu hóa"
+        message={
+          selectedCategory
+            ? `Bạn có chắc muốn vô hiệu hóa danh mục "${selectedCategory.name}"?`
+            : "Bạn có chắc chắn muốn vô hiệu hóa danh mục này?"
+        }
+        confirmText="Vô hiệu hóa"
+        isLoading={deleteLoading}
+      />
 
       <UpdateWasteCategoryModal
         isOpen={isModalUpdateOpen}
