@@ -1,7 +1,7 @@
 // Sử dụng proxy trong development để tránh lỗi CORS
 // Trong development: sử dụng relative path (sẽ được proxy bởi Vite)
 // Trong production: sử dụng full URL
-const API_BASE_URL = import.meta.env.DEV ? "" : "http://localhost:8080";
+const API_BASE_URL = import.meta.env.DEV ? "" : "https://swpbe-production-b987.up.railway.app";
 
 import axios from "axios";
 
