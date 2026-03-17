@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPause } from "react-icons/fa";
 import toast from "react-hot-toast";
 import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
 import ModalConfirm from "./Modal/ModalConfirm";
@@ -195,10 +195,10 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                         </button>
                         <button
                           onClick={() => handleDelete(category)}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
                           title="Vô hiệu hóa"
                         >
-                          <FaTrash className="text-sm text-red-600" />
+                          <FaPause className="text-sm text-gray-600" />
                         </button>
                       </div>
                     </td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPause } from "react-icons/fa";
 import toast from "react-hot-toast";
 import UpdateAreaModal from "./Modal/UpdateAreaModal";
 import ModalConfirm from "./Modal/ModalConfirm";
@@ -102,7 +102,11 @@ const AreaList = ({ userId = null }) => {
       await deactivateArea(selectedArea.id);
       const response = await getAreas();
       const rawData = response?.data ?? response;
-      const rootNodes = rawData ? (Array.isArray(rawData) ? rawData : [rawData]) : [];
+      const rootNodes = rawData
+        ? Array.isArray(rawData)
+          ? rawData
+          : [rawData]
+        : [];
       setAreas(buildAreaOptions(rootNodes));
       handleCloseDeleteModal();
       toast.success("Đã vô hiệu hóa khu vực.");
@@ -119,7 +123,11 @@ const AreaList = ({ userId = null }) => {
     try {
       const response = await getAreas();
       const rawData = response?.data ?? response;
-      const rootNodes = rawData ? (Array.isArray(rawData) ? rawData : [rawData]) : [];
+      const rootNodes = rawData
+        ? Array.isArray(rawData)
+          ? rawData
+          : [rawData]
+        : [];
       setAreas(buildAreaOptions(rootNodes));
     } catch (err) {
       console.error(err);
@@ -200,10 +208,10 @@ const AreaList = ({ userId = null }) => {
                       </button>
                       <button
                         onClick={() => handleDelete(area)}
-                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
+                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
                         title="Vô hiệu hóa"
                       >
-                        <FaTrash className="text-sm text-red-600" />
+                        <FaPause className="text-sm text-gray-600" />
                       </button>
                     </div>
                   </td>

@@ -103,6 +103,23 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/collector/statistics/overview": {
+        target: "https://swpbe-production-b987.up.railway.app",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/admin/statistics": {
+        target: "https://swpbe-production-b987.up.railway.app",
+        changeOrigin: true,
+        secure: false,
+      },
+      // Proxy API xử lý khiếu nại (PATCH /admin/complaint/{id}/processing)
+      // Dùng "/admin/complaint/" (có slash cuối) để không trùng route frontend /admin/complaints
+      "/admin/complaint/": {
+        target: "https://swpbe-production-b987.up.railway.app",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });
