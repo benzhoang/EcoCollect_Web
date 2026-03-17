@@ -46,6 +46,7 @@ import ConfigVoucher from "./pages/Enterprise/ConfigVoucher";
 import VoucherDetail from "./pages/Enterprise/VoucherDetail";
 import TradeHistory from "./pages/Citizen/TradeHistory";
 import Complaints from "./pages/Citizen/Complaints";
+import Statistic from "./pages/Citizen/Statistic";
 
 function App() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -217,6 +218,14 @@ function App() {
             <Footer />
           </>
         );
+      case "/statistics":
+        return (
+          <>
+            <Navbar />
+            <Statistic />
+            <Footer />
+          </>
+        );
       case "/setting":
         return (
           <>
@@ -317,7 +326,7 @@ function App() {
         return <FollowProgress />;
       case "/enterprise/rewards":
         return <ConfigPoint />;
-      case "/enterprise/reports":
+      case "/enterprise/statistic":
         return <EnterpriseReport />;
       case "/enterprise/settings":
         return <EnterpriseSetting />;

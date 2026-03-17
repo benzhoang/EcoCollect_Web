@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { createCitizenReport, getAreaTree, getWasteCategories } from '../../service/api';
+import { uploadImage } from '../../service/uploadImage';
 
 const CreateReport = () => {
     // Lưu trực tiếp wasteCategoryId (UUID) thay vì name để submit chuẩn
@@ -131,12 +132,12 @@ const CreateReport = () => {
                 if (isMatch) {
                     if (hasChildren) {
                         const childMatch = searchLeafArea(area.children);
-                            if (childMatch) return childMatch;
-                        }
+                        if (childMatch) return childMatch;
+                    }
                     if (!hasChildren && area.id) {
                         return area.id;
-                        }
                     }
+                }
 
                 if (hasChildren) {
                     const childMatch = searchLeafArea(area.children);
@@ -203,7 +204,7 @@ const CreateReport = () => {
         return Number.isFinite(n) && n > 0;
     };
 
-    const handleImageChange = (e) => {
+    const handleUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 10 * 1024 * 1024) {
@@ -220,6 +221,17 @@ const CreateReport = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
+
+            try {
+                const url = await uploadImage(file);
+                console.log(url); // link ảnh
+                setImageUrl(url);
+            } catch (error) {
+                console.error('Upload ảnh thất bại:', error);
+                toast.error('Upload ảnh thất bại. Vui lòng thử lại.', {
+                    duration: 4000,
+                });
+            }
         }
     };
 
@@ -246,16 +258,6 @@ const CreateReport = () => {
                 duration: 4000,
             });
         }
-    };
-
-    // 将文件转换为 base64 数据 URL
-    const fileToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     };
 
     const handleSubmit = async () => {
@@ -321,9 +323,14 @@ const CreateReport = () => {
                     imageUrls = [url];
                 }
             } else if (selectedImage) {
-                // 如果是上传的文件，转换为 base64 数据 URL
-                const base64Url = await fileToBase64(selectedImage);
-                imageUrls = [base64Url];
+                const uploadedUrl = imageUrl?.trim();
+                if (uploadedUrl) {
+                    imageUrls = [uploadedUrl];
+                } else {
+                    const url = await uploadImage(selectedImage);
+                    console.log(url); // link ảnh
+                    imageUrls = [url];
+                }
             }
 
             if (imageUrls.length === 0) {
@@ -545,7 +552,7 @@ const CreateReport = () => {
                                             ref={fileInputRef}
                                             type="file"
                                             accept="image/png,image/jpeg,image/jpg"
-                                            onChange={handleImageChange}
+                                            onChange={handleUpload}
                                             className="hidden"
                                             disabled={imageMode !== 'upload'}
                                         />
