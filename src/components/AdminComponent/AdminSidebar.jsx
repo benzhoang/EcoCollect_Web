@@ -138,7 +138,7 @@ const AdminSidebar = ({ isOpen }) => {
               >
                 {getIcon("dashboard")}
               </span>
-              <span className="text-sm">Báo cáo</span>
+              <span className="text-sm">Báo cáo thống kê</span>
             </Link>
           </li>
 

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { FaEye } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 import { getComplaints } from "../../service/api";
 import AdminPagination from "./AdminPagination";
+import UpdateComplaintStatusModal from "./Modal/UpdateComplaintStatusModal";
 
 const PAGE_SIZE = 5;
 
@@ -51,6 +52,8 @@ const ComplaintList = ({
   const [complaintsRaw, setComplaintsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [pageInfo, setPageInfo] = useState({
     page: 0,
@@ -102,6 +105,16 @@ const ComplaintList = ({
     setPage(Math.max(0, nextPage - 1));
   };
 
+  const handleOpenUpdate = (complaint) => {
+    setSelectedComplaint(complaint);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleCloseUpdate = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedComplaint(null);
+  };
+
   const complaints = useMemo(() => {
     let list = [...complaintsRaw];
     if (searchTerm.trim()) {
@@ -138,9 +151,9 @@ const ComplaintList = ({
               <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
                 NGÀY XỬ LÝ
               </th>
-              {/* <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
+              <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
                 THAO TÁC
-              </th> */}
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -215,17 +228,17 @@ const ComplaintList = ({
                       {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
                     </span>
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => onViewDetail?.(c.id)}
-                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-blue-50 shrink-0"
-                        title="Xem chi tiết"
+                        onClick={() => handleOpenUpdate(c)}
+                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
+                        title="Cập nhật trạng thái"
                       >
-                        <FaEye className="text-sm text-blue-600" />
+                        <FaEdit className="text-sm text-yellow-600" />
                       </button>
                     </div>
-                  </td> */}
+                  </td>
                 </tr>
               ))
             )}
@@ -241,6 +254,14 @@ const ComplaintList = ({
           itemLabel="khiếu nại"
         />
       )}
+      <UpdateComplaintStatusModal
+        isOpen={isUpdateModalOpen}
+        onClose={handleCloseUpdate}
+        complaintId={selectedComplaint?.id}
+        initialStatus={selectedComplaint?.status}
+        initialResolutionNote={selectedComplaint?.resolutionNote}
+        onSuccess={() => load(page)}
+      />
     </div>
   );
 };

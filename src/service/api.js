@@ -1,7 +1,9 @@
 // Sử dụng proxy trong development để tránh lỗi CORS
 // Trong development: sử dụng relative path (sẽ được proxy bởi Vite)
 // Trong production: sử dụng full URL
-const API_BASE_URL = import.meta.env.DEV ? "" : "https://swpbe-production-b987.up.railway.app";
+const API_BASE_URL = import.meta.env.DEV
+  ? ""
+  : "https://swpbe-production-b987.up.railway.app";
 
 import axios from "axios";
 
@@ -435,6 +437,116 @@ export const deactivateWasteCategory = async (id) => {
 };
 
 /**
+ * Xử lý khiếu nại (Admin) - Processing complaint
+ * PATCH /admin/complaint/{id}/processing
+ * @param {string} id - UUID khiếu nại (path parameter, bắt buộc)
+ * @param {Object} body - Request body (bắt buộc)
+ * @param {string} body.status - Trạng thái (vd: "OPEN")
+ * @param {string} body.resolutionNote - Ghi chú xử lý
+ * @returns {Promise} Response từ API
+ */
+export const patchAdminComplaintProcessing = async (id, body) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id khiếu nại để xử lý.");
+    }
+    const { data } = await api.patch(
+      `/admin/complaint/${id}/processing`,
+      body,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi xử lý khiếu nại. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Thống kê số report theo tháng trong năm (Admin)
+ * GET /admin/statistics/reports-by-month
+ * @param {number} year - Năm cần thống kê (query, integer)
+ * @returns {Promise} Response từ API
+ */
+export const getAdminStatisticsReportsByMonth = async (year) => {
+  try {
+    const params = {};
+    if (year != null) params.year = year;
+    const { data } = await api.get("/admin/statistics/reports-by-month", {
+      params,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê report theo tháng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Thống kê tổng quan admin
+ * GET /admin/statistics/overview
+ * @param {Object} [options]
+ * @param {string} [options.range] - Khoảng thời gian (vd: "MONTH")
+ * @returns {Promise} Response từ API
+ */
+export const getAdminStatisticsOverview = async ({ range } = {}) => {
+  try {
+    const params = {};
+    if (range) params.range = range;
+    const { data } = await api.get("/admin/statistics/overview", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê tổng quan admin. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Thống kê collector theo khu vực làm việc (Admin)
+ * GET /admin/statistics/collectors-by-area
+ * @returns {Promise} Response từ API
+ */
+export const getAdminStatisticsCollectorsByArea = async () => {
+  try {
+    const { data } = await api.get("/admin/statistics/collectors-by-area");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê collector theo khu vực. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Thống kê tổng quan collector
+ * GET /collector/statistics/overview
+ * @param {Object} [options]
+ * @param {string} [options.range] - Khoảng thời gian (vd: "MONTH")
+ * @returns {Promise} Response từ API
+ */
+export const getCollectorStatisticsOverview = async ({ range } = {}) => {
+  try {
+    const params = {};
+    if (range) params.range = range;
+    const { data } = await api.get("/collector/statistics/overview", {
+      params,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê tổng quan collector. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Lấy lịch sử giao dịch điểm của công dân hiện tại
  * GET /citizen/points/transactions
  * @param {number} page - Chỉ số trang (zero-based)
@@ -779,7 +891,9 @@ export const getEnterpriseStatisticsOverview = async ({ range } = {}) => {
   try {
     const params = {};
     if (range) params.range = range;
-    const { data } = await api.get("/enterprise/statistics/overview", { params });
+    const { data } = await api.get("/enterprise/statistics/overview", {
+      params,
+    });
     return data;
   } catch (error) {
     handleApiError(
@@ -1527,6 +1641,61 @@ export const getAdminRewardRules = async () => {
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy danh sách quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Upsert quy tắc thưởng theo danh mục rác (Admin)
+ * PUT /admin/reward-rules/{wasteCategoryId}
+ * @param {string} wasteCategoryId - ID danh mục rác (uuid, path param, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {number} body.pointsPerKg
+ * @param {number} body.bonusQualityPoints
+ * @param {number} body.bonusFastCompletePoints
+ * @param {string} body.effectiveFrom - ISO datetime
+ * @param {string} body.effectiveTo - ISO datetime
+ * @param {number} body.priority
+ * @returns {Promise} Response từ API
+ */
+export const upsertAdminRewardRuleByWasteCategory = async (
+  wasteCategoryId,
+  body,
+) => {
+  try {
+    if (!wasteCategoryId) {
+      throw new Error("Thiếu wasteCategoryId để lưu quy tắc thưởng.");
+    }
+    const { data } = await api.put(
+      `/admin/reward-rules/${wasteCategoryId}`,
+      body,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lưu quy tắc thưởng. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Bật/tắt trạng thái active của quy tắc thưởng (Admin)
+ * PATCH /admin/reward-rules/{id}/toggle
+ * @param {string} id - ID quy tắc thưởng (uuid, path param, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const toggleAdminRewardRule = async (id) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id để bật/tắt quy tắc thưởng.");
+    }
+    const { data } = await api.patch(`/admin/reward-rules/${id}/toggle`);
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi bật/tắt quy tắc thưởng. Vui lòng thử lại.",
     );
   }
 };

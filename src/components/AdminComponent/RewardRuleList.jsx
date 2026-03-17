@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { getAdminRewardRules, getWasteCategories } from "../../service/api";
+import { FaPause } from "react-icons/fa";
+import { FaArrowsRotate } from "react-icons/fa6";
+import toast from "react-hot-toast";
+import {
+  getAdminRewardRules,
+  getWasteCategories,
+  toggleAdminRewardRule,
+} from "../../service/api";
 import AdminPagination from "./AdminPagination";
+import ModalConfirm from "./Modal/ModalConfirm";
 
 const PAGE_SIZE = 5;
 
@@ -20,11 +27,10 @@ const formatDate = (dateStr) => {
   }
 };
 
-const RewardRuleList = ({ searchTerm = "" }) => {
-  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+const RewardRuleList = ({ searchTerm = "", refreshKey = 0 }) => {
+  const [isModalToggleOpen, setIsModalToggleOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [toggleLoading, setToggleLoading] = useState(false);
   const [rules, setRules] = useState([]);
   const [categoryNameMap, setCategoryNameMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -62,7 +68,7 @@ const RewardRuleList = ({ searchTerm = "" }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   const getCategoryName = (wasteCategoryId) =>
     categoryNameMap[wasteCategoryId] ?? wasteCategoryId ?? "—";
@@ -99,30 +105,42 @@ const RewardRuleList = ({ searchTerm = "" }) => {
     setPage(Math.max(0, nextPage - 1));
   };
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setIsModalUpdateOpen(true);
-  };
-
-  const handleDelete = (item) => {
+  const handleToggle = (item) => {
     setSelectedItem(item);
-    setIsModalDeleteOpen(true);
+    setIsModalToggleOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedItem) {
-      setRules((prev) => prev.filter((r) => r.id !== selectedItem.id));
-      setIsModalDeleteOpen(false);
+  const handleCloseToggleModal = () => {
+    if (!toggleLoading) {
+      setIsModalToggleOpen(false);
       setSelectedItem(null);
     }
   };
 
-  const onUpdateSuccess = (updatedItem) => {
-    setRules((prev) =>
-      prev.map((r) => (r.id === updatedItem.id ? updatedItem : r)),
-    );
-    setIsModalUpdateOpen(false);
-    setEditingItem(null);
+  const handleConfirmToggle = async () => {
+    if (!selectedItem?.id) return;
+    setToggleLoading(true);
+    try {
+      await toggleAdminRewardRule(selectedItem.id);
+      setRules((prev) =>
+        prev.map((r) =>
+          r.id === selectedItem.id ? { ...r, active: !(r.active ?? false) } : r,
+        ),
+      );
+      handleCloseToggleModal();
+      const isRestore = selectedItem.active === false;
+      toast.success(
+        isRestore
+          ? "Đã bật lại quy tắc thưởng."
+          : "Đã tạm dừng quy tắc thưởng.",
+      );
+    } catch {
+      toast.error(
+        "Không thể thay đổi trạng thái quy tắc thưởng. Vui lòng thử lại.",
+      );
+    } finally {
+      setToggleLoading(false);
+    }
   };
 
   return (
@@ -263,20 +281,23 @@ const RewardRuleList = ({ searchTerm = "" }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
-                          title="Sửa"
-                        >
-                          <FaEdit className="text-sm text-yellow-600" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item)}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
-                          title="Xóa"
-                        >
-                          <FaTrash className="text-sm text-red-600" />
-                        </button>
+                        {item.active === false ? (
+                          <button
+                            onClick={() => handleToggle(item)}
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-green-100 shrink-0"
+                            title="Khôi phục"
+                          >
+                            <FaArrowsRotate className="text-sm text-green-600" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggle(item)}
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
+                            title="Tạm dừng"
+                          >
+                            <FaPause className="text-sm text-gray-600" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -296,93 +317,25 @@ const RewardRuleList = ({ searchTerm = "" }) => {
         )}
       </div>
 
-      {/* Modal xác nhận xóa */}
-      {isModalDeleteOpen && selectedItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setIsModalDeleteOpen(false);
-            setSelectedItem(null);
-          }}
-        >
-          <div
-            className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 pt-6 pb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Xác nhận xóa
-              </h2>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-gray-700">
-                Bạn có chắc muốn xóa quy tắc thưởng này?
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4">
-              <button
-                onClick={() => {
-                  setIsModalDeleteOpen(false);
-                  setSelectedItem(null);
-                }}
-                type="button"
-                className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                type="button"
-                className="px-4 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal sửa placeholder */}
-      {isModalUpdateOpen && editingItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => {
-            setIsModalUpdateOpen(false);
-            setEditingItem(null);
-          }}
-        >
-          <div
-            className="relative w-full max-w-md p-6 mx-4 bg-white rounded-lg shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
-              Sửa quy tắc thưởng
-            </h2>
-            <p className="mb-4 text-sm text-gray-600">
-              Modal cập nhật quy tắc thưởng sẽ được thêm sau.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsModalUpdateOpen(false);
-                  setEditingItem(null);
-                }}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                onClick={() => onUpdateSuccess(editingItem)}
-                className="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700"
-              >
-                Lưu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalConfirm
+        isOpen={isModalToggleOpen}
+        onClose={handleCloseToggleModal}
+        onConfirm={handleConfirmToggle}
+        title={
+          selectedItem?.active === false
+            ? "Xác nhận bật lại quy tắc thưởng"
+            : "Xác nhận tạm dừng quy tắc thưởng"
+        }
+        message={
+          selectedItem
+            ? selectedItem.active === false
+              ? `Bạn có chắc muốn bật lại quy tắc thưởng cho "${getCategoryName(selectedItem.wasteCategoryId)}"?`
+              : `Bạn có chắc muốn tạm dừng quy tắc thưởng cho "${getCategoryName(selectedItem.wasteCategoryId)}"?`
+            : ""
+        }
+        confirmText={selectedItem?.active === false ? "Khôi phục" : "Tạm dừng"}
+        isLoading={toggleLoading}
+      />
     </>
   );
 };

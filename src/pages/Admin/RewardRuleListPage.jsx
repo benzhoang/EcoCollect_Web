@@ -1,12 +1,38 @@
 import React, { useState } from "react";
 import RewardRuleList from "../../components/AdminComponent/RewardRuleList";
+import CreateRewardRuleModal from "../../components/AdminComponent/Modal/CreateRewardRuleModal";
 import { FaPlus, FaSearch } from "react-icons/fa";
+
+const initialFormData = {
+  wasteCategoryId: "",
+  pointsPerKg: "",
+  bonusQualityPoints: "",
+  bonusFastCompletePoints: "",
+  effectiveFrom: "",
+  effectiveTo: "",
+  priority: "",
+};
 
 const RewardRuleListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState(initialFormData);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleCreate = () => {
-    // TODO: mở modal thêm quy tắc thưởng khi có CreateRewardRuleModal
+    setFormData(initialFormData);
+    setShowCreateModal(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateSuccess = () => {
+    setRefreshKey((k) => k + 1);
+    setShowCreateModal(false);
+    setFormData(initialFormData);
   };
 
   const handleSearch = () => {
@@ -48,7 +74,18 @@ const RewardRuleListPage = () => {
         </div>
       </header>
 
-      <RewardRuleList searchTerm={searchTerm} />
+      <RewardRuleList searchTerm={searchTerm} refreshKey={refreshKey} />
+
+      <CreateRewardRuleModal
+        show={showCreateModal}
+        formData={formData}
+        onClose={() => {
+          setShowCreateModal(false);
+          setFormData(initialFormData);
+        }}
+        onSuccess={handleCreateSuccess}
+        onInputChange={handleInputChange}
+      />
     </div>
   );
 };

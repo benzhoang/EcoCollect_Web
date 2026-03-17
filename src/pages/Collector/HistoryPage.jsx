@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { FaSearch, FaEye } from "react-icons/fa";
-import { getCollectorAssignments, getWasteCategories } from "../../service/api";
+import {
+  FaSearch,
+  FaEye,
+  FaInbox,
+  FaCheckCircle,
+  FaChartPie,
+  FaImage,
+} from "react-icons/fa";
+import {
+  getCollectorAssignments,
+  getWasteCategories,
+  getCollectorStatisticsOverview,
+} from "../../service/api";
 import CollectorPagination from "../../components/CollectorComponent/CollectorPagination";
 
 const PAGE_SIZE = 5;
@@ -96,6 +107,12 @@ const HistoryPage = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [categoryMap, setCategoryMap] = useState({});
+  const [stats, setStats] = useState({
+    totalAssignedRequests: 0,
+    totalCompletedRequests: 0,
+    completionRate: 0,
+    totalProofsUploaded: 0,
+  });
   const [pageInfo, setPageInfo] = useState({
     page: 0,
     size: PAGE_SIZE,
@@ -163,6 +180,26 @@ const HistoryPage = () => {
     fetchAssignments(page);
   }, [page, fetchAssignments]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await getCollectorStatisticsOverview({
+          range: "MONTH",
+        });
+        const data = response?.data ?? response ?? {};
+        setStats({
+          totalAssignedRequests: Number(data.totalAssignedRequests ?? 0),
+          totalCompletedRequests: Number(data.totalCompletedRequests ?? 0),
+          completionRate: Number(data.completionRate ?? 0),
+          totalProofsUploaded: Number(data.totalProofsUploaded ?? 0),
+        });
+      } catch (err) {
+        console.error("Không thể tải thống kê tổng quan collector:", err);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const handlePageChange = (nextPage) => {
     setPage(Math.max(0, nextPage - 1));
   };
@@ -199,6 +236,67 @@ const HistoryPage = () => {
           <FaSearch className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
         </div>
       </header>
+
+      {/* Thống kê tổng quan (không hiển thị range) */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 shrink-0">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Số báo cáo đã nhận</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {stats.totalAssignedRequests}
+              </p>
+            </div>
+            <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+              <FaInbox className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between gap-1">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">
+                Số báo cáo đã hoàn thành
+              </p>
+              <p className="text-3xl font-bold text-orange-600">
+                {stats.totalCompletedRequests}
+              </p>
+            </div>
+            <div className="w-14 h-14 bg-orange-100 rounded-lg flex items-center justify-center shrink-0">
+              <FaCheckCircle className="w-8 h-8 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Tỷ lệ hoàn thành</p>
+              <p className="text-3xl font-bold text-green-600">
+                {Math.round(stats.completionRate * 100)}%
+              </p>
+            </div>
+            <div className="w-14 h-14 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
+              <FaChartPie className="w-8 h-8 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Số bằng chứng đã tải</p>
+              <p className="text-3xl font-bold text-purple-600">
+                {stats.totalProofsUploaded}
+              </p>
+            </div>
+            <div className="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+              <FaImage className="w-8 h-8 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="flex-1 min-h-0 overflow-auto">
         <div className="overflow-hidden bg-white border border-gray-200 rounded-xl">
@@ -327,31 +425,34 @@ const HistoryPage = () => {
           )}
         </div>
 
-        {!loading && !error && displayList.length === 0 && list.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-xl">
-            <div className="flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+        {!loading &&
+          !error &&
+          displayList.length === 0 &&
+          list.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-xl">
+              <div className="flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full">
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <p className="font-medium text-gray-600">
+                Chưa có lịch sử công việc
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Các yêu cầu đã thu gom sẽ hiển thị tại đây.
+              </p>
             </div>
-            <p className="font-medium text-gray-600">
-              Chưa có lịch sử công việc
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              Các yêu cầu đã thu gom sẽ hiển thị tại đây.
-            </p>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaTrash } from "react-icons/fa";
+import { FaPause } from "react-icons/fa";
 import toast from "react-hot-toast";
 import {
   getAdminWasteCapabilities,
@@ -216,18 +216,18 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
                         {item.accepting === false ? (
                           <button
                             onClick={() => handleToggle(item)}
-                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-green-100 shrink-0"
                             title="Khôi phục"
                           >
-                            <FaArrowsRotate className="text-sm text-gray-500" />
+                            <FaArrowsRotate className="text-sm text-green-600" />
                           </button>
                         ) : (
                           <button
                             onClick={() => handleToggle(item)}
-                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-red-50 shrink-0"
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
                             title="Tạm dừng tiếp nhận"
                           >
-                            <FaTrash className="text-sm text-red-600" />
+                            <FaPause className="text-sm text-gray-600" />
                           </button>
                         )}
                       </div>
