@@ -480,6 +480,26 @@ export const getCitizenNotifications = async () => {
 };
 
 /**
+ * Thống kê tổng quan citizen theo tháng
+ * GET /citizen/statistics/overview?month=YYYY-MM
+ * @param {string} [month] - Tháng cần thống kê (YYYY-MM)
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenStatisticsOverview = async (month) => {
+  try {
+    const params = {};
+    if (month) params.month = month;
+    const { data } = await api.get("/citizen/statistics/overview", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê tổng quan. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Cập nhật trạng thái đã đọc cho thông báo của công dân
  * PUT /citizen/notification?ids=<id>&ids=<id>
  * @param {string[]} ids - Danh sách notification user id cần đánh dấu đã đọc
@@ -744,6 +764,27 @@ export const getEnterpriseVouchers = async ({
     handleApiError(
       error,
       "Đã xảy ra lỗi khi lấy danh sách voucher. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
+ * Lấy thống kê tổng quan enterprise
+ * Endpoint: GET /enterprise/statistics/overview
+ * @param {Object} [options]
+ * @param {string} [options.range] - DAY | WEEK | MONTH | YEAR
+ * @returns {Promise} Response từ API
+ */
+export const getEnterpriseStatisticsOverview = async ({ range } = {}) => {
+  try {
+    const params = {};
+    if (range) params.range = range;
+    const { data } = await api.get("/enterprise/statistics/overview", { params });
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thống kê tổng quan. Vui lòng thử lại.",
     );
   }
 };

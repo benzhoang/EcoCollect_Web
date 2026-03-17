@@ -98,6 +98,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/enterprise/statistics/overview": {
+        target: "https://swpbe-production-b987.up.railway.app",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

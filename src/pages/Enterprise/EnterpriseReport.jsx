@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
+import { getEnterpriseStatisticsOverview, getWasteCategories, getAreaTree, getEnterpriseReports } from '../../service/api';
 
 const EnterpriseReport = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen] = useState(true);
     const [timeFilter, setTimeFilter] = useState('month'); // day, week, month, year
     const [wasteTypeFilter, setWasteTypeFilter] = useState('all');
     const [areaFilter, setAreaFilter] = useState('all');
@@ -15,53 +16,61 @@ const EnterpriseReport = () => {
     const [reportData, setReportData] = useState({
         totalCollected: 0,
         totalRecycled: 0,
+        totalReportsReceived: 0,
+        totalReportsCompleted: 0,
+        totalAcceptedWasteCategories: 0,
         byType: [],
         byArea: [],
         byTime: []
     });
 
-    const wasteTypes = [
-        { value: 'all', label: 'Tất cả loại' },
-        { value: 'PET', label: 'Nhựa PET', color: 'bg-blue-100 text-blue-700' },
-        { value: 'HDPE', label: 'Nhựa HDPE', color: 'bg-indigo-100 text-indigo-700' },
-        { value: 'ORGANIC', label: 'Rác hữu cơ', color: 'bg-green-100 text-green-700' },
-        { value: 'PAPER', label: 'Giấy vụn', color: 'bg-orange-100 text-orange-700' },
-        { value: 'METAL', label: 'Kim loại', color: 'bg-gray-100 text-gray-700' },
-        { value: 'GLASS', label: 'Thủy tinh', color: 'bg-cyan-100 text-cyan-700' },
-        { value: 'ELECTRONIC', label: 'Điện tử', color: 'bg-purple-100 text-purple-700' }
-    ];
+    const [wasteTypes, setWasteTypes] = useState([
+        { value: 'all', label: 'Tất cả loại' }
+    ]);
+    const [isWasteTypesLoading, setIsWasteTypesLoading] = useState(false);
 
-    const areas = [
-        { value: 'all', label: 'Tất cả khu vực' },
-        { value: 'q1', label: 'Quận 1' },
-        { value: 'q2', label: 'Quận 2' },
-        { value: 'q3', label: 'Quận 3' },
-        { value: 'q7', label: 'Quận 7' },
-        { value: 'q9', label: 'Quận 9' },
-        { value: 'btl', label: 'Bắc Thăng Long' }
-    ];
+    const [areas, setAreas] = useState([
+        { value: 'all', label: 'Tất cả khu vực' }
+    ]);
+    const [isAreasLoading, setIsAreasLoading] = useState(false);
+
+    const [reportRows, setReportRows] = useState([]);
+    const [isReportsLoading, setIsReportsLoading] = useState(false);
+    const [reportsError, setReportsError] = useState(null);
 
     useEffect(() => {
-        // Simulate data fetching
+        // Simulate data fetching for charts/tables
         const generateReportData = () => {
-            const sampleByType = [
-                { type: 'PET', collected: 1250, recycled: 1100, percentage: 88 },
-                { type: 'HDPE', collected: 850, recycled: 720, percentage: 85 },
-                { type: 'ORGANIC', collected: 2100, recycled: 1890, percentage: 90 },
-                { type: 'PAPER', collected: 980, recycled: 850, percentage: 87 },
-                { type: 'METAL', collected: 650, recycled: 580, percentage: 89 },
-                { type: 'GLASS', collected: 420, recycled: 380, percentage: 90 },
-                { type: 'ELECTRONIC', collected: 180, recycled: 150, percentage: 83 }
-            ];
+            const sampleByType = wasteTypes
+                .filter((type) => type.value !== 'all')
+                .map((type, index) => {
+                    const base = 300 + index * 120;
+                    const collected = base + (index % 3) * 80;
+                    const recycled = Math.floor(collected * (0.8 + (index % 3) * 0.05));
+                    const percentage = collected > 0 ? Math.round((recycled / collected) * 100) : 0;
 
-            const sampleByArea = [
-                { area: 'q1', name: 'Quận 1', collected: 1200, recycled: 1050 },
-                { area: 'q2', name: 'Quận 2', collected: 980, recycled: 850 },
-                { area: 'q3', name: 'Quận 3', collected: 1100, recycled: 950 },
-                { area: 'q7', name: 'Quận 7', collected: 1350, recycled: 1200 },
-                { area: 'q9', name: 'Quận 9', collected: 900, recycled: 800 },
-                { area: 'btl', name: 'Bắc Thăng Long', collected: 1420, recycled: 1280 }
-            ];
+                    return {
+                        type: type.value,
+                        collected,
+                        recycled,
+                        percentage
+                    };
+                });
+
+            const sampleByArea = areas
+                .filter((area) => area.value !== 'all')
+                .map((area, index) => {
+                    const base = 400 + index * 150;
+                    const collected = base + (index % 4) * 90;
+                    const recycled = Math.floor(collected * (0.78 + (index % 4) * 0.05));
+
+                    return {
+                        area: area.value,
+                        name: area.label,
+                        collected,
+                        recycled
+                    };
+                });
 
             const sampleByTime = [
                 { date: '2024-01-01', collected: 450, recycled: 400 },
@@ -73,34 +82,192 @@ const EnterpriseReport = () => {
                 { date: '2024-01-07', collected: 510, recycled: 460 }
             ];
 
-            const totalCollected = sampleByType.reduce((sum, item) => sum + item.collected, 0);
-            const totalRecycled = sampleByType.reduce((sum, item) => sum + item.recycled, 0);
-
-            setReportData({
-                totalCollected,
-                totalRecycled,
+            setReportData((prev) => ({
+                ...prev,
                 byType: sampleByType,
                 byArea: sampleByArea,
                 byTime: sampleByTime
-            });
+            }));
+        };
+
+        const fetchOverview = async () => {
+            try {
+                const rangeMap = {
+                    day: 'DAY',
+                    week: 'WEEK',
+                    month: 'MONTH',
+                    year: 'YEAR'
+                };
+                const response = await getEnterpriseStatisticsOverview({
+                    range: rangeMap[timeFilter] || 'MONTH'
+                });
+                const data = response?.data ?? response;
+
+                setReportData((prev) => ({
+                    ...prev,
+                    totalReportsReceived: Number(data?.totalReportsReceived ?? 0),
+                    totalRecycled: Number(data?.totalRecycledWeightKg ?? prev.totalRecycled ?? 0),
+                    totalReportsCompleted: Number(data?.totalCompletedReports ?? 0),
+                    totalCollected: Number(data?.totalRecycledWeightKg ?? prev.totalCollected ?? 0),
+                    byType: prev.byType,
+                    byArea: prev.byArea,
+                    byTime: prev.byTime,
+                    totalAcceptedWasteCategories: Number(data?.totalAcceptedWasteCategories ?? prev.byType?.length ?? 0)
+                }));
+            } catch (error) {
+                console.error('Không thể tải thống kê tổng quan:', error);
+            }
         };
 
         generateReportData();
-    }, [timeFilter, wasteTypeFilter, areaFilter, dateRange]);
+        fetchOverview();
+    }, [timeFilter, wasteTypeFilter, areaFilter, dateRange, wasteTypes, areas]);
+
+    useEffect(() => {
+        const loadWasteCategories = async () => {
+            try {
+                setIsWasteTypesLoading(true);
+                const response = await getWasteCategories();
+                const raw = response?.data ?? response;
+                const items = Array.isArray(raw)
+                    ? raw
+                    : Array.isArray(raw?.items)
+                        ? raw.items
+                        : [];
+
+                const mapped = items
+                    .filter((c) => c && c.id)
+                    .map((c) => ({
+                        id: c.id,
+                        value: c.code || c.name || c.id,
+                        label: c.name || c.displayName || c.code || 'Rác thải',
+                        color: 'bg-gray-100 text-gray-700'
+                    }));
+
+                setWasteTypes([{ value: 'all', label: 'Tất cả loại' }, ...mapped]);
+            } catch (error) {
+                console.error('Không thể tải danh sách loại rác:', error);
+                setWasteTypes([{ value: 'all', label: 'Tất cả loại' }]);
+            } finally {
+                setIsWasteTypesLoading(false);
+            }
+        };
+
+        loadWasteCategories();
+    }, []);
+
+    useEffect(() => {
+        const loadAreas = async () => {
+            try {
+                setIsAreasLoading(true);
+                const response = await getAreaTree();
+                const raw = response?.data ?? response;
+                const roots = Array.isArray(raw) ? raw : raw ? [raw] : [];
+                const wards = [];
+
+                const collectWards = (nodes) => {
+                    nodes.forEach((node) => {
+                        const children = Array.isArray(node?.children) ? node.children : [];
+                        if (!children.length && node?.id) {
+                            wards.push({
+                                value: node.id,
+                                label: node.name || 'Khu vực'
+                            });
+                        } else if (children.length) {
+                            collectWards(children);
+                        }
+                    });
+                };
+
+                collectWards(roots);
+
+                setAreas([{ value: 'all', label: 'Tất cả khu vực' }, ...wards]);
+            } catch (error) {
+                console.error('Không thể tải danh sách khu vực:', error);
+                setAreas([{ value: 'all', label: 'Tất cả khu vực' }]);
+            } finally {
+                setIsAreasLoading(false);
+            }
+        };
+
+        loadAreas();
+    }, []);
+
+    useEffect(() => {
+        const loadReports = async () => {
+            try {
+                setIsReportsLoading(true);
+                setReportsError(null);
+                const response = await getEnterpriseReports(0, 50, ['createdAt,desc']);
+                const pageData = response?.data || {};
+                const list = Array.isArray(pageData.content) ? pageData.content : [];
+                const collected = list.filter((report) => String(report?.currentStatus || '').toUpperCase() === 'COLLECTED');
+
+                const mapped = collected.map((report) => {
+                    const statusConfig = getStatusConfig(report?.currentStatus);
+                    const weightValue = Number(report?.actualWeightKg ?? report?.estimatedWeightKg ?? 0) || 0;
+
+                    return {
+                        id: report.id,
+                        wasteCategoryId: report.wasteCategoryId,
+                        areaId: report.areaId,
+                        addressText: report.addressText,
+                        weightKg: weightValue,
+                        statusLabel: statusConfig.label,
+                        statusColor: statusConfig.color,
+                        date: report.collectedAt || report.completedAt || report.updatedAt || report.createdAt
+                    };
+                });
+
+                setReportRows(mapped);
+            } catch (error) {
+                console.error('Không thể tải danh sách báo cáo:', error);
+                setReportsError(error?.message || 'Không thể tải danh sách báo cáo');
+                setReportRows([]);
+            } finally {
+                setIsReportsLoading(false);
+            }
+        };
+
+        loadReports();
+    }, []);
 
     const getWasteTypeLabel = (type) => {
-        const found = wasteTypes.find(t => t.value === type);
+        const found = wasteTypes.find(t => t.value === type || t.id === type);
         return found ? found.label : type;
     };
 
     const getWasteTypeColor = (type) => {
-        const found = wasteTypes.find(t => t.value === type);
+        const found = wasteTypes.find(t => t.value === type || t.id === type);
         return found ? found.color : 'bg-gray-100 text-gray-700';
     };
 
-    const getAreaName = (area) => {
-        const found = areas.find(a => a.value === area);
-        return found ? found.label : area;
+    const getAreaLabel = (id) => {
+        const found = areas.find((a) => a.value === id);
+        return found ? found.label : 'Không rõ';
+    };
+
+    const getStatusConfig = (status) => {
+        const upperStatus = String(status || '').toUpperCase();
+        switch (upperStatus) {
+            case 'PENDING':
+                return { label: 'Chờ xử lý', color: 'bg-orange-100 text-orange-700' };
+            case 'ACCEPTED':
+                return { label: 'Chấp thuận', color: 'bg-green-100 text-green-700' };
+            case 'ASSIGNED':
+                return { label: 'Đã phân công', color: 'bg-blue-100 text-blue-700' };
+            case 'ON_THE_WAY':
+                return { label: 'Đang trên đường', color: 'bg-purple-100 text-purple-700' };
+            case 'COLLECTED':
+                return { label: 'Đã thu gom', color: 'bg-green-100 text-green-700' };
+            case 'REJECTED':
+                return { label: 'Từ chối', color: 'bg-red-100 text-red-700' };
+            case 'CANCELLED':
+            case 'CANCELED':
+                return { label: 'Hủy bỏ', color: 'bg-gray-100 text-gray-700' };
+            default:
+                return { label: status || 'Không rõ', color: 'bg-gray-100 text-gray-700' };
+        }
     };
 
     const formatNumber = (num) => {
@@ -183,8 +350,12 @@ const EnterpriseReport = () => {
                                     value={wasteTypeFilter}
                                     onChange={(e) => setWasteTypeFilter(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    disabled={isWasteTypesLoading}
                                 >
-                                    {wasteTypes.map(type => (
+                                    {isWasteTypesLoading && (
+                                        <option value="all">Đang tải...</option>
+                                    )}
+                                    {!isWasteTypesLoading && wasteTypes.map(type => (
                                         <option key={type.value} value={type.value}>{type.label}</option>
                                     ))}
                                 </select>
@@ -197,8 +368,12 @@ const EnterpriseReport = () => {
                                     value={areaFilter}
                                     onChange={(e) => setAreaFilter(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    disabled={isAreasLoading}
                                 >
-                                    {areas.map(area => (
+                                    {isAreasLoading && (
+                                        <option value="all">Đang tải...</option>
+                                    )}
+                                    {!isAreasLoading && areas.map(area => (
                                         <option key={area.value} value={area.value}>{area.label}</option>
                                     ))}
                                 </select>
@@ -211,8 +386,8 @@ const EnterpriseReport = () => {
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600 mb-1">Tổng khối lượng thu gom</p>
-                                    <p className="text-3xl font-bold text-gray-900">{formatNumber(reportData.totalCollected)} kg</p>
+                                    <p className="text-sm text-gray-600 mb-1">Tổng báo cáo đã nhận</p>
+                                    <p className="text-3xl font-bold text-gray-900">{formatNumber(reportData.totalReportsReceived)}</p>
                                 </div>
                                 <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center">
                                     <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,12 +414,8 @@ const EnterpriseReport = () => {
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600 mb-1">Tỷ lệ tái chế</p>
-                                    <p className="text-3xl font-bold text-orange-600">
-                                        {reportData.totalCollected > 0
-                                            ? ((reportData.totalRecycled / reportData.totalCollected) * 100).toFixed(1)
-                                            : 0}%
-                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1">Tổng báo cáo đã hoàn thành</p>
+                                    <p className="text-3xl font-bold text-orange-600">{formatNumber(reportData.totalReportsCompleted)}</p>
                                 </div>
                                 <div className="w-14 h-14 bg-orange-100 rounded-lg flex items-center justify-center">
                                     <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +429,7 @@ const EnterpriseReport = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Số loại rác</p>
-                                    <p className="text-3xl font-bold text-purple-600">{reportData.byType.length}</p>
+                                    <p className="text-3xl font-bold text-purple-600">{formatNumber(reportData.totalAcceptedWasteCategories || reportData.byType.length)}</p>
                                 </div>
                                 <div className="w-14 h-14 bg-purple-100 rounded-lg flex items-center justify-center">
                                     <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,48 +522,6 @@ const EnterpriseReport = () => {
                         </div>
                     </div>
 
-                    {/* Time Series Chart */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Theo thời gian</h3>
-                        <div className="h-64 flex items-end justify-between gap-2">
-                            {reportData.byTime.map((item, index) => {
-                                const maxCollected = getMaxValue(reportData.byTime, 'collected');
-                                const collectedHeight = (item.collected / maxCollected) * 100;
-                                const recycledHeight = (item.recycled / maxCollected) * 100;
-
-                                return (
-                                    <div key={index} className="flex-1 flex flex-col items-center gap-1 group">
-                                        <div className="w-full flex flex-col items-center justify-end gap-1 h-48">
-                                            <div
-                                                className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer"
-                                                style={{ height: `${collectedHeight}%` }}
-                                                title={`Thu gom: ${formatNumber(item.collected)} kg`}
-                                            ></div>
-                                            <div
-                                                className="w-full bg-green-500 rounded-t hover:bg-green-600 transition-colors cursor-pointer"
-                                                style={{ height: `${recycledHeight}%` }}
-                                                title={`Tái chế: ${formatNumber(item.recycled)} kg`}
-                                            ></div>
-                                        </div>
-                                        <span className="text-xs text-gray-600 mt-2">
-                                            {new Date(item.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="flex items-center justify-center gap-6 mt-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                                <span className="text-sm text-gray-600">Thu gom</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                                <span className="text-sm text-gray-600">Tái chế</span>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Detailed Table */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-200">
@@ -403,49 +532,59 @@ const EnterpriseReport = () => {
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Loại rác</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Khu vực</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Khối lượng thu gom (kg)</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Khối lượng tái chế (kg)</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tỷ lệ tái chế (%)</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Địa điểm</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Khối lượng(kg)</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Trạng thái</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ngày</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {reportData.byType.flatMap((typeItem, typeIndex) =>
-                                        reportData.byArea.map((areaItem, areaIndex) => {
-                                            const collected = Math.floor(Math.random() * 500) + 100;
-                                            const recycled = Math.floor(collected * 0.85);
-                                            const percentage = ((recycled / collected) * 100).toFixed(1);
-                                            const date = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-                                            return (
-                                                <tr key={`${typeIndex}-${areaIndex}`} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getWasteTypeColor(typeItem.type)}`}>
-                                                            {getWasteTypeLabel(typeItem.type)}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm text-gray-900">{areaItem.name}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm font-medium text-gray-900">{formatNumber(collected)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm font-medium text-green-600">{formatNumber(recycled)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm font-medium text-orange-600">{percentage}%</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="text-sm text-gray-600">
-                                                            {new Date(date).toLocaleDateString('vi-VN')}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
+                                    {isReportsLoading && (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-6 text-center text-sm text-gray-500">
+                                                Đang tải danh sách báo cáo...
+                                            </td>
+                                        </tr>
                                     )}
+                                    {!isReportsLoading && reportsError && (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-6 text-center text-sm text-red-500">
+                                                {reportsError}
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {!isReportsLoading && !reportsError && reportRows.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-6 text-center text-sm text-gray-500">
+                                                Chưa có báo cáo đã thu gom.
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {!isReportsLoading && !reportsError && reportRows.map((row) => (
+                                        <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getWasteTypeColor(row.wasteCategoryId)}`}>
+                                                    {getWasteTypeLabel(row.wasteCategoryId)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="text-sm text-gray-900">{row.addressText || getAreaLabel(row.areaId)}</span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="text-sm font-medium text-gray-900">{formatNumber(row.weightKg)}</span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${row.statusColor}`}>
+                                                    {row.statusLabel}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="text-sm text-gray-600">
+                                                    {row.date ? new Date(row.date).toLocaleDateString('vi-VN') : '—'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

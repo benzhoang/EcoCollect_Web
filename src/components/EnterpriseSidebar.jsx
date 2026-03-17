@@ -53,7 +53,7 @@ const EnterpriseSidebar = ({ isOpen }) => {
         // { id: 'dispatch', label: 'Điều phối & Theo dõi', icon: 'truck', path: '/enterprise/dispatch' },
         { id: 'rewards', label: 'Cấu hình điểm thưởng', icon: 'gift', path: '/enterprise/rewards' },
         { id: 'vouchers', label: 'Cấu hình voucher', icon: 'ticket', path: '/enterprise/voucher' },
-        { id: 'reports', label: 'Báo cáo thống kê', icon: 'chart', path: '/enterprise/reports' },
+        { id: 'statistic', label: 'Báo cáo thống kê', icon: 'chart', path: '/enterprise/statistic' },
         { id: 'settings', label: 'Cài đặt doanh nghiệp', icon: 'building', path: '/enterprise/settings' }
     ];
 
