@@ -127,6 +127,14 @@ const ComplaintList = ({
     }
     return list;
   }, [complaintsRaw, searchTerm]);
+
+  const isResolvedOrRejected = (status) =>
+    ["RESOLVED", "REJECTED"].includes(String(status || "").toUpperCase());
+
+  // Chỉ hiện cột THAO TÁC nếu trong trang hiện tại còn dòng có thể cập nhật
+  const showActionsColumn = complaints.some((c) => !isResolvedOrRejected(c.status));
+  const tableColCount = showActionsColumn ? 8 : 7;
+
   return (
     <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
       <div className="overflow-x-auto">
@@ -151,33 +159,32 @@ const ComplaintList = ({
               <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
                 NGÀY XỬ LÝ
               </th>
-              <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
-                THAO TÁC
+              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                GHI CHÚ XỬ LÝ
               </th>
+              {showActionsColumn && (
+                <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
+                  THAO TÁC
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-12 text-center text-gray-500"
-                >
+                <td colSpan={tableColCount} className="px-6 py-12 text-center text-gray-500">
                   Đang tải...
                 </td>
               </tr>
             ) : loadError ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-red-600">
+                <td colSpan={tableColCount} className="px-6 py-12 text-center text-red-600">
                   {loadError}
                 </td>
               </tr>
             ) : complaints.length === 0 ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-12 text-center text-gray-500"
-                >
+                <td colSpan={tableColCount} className="px-6 py-12 text-center text-gray-500">
                   Không có khiếu nại nào phù hợp.
                 </td>
               </tr>
@@ -228,17 +235,30 @@ const ComplaintList = ({
                       {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleOpenUpdate(c)}
-                        className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
-                        title="Cập nhật trạng thái"
-                      >
-                        <FaEdit className="text-sm text-yellow-600" />
-                      </button>
-                    </div>
+                  <td className="max-w-xs px-6 py-4">
+                    <span
+                      className="text-sm text-gray-700 line-clamp-2"
+                      title={c.resolutionNote ?? ""}
+                    >
+                      {c.resolutionNote ?? "—"}
+                    </span>
                   </td>
+                  {showActionsColumn && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        {!isResolvedOrRejected(c.status) && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenUpdate(c)}
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
+                            title="Cập nhật trạng thái"
+                          >
+                            <FaEdit className="text-sm text-yellow-600" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

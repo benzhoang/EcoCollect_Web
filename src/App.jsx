@@ -35,7 +35,6 @@ import ComplaintDetailPage from "./pages/Admin/ComplaintDetailPage";
 import RequestListPage from "./pages/Collector/RequestListPage";
 import CollectorLayout from "./layouts/CollectorLayout";
 import HistoryPage from "./pages/Collector/HistoryPage";
-import CollectionConfirmationPage from "./pages/Collector/CollectionConfirmationPage";
 import CreateIncidentReportPage from "./pages/Collector/CreateIncidentReportPage";
 import RequestDetailPage from "./pages/Collector/RequestDetailPage";
 import AreaListPage from "./pages/Admin/AreaListPage";
@@ -123,7 +122,7 @@ function App() {
 
     if (
       pathname.match(
-        /^\/admin\/account\/(citizens|collectors|recycling-enterprises)\/[^/]+$/
+        /^\/admin\/account\/(citizens|collectors|recycling-enterprises)\/[^/]+$/,
       )
     ) {
       return (
@@ -304,12 +303,6 @@ function App() {
         return (
           <CollectorLayout>
             <HistoryPage />
-          </CollectorLayout>
-        );
-      case "/collector/collection-confirm":
-        return (
-          <CollectorLayout>
-            <CollectionConfirmationPage />
           </CollectorLayout>
         );
       case "/collector/incident-report":

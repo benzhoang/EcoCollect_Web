@@ -195,10 +195,10 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                         </button>
                         <button
                           onClick={() => handleDelete(category)}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-50 shrink-0"
+                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-100 shrink-0"
                           title="Vô hiệu hóa"
                         >
-                          <FaPause className="text-sm text-gray-600" />
+                          <FaPause className="text-sm text-gray-500" />
                         </button>
                       </div>
                     </td>
