@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaEye } from "react-icons/fa";
 import { getCollectorAssignments, getWasteCategories } from "../../service/api";
 import CollectorPagination from "./CollectorPagination";
@@ -26,7 +26,7 @@ const mapStatusToLabel = (status) => {
   const s = status ? String(status).toUpperCase() : "";
   switch (s) {
     case "ASSIGNED":
-      return "Đã giao";
+      return "Đã phân công";
     case "ON_THE_WAY":
       return "Đang trên đường";
     case "COLLECTED":
@@ -98,6 +98,15 @@ const isAllowedStatus = (item) => {
   return ALLOWED_STATUSES.includes(s);
 };
 
+const FILTER_TABS = ["Tất cả", "Đã phân công", "Đang trên đường"];
+
+/** Tab label → status API (null = không lọc theo status, chỉ giữ ASSIGNED + ON_THE_WAY) */
+const TAB_TO_STATUS = {
+  "Tất cả": null,
+  "Đã phân công": "ASSIGNED",
+  "Đang trên đường": "ON_THE_WAY",
+};
+
 /**
  * Danh sách yêu cầu thu gom (bảng). Chỉ hiển thị trạng thái Đã giao và Đang trên đường.
  * Gọi API getCollectorAssignments khi không truyền requests.
@@ -111,71 +120,103 @@ const RequestList = ({ requests: requestsProp }) => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [categoryMap, setCategoryMap] = useState({});
+  /** Cache map loại rác — tránh gọi lại API khi đổi trang; dùng chung khi fetch song song với assignments */
+  const categoryMapRef = useRef({});
   const [pageInfo, setPageInfo] = useState({
     page: 0,
     size: PAGE_SIZE,
     totalElements: 0,
     totalPages: 1,
   });
+  const [activeTab, setActiveTab] = useState("Tất cả");
 
-  const fetchAssignments = useCallback(
-    async (pageIndex = 0) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getCollectorAssignments({
+  const fetchAssignments = useCallback(async (pageIndex = 0) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const apiStatus = TAB_TO_STATUS[activeTab];
+
+      const loadCategoriesIfNeeded = async () => {
+        if (Object.keys(categoryMapRef.current).length > 0) {
+          return categoryMapRef.current;
+        }
+        try {
+          const response = await getWasteCategories();
+          const categories = response?.data ?? response ?? [];
+          const nextMap = {};
+          if (Array.isArray(categories)) {
+            categories.forEach((cat) => {
+              if (cat?.id) {
+                nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+              }
+            });
+          }
+          categoryMapRef.current = nextMap;
+          setCategoryMap(nextMap);
+          return nextMap;
+        } catch (err) {
+          console.error("Không thể tải danh mục loại rác:", err);
+          return categoryMapRef.current;
+        }
+      };
+
+      const [response, map] = await Promise.all([
+        getCollectorAssignments({
+          ...(apiStatus ? { status: apiStatus } : {}),
           page: pageIndex,
           size: PAGE_SIZE,
           sort: ["assignedAt,desc"],
-        });
+        }),
+        loadCategoriesIfNeeded(),
+      ]);
 
-        const pageData = response?.data ?? response;
-        const content =
-          pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
-        const filtered = content.filter(isAllowedStatus);
-        const mapped = filtered.map((item) =>
-          mapAssignmentToRow(item, categoryMap),
-        );
+      const pageData = response?.data ?? response;
+      const content =
+        pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
+      const filtered = apiStatus ? content : content.filter(isAllowedStatus);
+      const mapped = filtered.map((item) =>
+        mapAssignmentToRow(item, map),
+      );
 
-        setList(mapped);
-        setPageInfo({
-          page: pageData?.number ?? pageData?.page ?? pageIndex,
-          size: pageData?.size ?? PAGE_SIZE,
-          totalElements: pageData?.totalElements ?? mapped.length,
-          totalPages: pageData?.totalPages ?? 1,
-        });
-      } catch (err) {
-        setError(err?.message ?? "Không thể tải danh sách phân công.");
-        setList([]);
-        setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [categoryMap],
-  );
+      setList(mapped);
+      setPageInfo({
+        page: pageData?.number ?? pageData?.page ?? pageIndex,
+        size: pageData?.size ?? PAGE_SIZE,
+        totalElements: pageData?.totalElements ?? mapped.length,
+        totalPages: pageData?.totalPages ?? 1,
+      });
+    } catch (err) {
+      setError(err?.message ?? "Không thể tải danh sách phân công.");
+      setList([]);
+      setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab]);
 
+  /** Chế độ dữ liệu tĩnh: vẫn cần danh mục để map tên loại rác */
   useEffect(() => {
-    const fetchCategories = async () => {
+    if (useApi) return;
+    if (Object.keys(categoryMapRef.current).length > 0) return;
+    (async () => {
       try {
         const response = await getWasteCategories();
         const categories = response?.data ?? response ?? [];
+        const nextMap = {};
         if (Array.isArray(categories)) {
-          const nextMap = {};
           categories.forEach((cat) => {
             if (cat?.id) {
               nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
             }
           });
-          setCategoryMap(nextMap);
         }
+        categoryMapRef.current = nextMap;
+        setCategoryMap(nextMap);
       } catch (err) {
         console.error("Không thể tải danh mục loại rác:", err);
       }
-    };
-
-    fetchCategories();
-  }, []);
+    })();
+  }, [useApi]);
 
   useEffect(() => {
     if (useApi) {
@@ -187,16 +228,55 @@ const RequestList = ({ requests: requestsProp }) => {
     }
   }, [useApi, page, fetchAssignments, requestsProp]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [activeTab]);
+
   const handlePageChange = (nextPage) => {
     setPage(Math.max(0, nextPage - 1));
   };
 
-  const displayList = useApi ? list : (requestsProp ?? list);
+  const filterRowsByTab = (rows) => {
+    if (!Array.isArray(rows)) return [];
+    const statusFilter = TAB_TO_STATUS[activeTab];
+    if (!statusFilter) {
+      return rows.filter((r) =>
+        ALLOWED_STATUSES.includes(String(r.status || "").toUpperCase()),
+      );
+    }
+    return rows.filter(
+      (r) => String(r.status || "").toUpperCase() === statusFilter,
+    );
+  };
+
+  const displayList = useApi
+    ? list
+    : filterRowsByTab(
+        (requestsProp ?? []).map((item) =>
+          mapAssignmentToRow(item, categoryMap),
+        ),
+      );
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* Khu vực bảng — flex-1 để chia sẻ với sidebar phải (giống Enterprise) */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <div className="flex flex-wrap gap-2 mb-8">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === tab
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -263,7 +343,7 @@ const RequestList = ({ requests: requestsProp }) => {
                       className="transition-colors hover:bg-gray-50/80"
                     >
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {page * PAGE_SIZE + index + 1}
+                        {useApi ? page * PAGE_SIZE + index + 1 : index + 1}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {formatDate(request.assignedAt)}

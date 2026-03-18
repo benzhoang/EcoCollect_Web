@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaArrowLeft } from "react-icons/fa";
 import {
   getCollectorAssignmentReportDetail,
@@ -12,7 +12,7 @@ const mapStatusToLabel = (status) => {
   const s = status ? String(status).toUpperCase() : "";
   switch (s) {
     case "ASSIGNED":
-      return "Đã giao";
+      return "Đã phân công";
     case "ON_THE_WAY":
       return "Đang trên đường";
     case "COLLECTED":
@@ -133,7 +133,7 @@ const RequestDetailPage = () => {
     null;
 
   const [request, setRequest] = useState(null);
-  const [categoryMap, setCategoryMap] = useState({});
+  const categoryMapRef = useRef({});
   const [loading, setLoading] = useState(!!reportId);
   const [error, setError] = useState(null);
   const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
@@ -149,45 +149,48 @@ const RequestDetailPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getCollectorAssignmentReportDetail(reportId);
-      setRequest(mapDetailToRequest(data, categoryMap));
+      const loadCategoriesIfNeeded = async () => {
+        if (Object.keys(categoryMapRef.current).length > 0) {
+          return categoryMapRef.current;
+        }
+        try {
+          const response = await getWasteCategories();
+          const categories = response?.data ?? response ?? [];
+          const nextMap = {};
+          if (Array.isArray(categories)) {
+            categories.forEach((cat) => {
+              if (cat?.id) {
+                nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+              }
+            });
+          }
+          categoryMapRef.current = nextMap;
+          return nextMap;
+        } catch (err) {
+          console.error("Không thể tải danh mục loại rác:", err);
+          return categoryMapRef.current;
+        }
+      };
+
+      const [data, map] = await Promise.all([
+        getCollectorAssignmentReportDetail(reportId),
+        loadCategoriesIfNeeded(),
+      ]);
+      setRequest(mapDetailToRequest(data, map));
     } catch (err) {
       setError(err?.message ?? "Không thể tải chi tiết yêu cầu.");
       setRequest(null);
     } finally {
       setLoading(false);
     }
-  }, [reportId, categoryMap]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await getWasteCategories();
-        const categories = response?.data ?? response ?? [];
-        if (Array.isArray(categories)) {
-          const nextMap = {};
-          categories.forEach((cat) => {
-            if (cat?.id) {
-              nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
-            }
-          });
-          setCategoryMap(nextMap);
-        }
-      } catch (err) {
-        console.error("Không thể tải danh mục loại rác:", err);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  }, [reportId]);
 
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
 
   const handleBack = () => {
-    window.history.pushState({}, "", "/collector/request-list");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.history.go(-1);
   };
 
   if (loading) {
@@ -632,6 +635,8 @@ const RequestDetailPage = () => {
           statusId={assignmentId || reportId}
           onSuccess={fetchDetail}
           onCollected={() => setShowUploadProofModal(true)}
+          latitude={request?.latitude}
+          longitude={request?.longitude}
           initialStatus={
             updateStatusInitial === "COMPLETED"
               ? "COLLECTED"

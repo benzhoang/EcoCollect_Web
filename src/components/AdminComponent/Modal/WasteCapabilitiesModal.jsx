@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 import {
     getWasteCategories,
     upsertAdminWasteCapability,
@@ -9,16 +10,13 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
     const [dailyCapacityKg, setDailyCapacityKg] = useState("");
     const [wasteCategories, setWasteCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
-    const [categoryError, setCategoryError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState("");
 
     useEffect(() => {
         if (!isOpen) return;
 
         const fetchCategories = async () => {
             setLoadingCategories(true);
-            setCategoryError("");
             try {
                 const response = await getWasteCategories();
                 const list = Array.isArray(response)
@@ -30,7 +28,7 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
                             : [];
                 setWasteCategories(list);
             } catch (err) {
-                setCategoryError(
+                toast.error(
                     err?.message || "Không thể tải danh sách loại rác thải.",
                 );
                 setWasteCategories([]);
@@ -46,16 +44,15 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitError("");
 
         if (!wasteCategoryId) {
-            setSubmitError("Vui lòng chọn loại rác thải.");
+            toast.error("Vui lòng chọn loại rác thải.");
             return;
         }
 
         const capacityValue = Number(dailyCapacityKg);
         if (Number.isNaN(capacityValue) || capacityValue < 0) {
-            setSubmitError("Công suất mỗi ngày không hợp lệ.");
+            toast.error("Công suất mỗi ngày không hợp lệ.");
             return;
         }
 
@@ -65,6 +62,7 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
                 dailyCapacityKg: capacityValue,
                 accepting: true,
             });
+            toast.success("Thêm công suất thành công.");
             if (onSubmit) {
                 onSubmit({
                     wasteCategoryId,
@@ -75,7 +73,7 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
             setDailyCapacityKg("");
             onClose();
         } catch (err) {
-            setSubmitError(err?.message || "Không thể thêm công suất.");
+            toast.error(err?.message || "Không thể thêm công suất.");
         } finally {
             setIsSubmitting(false);
         }
@@ -133,12 +131,6 @@ const WasteCapabilitiesModal = ({ isOpen, onClose, onSubmit }) => {
                                     </option>
                                 ))}
                             </select>
-                            {categoryError && (
-                                <p className="mt-2 text-sm text-red-600">{categoryError}</p>
-                            )}
-                            {submitError && (
-                                <p className="mt-2 text-sm text-red-600">{submitError}</p>
-                            )}
                         </div>
 
                         <div>

@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { uploadCollectorAssignmentProof } from "../../service/api";
+import { uploadImage } from "../../service/uploadImage";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -42,7 +43,10 @@ const validateProofUrl = (value) => {
  */
 const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
   const [proofMode, setProofMode] = useState("upload"); // 'upload' | 'url'
-  const [proofUrls, setProofUrls] = useState([]); // base64 khi upload
+  /** Preview hiển thị (base64) khi chế độ upload */
+  const [proofPreviewUrls, setProofPreviewUrls] = useState([]);
+  /** URL Cloudinary gửi API (giống CreateReport sau uploadImage) */
+  const [proofCloudinaryUrls, setProofCloudinaryUrls] = useState([]);
   const [proofUrlInput, setProofUrlInput] = useState(""); // link khi chế độ url
   const [takenAt, setTakenAt] = useState(toDatetimeLocal(new Date()));
   const [submitting, setSubmitting] = useState(false);
@@ -51,23 +55,41 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    if (!show) return;
+    setProofMode("upload");
+    setProofPreviewUrls([]);
+    setProofCloudinaryUrls([]);
+    setProofUrlInput("");
+    setTakenAt(toDatetimeLocal(new Date()));
+    setPreviewIndex(null);
+  }, [show]);
+
   /** Có ảnh hợp lệ (giống hasImage trong CreateReport) */
+  const readFileAsDataURL = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
   const hasValidProof =
     proofMode === "upload"
-      ? proofUrls.length > 0
+      ? proofCloudinaryUrls.length > 0
       : validateProofUrl(proofUrlInput).ok;
-  /** Mảng URL cuối cùng gửi API: upload → base64, url → [link] */
+  /** Mảng URL cuối cùng gửi API: upload → Cloudinary URL, url → [link] */
   const getPayloadProofUrls = () => {
     if (proofMode === "url") {
       const url = proofUrlInput.trim();
       return url ? [url] : [];
     }
-    return Array.isArray(proofUrls) ? proofUrls : [proofUrls].filter(Boolean);
+    return [...proofCloudinaryUrls];
   };
   /** Mảng URL để hiển thị thumbnail + lightbox (upload hoặc url) */
   const displayUrlsForPreview =
     proofMode === "upload"
-      ? proofUrls
+      ? proofPreviewUrls
       : validateProofUrl(proofUrlInput).ok
         ? [proofUrlInput.trim()]
         : [];
@@ -84,20 +106,22 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
     if (!valid.length) return;
     setUploadingFiles(true);
     try {
-      const dataUrls = await Promise.all(
-        valid.map(
-          (file) =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.onerror = () => reject(reader.error);
-              reader.readAsDataURL(file);
-            }),
-        ),
-      );
-      setProofUrls((prev) => [...prev, ...dataUrls]);
-    } catch {
-      toast.error("Đọc file ảnh thất bại. Vui lòng thử lại.");
+      for (const file of valid) {
+        try {
+          const dataUrl = await readFileAsDataURL(file);
+          const secureUrl = await uploadImage(file);
+          if (!secureUrl) {
+            toast.error(`Upload "${file.name}" không trả về URL. Vui lòng thử lại.`);
+            continue;
+          }
+          setProofPreviewUrls((prev) => [...prev, dataUrl]);
+          setProofCloudinaryUrls((prev) => [...prev, secureUrl]);
+        } catch {
+          toast.error(`Upload ảnh "${file.name}" thất bại. Vui lòng thử lại.`, {
+            duration: 4000,
+          });
+        }
+      }
     } finally {
       setUploadingFiles(false);
     }
@@ -134,7 +158,8 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
   };
 
   const removeProofImage = (index) => {
-    setProofUrls((prev) => prev.filter((_, i) => i !== index));
+    setProofPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    setProofCloudinaryUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -241,7 +266,8 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
                 type="button"
                 onClick={() => {
                   setProofMode("url");
-                  setProofUrls([]);
+                  setProofPreviewUrls([]);
+                  setProofCloudinaryUrls([]);
                   setPreviewIndex(null);
                 }}
                 className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
@@ -287,7 +313,7 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
               className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
                 uploadingFiles
                   ? "cursor-wait border-blue-300 bg-blue-50"
-                  : proofUrls.length > 0
+                  : proofPreviewUrls.length > 0
                     ? "cursor-pointer border-blue-300 bg-blue-50 hover:border-blue-400"
                     : isDragging
                       ? "cursor-copy border-blue-400 bg-blue-50"
@@ -399,7 +425,9 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={submitting || !hasValidProof}
+              disabled={
+                submitting || uploadingFiles || !hasValidProof
+              }
               className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Đang gửi..." : "Hoàn tất"}

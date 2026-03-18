@@ -41,33 +41,18 @@ const UpdateStatusModal = ({
   statusId,
   onSuccess,
   onCollected,
+  latitude,
+  longitude,
 }) => {
   const [status, setStatus] = useState(() => normalizeStatus(initialStatus));
   const [note, setNote] = useState("");
-  const [latitudeInput, setLatitudeInput] = useState("");
-  const [longitudeInput, setLongitudeInput] = useState("");
+  const [latitudeInput, setLatitudeInput] = useState(
+    latitude != null ? String(latitude) : "",
+  );
+  const [longitudeInput, setLongitudeInput] = useState(
+    longitude != null ? String(longitude) : "",
+  );
   const [submitting, setSubmitting] = useState(false);
-
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Trình duyệt không hỗ trợ lấy vị trí.", { duration: 4000 });
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude: lat, longitude: lng } = position.coords || {};
-        if (typeof lat === "number") setLatitudeInput(String(lat));
-        if (typeof lng === "number") setLongitudeInput(String(lng));
-        toast.success("Đã lấy vị trí hiện tại!", { duration: 2000 });
-      },
-      (error) => {
-        console.error("Lỗi lấy vị trí hiện tại:", error);
-        toast.error("Không thể lấy vị trí. Vui lòng thử lại.", {
-          duration: 4000,
-        });
-      },
-    );
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -108,8 +93,8 @@ const UpdateStatusModal = ({
         onCollected?.();
       }
       setNote("");
-      setLatitudeInput("");
-      setLongitudeInput("");
+      setLatitudeInput(latitude != null ? String(latitude) : "");
+      setLongitudeInput(longitude != null ? String(longitude) : "");
     } catch {
       toast.error("Không thể cập nhật trạng thái.");
     } finally {
@@ -196,11 +181,10 @@ const UpdateStatusModal = ({
                   type="number"
                   inputMode="decimal"
                   value={latitudeInput}
-                  onChange={(e) => setLatitudeInput(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700 cursor-not-allowed"
                   placeholder="Ví dụ: 10.8231"
                 />
-                <p className="text-xs text-gray-500">Giới hạn: -90 đến 90</p>
               </div>
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-gray-700">
@@ -210,39 +194,12 @@ const UpdateStatusModal = ({
                   type="number"
                   inputMode="decimal"
                   value={longitudeInput}
-                  onChange={(e) => setLongitudeInput(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700 cursor-not-allowed"
                   placeholder="Ví dụ: 106.6297"
                 />
-                <p className="text-xs text-gray-500">Giới hạn: -180 đến 180</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleGetCurrentLocation}
-              className="flex items-center justify-center w-full gap-2 px-3 py-2 text-sm font-medium text-blue-600 transition-colors bg-white border border-gray-200 rounded-lg hover:text-blue-700 hover:bg-blue-50"
-            >
-              <svg
-                className="w-4 h-4 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span>Lấy toạ độ vị trí hiện tại</span>
-            </button>
           </div>
 
           <div className="flex gap-3 pt-2">
