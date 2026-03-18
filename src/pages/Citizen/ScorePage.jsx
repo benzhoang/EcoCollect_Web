@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenPointTransactions, getPublicVouchers, getCitizenVoucherRedemptions } from '../../service/api';
+import { getCitizenPointsBalance, getPublicVouchers, getCitizenVoucherRedemptions } from '../../service/api';
 
 const ScorePage = () => {
     const [ecopoints, setEcopoints] = useState(0);
@@ -14,19 +14,10 @@ const ScorePage = () => {
     useEffect(() => {
         const fetchCurrentPoints = async () => {
             try {
-                const response = await getCitizenPointTransactions(0, 20, ['createdAt,desc']);
-                const transactions = response?.data?.content || [];
-
-                const currentPoints = transactions.reduce((total, tx) => {
-                    const points = Number(tx?.points) || 0;
-                    const txType = String(tx?.txType || '').toUpperCase();
-
-                    if (txType === 'EARN') return total + points;
-                    if (txType === 'SPEND') return total - points;
-                    return total;
-                }, 0);
-
-                setEcopoints(Math.max(0, currentPoints));
+                const response = await getCitizenPointsBalance();
+                const payload = response?.data ?? response;
+                const currentPoints = Number(payload?.currentPoints ?? 0);
+                setEcopoints(currentPoints);
             } catch (error) {
                 console.error('Lỗi khi lấy số dư điểm hiện tại:', error);
                 setEcopoints(0);

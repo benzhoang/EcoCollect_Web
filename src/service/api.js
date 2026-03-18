@@ -575,6 +575,23 @@ export const getCitizenPointTransactions = async (
 };
 
 /**
+ * Lay so du diem hien tai cua cong dan
+ * GET /citizen/points/balance
+ * @returns {Promise} Response tu API
+ */
+export const getCitizenPointsBalance = async () => {
+  try {
+    const { data } = await api.get("/citizen/points/balance");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Da xay ra loi khi lay so du diem hien tai. Vui long thu lai.",
+    );
+  }
+};
+
+/**
  * Lấy danh sách thông báo của công dân hiện tại
  * GET /citizen/notifications
  * @returns {Promise} Response từ API

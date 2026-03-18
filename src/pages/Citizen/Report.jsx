@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { cancelCitizenReport, getCitizenReports, getCitizenPointTransactions, getWasteCategories } from '../../service/api';
+import { cancelCitizenReport, getCitizenPointsBalance, getCitizenReports, getWasteCategories } from '../../service/api';
 import CancelModal from '../../components/CancelModal';
 
 const Report = () => {
@@ -228,19 +228,10 @@ const Report = () => {
         const fetchRewardPoints = async () => {
             try {
                 setRewardPointsLoading(true);
-                const response = await getCitizenPointTransactions(0, 50, ['createdAt,desc']);
-                const transactions = response?.data?.content || [];
-
-                const currentPoints = transactions.reduce((total, tx) => {
-                    const points = Number(tx?.points) || 0;
-                    const txType = String(tx?.txType || '').toUpperCase();
-
-                    if (txType === 'EARN') return total + points;
-                    if (txType === 'SPEND') return total - points;
-                    return total;
-                }, 0);
-
-                setRewardPoints(Math.max(0, currentPoints));
+                const response = await getCitizenPointsBalance();
+                const payload = response?.data ?? response;
+                const currentPoints = Number(payload?.currentPoints ?? 0);
+                setRewardPoints(currentPoints);
             } catch (err) {
                 console.error('Không thể tải điểm thưởng:', err);
                 setRewardPoints(0);
