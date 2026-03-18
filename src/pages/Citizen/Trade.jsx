@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { getCitizenPointTransactions, getPublicVouchers, redeemCitizenVoucher } from '../../service/api';
+import { getCitizenPointsBalance, getPublicVouchers, redeemCitizenVoucher } from '../../service/api';
 
 const Trade = () => {
     const [userPoints, setUserPoints] = useState(0);
@@ -46,19 +46,10 @@ const Trade = () => {
         const fetchUserPoints = async () => {
             try {
                 setIsLoadingPoints(true);
-                const response = await getCitizenPointTransactions(0, 20, ['createdAt,desc']);
-                const transactions = response?.data?.content || [];
-
-                const currentPoints = transactions.reduce((total, tx) => {
-                    const points = Number(tx?.points) || 0;
-                    const txType = String(tx?.txType || '').toUpperCase();
-
-                    if (txType === 'EARN') return total + points;
-                    if (txType === 'SPEND') return total - points;
-                    return total;
-                }, 0);
-
-                setUserPoints(Math.max(0, currentPoints));
+                const response = await getCitizenPointsBalance();
+                const payload = response?.data ?? response;
+                const currentPoints = Number(payload?.currentPoints ?? 0);
+                setUserPoints(currentPoints);
             } catch (error) {
                 console.error('Lỗi khi lấy số dư điểm hiện tại:', error);
                 setUserPoints(0);
@@ -93,9 +84,9 @@ const Trade = () => {
             const remainingPoints = data?.remainingPoints;
 
             if (typeof remainingPoints === 'number') {
-                setUserPoints(Math.max(0, remainingPoints));
+                setUserPoints(remainingPoints);
             } else {
-                setUserPoints((prev) => Math.max(0, prev - (voucher.cost || 0)));
+                setUserPoints((prev) => prev - (voucher.cost || 0));
             }
 
             setVouchers((prev) =>

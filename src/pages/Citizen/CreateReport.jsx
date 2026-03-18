@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { createCitizenReport, getAreaTree, getWasteCategories } from '../../service/api';
 import { uploadImage } from '../../service/uploadImage';
@@ -7,6 +7,8 @@ const CreateReport = () => {
     // Lưu trực tiếp wasteCategoryId (UUID) thay vì name để submit chuẩn
     const [selectedWasteType, setSelectedWasteType] = useState(null);
     const [location, setLocation] = useState(null);
+    const [selectedDistrictId, setSelectedDistrictId] = useState('');
+    const [selectedAreaId, setSelectedAreaId] = useState('');
     const [description, setDescription] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -151,14 +153,70 @@ const CreateReport = () => {
         return result;
     };
 
+    const districtOptions = useMemo(() => {
+        if (!areaTree) return [];
+        const roots = Array.isArray(areaTree) ? areaTree : [areaTree];
+        const districts = roots.flatMap((root) => (Array.isArray(root?.children) ? root.children : []));
+        return districts
+            .filter((d) => d && d.id)
+            .map((d) => ({ id: d.id, name: String(d.name || '').trim(), children: d.children || [] }));
+    }, [areaTree]);
+
+    const wardOptions = useMemo(() => {
+        if (!selectedDistrictId) return [];
+        const district = districtOptions.find((d) => d.id === selectedDistrictId);
+        const wards = Array.isArray(district?.children) ? district.children : [];
+        return wards
+            .filter((w) => w && w.id)
+            .map((w) => ({ id: w.id, name: String(w.name || '').trim() }));
+    }, [districtOptions, selectedDistrictId]);
+
+    const selectedWardName = useMemo(() => {
+        if (!selectedAreaId) return '';
+        const match = wardOptions.find((w) => w.id === selectedAreaId);
+        return match?.name || '';
+    }, [wardOptions, selectedAreaId]);
+
+    const selectedDistrictName = useMemo(() => {
+        if (!selectedDistrictId) return '';
+        const match = districtOptions.find((d) => d.id === selectedDistrictId);
+        return match?.name || '';
+    }, [districtOptions, selectedDistrictId]);
+
+    const selectedAreaLabel = useMemo(() => {
+        const ward = String(selectedWardName || '').trim();
+        const district = String(selectedDistrictName || '').trim();
+        if (ward && district) return `${ward} - ${district}`;
+        return ward || district;
+    }, [selectedWardName, selectedDistrictName]);
+
+    const combinedAddressText = useMemo(() => {
+        const detail = String(location || '').trim();
+        const areaLabel = String(selectedAreaLabel || '').trim();
+        if (detail && areaLabel) return `${detail}, ${areaLabel}`;
+        if (detail) return detail;
+        return areaLabel;
+    }, [location, selectedAreaLabel]);
+
     useEffect(() => {
+        if (selectedAreaId) {
+            setAreaId(selectedAreaId);
+            return;
+        }
         if (location && location.trim() !== '') {
             const matchedAreaId = findAreaIdByAddress(location);
             setAreaId(matchedAreaId);
         } else {
             setAreaId(null);
         }
-    }, [location, areaTree]);
+    }, [location, areaTree, selectedAreaId]);
+
+    useEffect(() => {
+        if (selectedDistrictId && !wardOptions.length) {
+            setSelectedAreaId('');
+            setAreaId(null);
+        }
+    }, [selectedDistrictId, wardOptions.length]);
 
     const clearImage = () => {
         setSelectedImage(null);
@@ -260,6 +318,21 @@ const CreateReport = () => {
         }
     };
 
+    const handleDistrictChange = (e) => {
+        const nextId = e.target.value;
+        setSelectedDistrictId(nextId);
+        setSelectedAreaId('');
+        setAreaId(null);
+    };
+
+    const handleWardChange = (e) => {
+        const nextId = e.target.value;
+        setSelectedAreaId(nextId);
+        if (nextId) {
+            setAreaId(nextId);
+        }
+    };
+
     const handleSubmit = async () => {
         // Xử lý submit form
         const hasImage = imageMode === 'upload' ? !!selectedImage : validateImageUrl(imageUrl).ok;
@@ -275,14 +348,20 @@ const CreateReport = () => {
             });
             return;
         }
+        if (!selectedAreaId) {
+            toast.error('Vui lòng chọn khu vực (quận/phường).', {
+                duration: 4000,
+            });
+            return;
+        }
         if (!location || location.trim() === '') {
-            toast.error('Vui lòng nhập vị trí.', {
+            toast.error('Vui lòng nhập địa chỉ cụ thể.', {
                 duration: 4000,
             });
             return;
         }
         if (!areaId) {
-            toast.error('Không thể xác định khu vực từ địa chỉ. Vui lòng kiểm tra lại địa chỉ.', {
+            toast.error('Vui lòng chọn khu vực (quận/phường).', {
                 duration: 4000,
             });
             return;
@@ -339,13 +418,13 @@ const CreateReport = () => {
 
             // 准备 API 请求数据
             const reportData = {
-                areaId: areaId,
+                areaId: selectedAreaId || areaId,
                 wasteCategoryId,
                 description: description.trim() || '',
                 estimatedWeightKg: Number(estimatedWeightKg),
                 latitude: Number(latitude),
                 longitude: Number(longitude),
-                addressText: location.trim(),
+                addressText: combinedAddressText,
                 imageUrls: imageUrls
             };
 
@@ -382,7 +461,7 @@ const CreateReport = () => {
     const progressSteps = [
         { key: 'image', completed: hasValidImage, label: 'Hình ảnh' },
         { key: 'wasteType', completed: !!selectedWasteType, label: 'Loại rác' },
-        { key: 'location', completed: !!location && location.trim() !== '', label: 'Vị trí' },
+        { key: 'location', completed: !!selectedAreaId && !!location && location.trim() !== '', label: 'Vị trí' },
         { key: 'coordinates', completed: isValidLatitude(latitude) && isValidLongitude(longitude), label: 'Tọa độ' },
         { key: 'weight', completed: isValidEstimatedWeightKg(estimatedWeightKg), label: 'Khối lượng' }
     ];
@@ -628,33 +707,57 @@ const CreateReport = () => {
                                     <label className="block text-sm font-semibold text-gray-900">
                                         Vị trí <span className="text-red-500">*</span>
                                     </label>
-                                    <div className="space-y-2">
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Quận/Phường</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <select
+                                                    value={selectedDistrictId}
+                                                    onChange={handleDistrictChange}
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                                >
+                                                    <option value="">Chọn quận</option>
+                                                    {districtOptions.map((opt) => (
+                                                        <option key={opt.id} value={opt.id}>
+                                                            {opt.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    value={selectedAreaId}
+                                                    onChange={handleWardChange}
+                                                    disabled={!selectedDistrictId || wardOptions.length === 0}
+                                                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white disabled:bg-gray-100 disabled:text-gray-500"
+                                                >
+                                                    <option value="">
+                                                        {selectedDistrictId ? 'Chọn phường' : 'Chọn quận trước'}
+                                                    </option>
+                                                    {wardOptions.map((opt) => (
+                                                        <option key={opt.id} value={opt.id}>
+                                                            {opt.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                            <input
-                                                type="text"
-                                                value={location || ''}
-                                                onChange={(e) => setLocation(e.target.value)}
-                                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
-                                                placeholder="Nhập địa chỉ cụ thể của rác thải..."
-                                            />
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleGetCurrentLocation}
-                                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            <span>Lấy vị trí hiện tại</span>
-                                        </button>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Địa chỉ cụ thể</label>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={location || ''}
+                                                    onChange={(e) => setLocation(e.target.value)}
+                                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
+                                                    placeholder="Số nhà, tên đường, toà nhà..."
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -693,6 +796,17 @@ const CreateReport = () => {
                                             <p className="text-xs text-gray-500">Giới hạn: -180 đến 180</p>
                                         </div>
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleGetCurrentLocation}
+                                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <span>Lấy tọa độ</span>
+                                    </button>
                                 </div>
 
                                 <div className="space-y-2">
@@ -772,9 +886,9 @@ const CreateReport = () => {
                                         )}
                                     </span>
                                 </button>
-                                {!areaId && location && location.trim() !== '' && (
+                                {!areaId && (location && location.trim() !== '' || selectedAreaId) && (
                                     <p className="text-xs text-amber-600 mt-2">
-                                        ⚠️ Không thể xác định khu vực từ địa chỉ. Vui lòng kiểm tra lại địa chỉ hoặc nhập địa chỉ cụ thể hơn.
+                                        ⚠️ Vui lòng chọn khu vực (quận/phường) trước khi gửi báo cáo.
                                     </p>
                                 )}
                             </div>

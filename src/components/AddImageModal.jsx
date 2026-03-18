@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { addImagesToCitizenReport } from '../service/api';
+import { uploadImage } from '../service/uploadImage';
 
 const AddImageModal = ({ isOpen, onClose, onSave, reportId }) => {
     const [imageUrl, setImageUrl] = useState('');
@@ -9,12 +10,23 @@ const AddImageModal = ({ isOpen, onClose, onSave, reportId }) => {
 
     if (!isOpen) return null;
 
-    const handleFileChange = (event) => {
+    const handleFileChange = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        const localUrl = URL.createObjectURL(file);
-        setPreviewUrl(localUrl);
-        setError('');
+
+        try {
+            setIsSaving(true);
+            setError('');
+            setImageUrl('');
+
+            const uploadedUrl = await uploadImage(file);
+            setPreviewUrl(uploadedUrl);
+        } catch (err) {
+            console.error('Upload ảnh thất bại:', err);
+            setError('Tải ảnh lên thất bại. Vui lòng thử lại.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSave = async () => {
@@ -73,7 +85,8 @@ const AddImageModal = ({ isOpen, onClose, onSave, reportId }) => {
                             type="file"
                             accept="image/*"
                             onChange={handleFileChange}
-                            className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-green-100 file:text-green-700 hover:file:bg-green-200"
+                            disabled={isSaving}
+                            className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-green-100 file:text-green-700 hover:file:bg-green-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         />
                     </div>
 
@@ -96,6 +109,10 @@ const AddImageModal = ({ isOpen, onClose, onSave, reportId }) => {
                                 className="w-full h-56 object-cover"
                             />
                         </div>
+                    )}
+
+                    {isSaving && (
+                        <p className="text-sm text-gray-500">Đang tải ảnh lên...</p>
                     )}
 
                     {error && (

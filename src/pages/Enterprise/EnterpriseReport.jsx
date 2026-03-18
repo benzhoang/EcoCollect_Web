@@ -181,7 +181,7 @@ const EnterpriseReport = () => {
 
                 collectWards(roots);
 
-                setAreas([{ value: 'all', label: 'Tất cả khu vực' }, ...wards]);
+                setAreas([{ value: 'all', label: 'Tất cả khu vực' }, ...wards.slice(0, 7)]);
             } catch (error) {
                 console.error('Không thể tải danh sách khu vực:', error);
                 setAreas([{ value: 'all', label: 'Tất cả khu vực' }]);
