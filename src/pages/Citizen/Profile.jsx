@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getCitizenPointsBalance } from '../../service/api';
 
 const Profile = () => {
     const [userData, setUserData] = useState({
@@ -11,6 +12,7 @@ const Profile = () => {
         avatar: null
     });
     const [isEditing, setIsEditing] = useState(false);
+    const [currentPoints, setCurrentPoints] = useState(0);
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -44,6 +46,22 @@ const Profile = () => {
                 console.error('Error parsing user data:', error);
             }
         }
+    }, []);
+
+    useEffect(() => {
+        const fetchCurrentPoints = async () => {
+            try {
+                const response = await getCitizenPointsBalance();
+                const payload = response?.data ?? response;
+                const points = Number(payload?.currentPoints ?? 0);
+                setCurrentPoints(points);
+            } catch (error) {
+                console.error('Lỗi khi lấy số dư điểm hiện tại:', error);
+                setCurrentPoints(0);
+            }
+        };
+
+        fetchCurrentPoints();
     }, []);
 
     const handleInputChange = (e) => {
@@ -108,7 +126,7 @@ const Profile = () => {
         {
             id: 1,
             label: 'Tổng điểm tích lũy',
-            value: '2,450',
+            value: new Intl.NumberFormat('vi-VN').format(currentPoints),
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -129,30 +147,6 @@ const Profile = () => {
             color: 'text-blue-600',
             bgColor: 'bg-blue-100'
         },
-        {
-            id: 3,
-            label: 'Giảm thiểu CO2',
-            value: '38.5 kg',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            ),
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-100'
-        },
-        {
-            id: 4,
-            label: 'Thứ hạng',
-            value: '#12',
-            icon: (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-            ),
-            color: 'text-yellow-600',
-            bgColor: 'bg-yellow-100'
-        }
     ];
 
     return (
