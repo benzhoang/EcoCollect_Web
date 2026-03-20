@@ -1324,14 +1324,14 @@ export const getCollectorAssignmentReportDetail = async (reportId) => {
  */
 export const updateCollectorAssignmentStatus = async (
   id,
-  { status, note = "", lastKnownLatitude = 0, lastKnownLongitude = 0 },
+  { status, note = "" },
 ) => {
   try {
     const { data } = await api.patch(`/collector/assignments/${id}/status`, {
       status,
       note,
-      lastKnownLatitude,
-      lastKnownLongitude,
+      // lastKnownLatitude,
+      // lastKnownLongitude,
     });
     return data;
   } catch (error) {

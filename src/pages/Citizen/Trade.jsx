@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { getCitizenPointsBalance, getPublicVouchers, redeemCitizenVoucher } from '../../service/api';
+import { getCitizenPointsBalance, getPublicVouchers, redeemCitizenVoucher, getCitizenVoucherRedemptions } from '../../service/api';
 
 const Trade = () => {
     const [userPoints, setUserPoints] = useState(0);
@@ -8,6 +8,7 @@ const Trade = () => {
     const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
     const [isLoadingPoints, setIsLoadingPoints] = useState(false);
     const [redeemingVoucherId, setRedeemingVoucherId] = useState(null);
+    const [redeemedVoucherIds, setRedeemedVoucherIds] = useState(() => new Set());
 
     useEffect(() => {
         const fetchVouchers = async () => {
@@ -39,7 +40,25 @@ const Trade = () => {
             }
         };
 
+        const fetchRedeemedVoucherHistory = async () => {
+            try {
+                const response = await getCitizenVoucherRedemptions({ page: 0, size: 200, sort: ['createdAt,desc'] });
+                const payload = response?.data ?? response;
+                const pageData = payload?.data ?? payload;
+                const content = Array.isArray(pageData?.content) ? pageData.content : [];
+
+                const redeemedIds = content
+                    .map((item) => item?.voucherId || item?.voucher?.id)
+                    .filter(Boolean);
+
+                setRedeemedVoucherIds(new Set(redeemedIds));
+            } catch (error) {
+                console.error('Lỗi khi lấy lịch sử đổi voucher:', error);
+            }
+        };
+
         fetchVouchers();
+        fetchRedeemedVoucherHistory();
     }, []);
 
     useEffect(() => {
@@ -76,6 +95,7 @@ const Trade = () => {
 
     const handleRedeemVoucher = async (voucher) => {
         if (!voucher?.id) return;
+        if (redeemedVoucherIds.has(voucher.id)) return;
         try {
             setRedeemingVoucherId(voucher.id);
             const response = await redeemCitizenVoucher(voucher.id);
@@ -103,6 +123,11 @@ const Trade = () => {
                         : item,
                 ),
             );
+            setRedeemedVoucherIds((prev) => {
+                const next = new Set(prev);
+                next.add(voucher.id);
+                return next;
+            });
             toast.success('Đổi quà thành công', { duration: 2500 });
         } catch (error) {
             console.error('Lỗi khi đổi voucher:', error);
@@ -138,9 +163,10 @@ const Trade = () => {
                         <div className="col-span-full text-sm text-gray-600">Chưa có voucher phù hợp.</div>
                     )}
                     {vouchers.map((voucher) => {
-                        const canRedeem = voucher.status === 'available' && userPoints >= voucher.cost && voucher.canRedeem;
+                        const isRedeemed = redeemedVoucherIds.has(voucher.id);
+                        const canRedeem = voucher.status === 'available' && userPoints >= voucher.cost && voucher.canRedeem && !isRedeemed;
                         const isRedeeming = redeemingVoucherId === voucher.id;
-                        const isDisabled = voucher.status !== 'available' || !canRedeem || isRedeeming;
+                        const isDisabled = voucher.status !== 'available' || !canRedeem || isRedeeming || isRedeemed;
 
                         return (
                             <div key={voucher.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-5 flex flex-col gap-3">
@@ -173,13 +199,15 @@ const Trade = () => {
                                 >
                                     {isRedeeming
                                         ? 'Đang đổi...'
-                                        : voucher.status === 'out'
-                                            ? 'Tạm hết'
-                                            : voucher.status === 'coming-soon'
-                                                ? 'Sắp mở'
-                                                : canRedeem
-                                                    ? 'Đổi ngay'
-                                                    : 'Chưa đủ điểm'}
+                                        : isRedeemed
+                                            ? 'Đã đổi'
+                                            : voucher.status === 'out'
+                                                ? 'Tạm hết'
+                                                : voucher.status === 'coming-soon'
+                                                    ? 'Sắp mở'
+                                                    : canRedeem
+                                                        ? 'Đổi ngay'
+                                                        : 'Chưa đủ điểm'}
                                 </button>
                             </div>
                         );

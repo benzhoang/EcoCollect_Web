@@ -14,8 +14,6 @@ const CreateReport = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [imageMode, setImageMode] = useState('upload'); // 'upload' | 'url'
     const [imageUrl, setImageUrl] = useState('');
-    const [latitude, setLatitude] = useState('');
-    const [longitude, setLongitude] = useState('');
     const [estimatedWeightKg, setEstimatedWeightKg] = useState('');
     const [areaId, setAreaId] = useState(null);
     const [areaTree, setAreaTree] = useState(null);
@@ -198,6 +196,11 @@ const CreateReport = () => {
         return areaLabel;
     }, [location, selectedAreaLabel]);
 
+    const mapEmbedUrl = useMemo(() => {
+        const query = combinedAddressText ? `${combinedAddressText}, Việt Nam` : 'Việt Nam';
+        return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+    }, [combinedAddressText]);
+
     useEffect(() => {
         if (selectedAreaId) {
             setAreaId(selectedAreaId);
@@ -241,25 +244,61 @@ const CreateReport = () => {
         }
     };
 
-    const isValidLatitude = (value) => {
-        const v = String(value ?? '').trim();
-        if (!v) return false;
-        const n = Number(v);
-        return Number.isFinite(n) && n >= -90 && n <= 90;
-    };
-
-    const isValidLongitude = (value) => {
-        const v = String(value ?? '').trim();
-        if (!v) return false;
-        const n = Number(v);
-        return Number.isFinite(n) && n >= -180 && n <= 180;
-    };
-
     const isValidEstimatedWeightKg = (value) => {
         const v = String(value ?? '').trim();
         if (!v) return false;
         const n = Number(v);
         return Number.isFinite(n) && n > 0;
+    };
+
+    const normalizeText = (value) => {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+
+    const stripAdministrativePrefix = (value) => {
+        return normalizeText(value).replace(/^(quan|huyen|thi xa|thanh pho|phuong|xa|thi tran)\s+/, '').trim();
+    };
+
+    const matchOptionIdByName = (name, options = []) => {
+        const normalizedName = normalizeText(name);
+        const strippedName = stripAdministrativePrefix(name);
+        if (!normalizedName) return '';
+
+        const exact = options.find((opt) => normalizeText(opt.name) === normalizedName);
+        if (exact) return exact.id;
+
+        const exactStripped = options.find((opt) => stripAdministrativePrefix(opt.name) === strippedName);
+        if (exactStripped) return exactStripped.id;
+
+        const includes = options.find((opt) => {
+            const optionName = normalizeText(opt.name);
+            return optionName.includes(normalizedName) || normalizedName.includes(optionName);
+        });
+        if (includes) return includes.id;
+
+        const includesStripped = options.find((opt) => {
+            const optionName = stripAdministrativePrefix(opt.name);
+            return optionName.includes(strippedName) || strippedName.includes(optionName);
+        });
+
+        return includesStripped?.id || '';
+    };
+
+    const getDetailedAddressFromGeocode = (address = {}, displayName = '') => {
+        const houseNumber = address.house_number || address.house || '';
+        const road = address.road || address.residential || address.pedestrian || address.footway || '';
+        const detail = [houseNumber, road].filter(Boolean).join(' ').trim();
+        if (detail) return detail;
+
+        const fallback = String(displayName || '').split(',').slice(0, 2).join(',').trim();
+        return fallback;
     };
 
     const handleUpload = async (e) => {
@@ -293,29 +332,84 @@ const CreateReport = () => {
         }
     };
 
-    const handleGetCurrentLocation = () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude: lat, longitude: lng } = position.coords || {};
-                    if (typeof lat === 'number') setLatitude(String(lat));
-                    if (typeof lng === 'number') setLongitude(String(lng));
-                    toast.success('Đã lấy vị trí hiện tại!', {
-                        duration: 2000,
-                    });
-                },
-                (error) => {
-                    console.error('Lỗi lấy vị trí hiện tại:', error);
-                    toast.error('Không thể lấy vị trí. Vui lòng nhập thủ công.', {
-                        duration: 4000,
-                    });
-                }
-            );
-        } else {
+    const handleGetCurrentLocation = async () => {
+        if (!navigator.geolocation) {
             toast.error('Trình duyệt không hỗ trợ lấy vị trí.', {
                 duration: 4000,
             });
+            return;
         }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude: lat, longitude: lng } = position.coords || {};
+                    if (typeof lat !== 'number' || typeof lng !== 'number') {
+                        throw new Error('Không đọc được tọa độ thiết bị.');
+                    }
+
+
+                    const reverseUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&addressdetails=1&accept-language=vi`;
+                    const response = await fetch(reverseUrl, {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Không thể phân tích địa chỉ từ vị trí hiện tại.');
+                    }
+
+                    const geocode = await response.json();
+                    const addr = geocode?.address || {};
+
+                    const districtName = addr.city_district || addr.district || addr.county || addr.city || '';
+                    const wardName = addr.suburb || addr.quarter || addr.neighbourhood || addr.town || addr.village || '';
+                    const detailAddress = getDetailedAddressFromGeocode(addr, geocode?.display_name || '');
+
+                    const districtId = matchOptionIdByName(districtName, districtOptions);
+                    if (districtId) {
+                        setSelectedDistrictId(districtId);
+                        const district = districtOptions.find((d) => d.id === districtId);
+                        const wardChildren = Array.isArray(district?.children) ? district.children : [];
+                        const mappedWards = wardChildren
+                            .filter((w) => w && w.id)
+                            .map((w) => ({ id: w.id, name: String(w.name || '').trim() }));
+                        const wardId = matchOptionIdByName(wardName, mappedWards);
+                        setSelectedAreaId(wardId || '');
+                        setAreaId(wardId || districtId);
+                    } else {
+                        setSelectedDistrictId('');
+                        setSelectedAreaId('');
+                        setAreaId(null);
+                    }
+
+                    if (detailAddress) {
+                        setLocation(detailAddress);
+                    }
+
+                    toast.success('Đã tự động điền vị trí của bạn!', {
+                        duration: 2500,
+                    });
+                } catch (error) {
+                    console.error('Lỗi lấy vị trí hiện tại:', error);
+                    toast.error('Không thể tự động điền đầy đủ địa chỉ. Vui lòng kiểm tra lại.', {
+                        duration: 4000,
+                    });
+                }
+            },
+            (error) => {
+                console.error('Lỗi lấy vị trí hiện tại:', error);
+                toast.error('Không thể lấy vị trí. Vui lòng cho phép quyền truy cập vị trí.', {
+                    duration: 4000,
+                });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
+            }
+        );
     };
 
     const handleDistrictChange = (e) => {
@@ -366,18 +460,6 @@ const CreateReport = () => {
             });
             return;
         }
-        if (!isValidLatitude(latitude)) {
-            toast.error('Vui lòng nhập vĩ độ hợp lệ (-90 đến 90).', {
-                duration: 4000,
-            });
-            return;
-        }
-        if (!isValidLongitude(longitude)) {
-            toast.error('Vui lòng nhập kinh độ hợp lệ (-180 đến 180).', {
-                duration: 4000,
-            });
-            return;
-        }
         if (!isValidEstimatedWeightKg(estimatedWeightKg)) {
             toast.error('Vui lòng nhập khối lượng ước tính (kg) hợp lệ (> 0).', {
                 duration: 4000,
@@ -422,8 +504,6 @@ const CreateReport = () => {
                 wasteCategoryId,
                 description: description.trim() || '',
                 estimatedWeightKg: Number(estimatedWeightKg),
-                latitude: Number(latitude),
-                longitude: Number(longitude),
                 addressText: combinedAddressText,
                 imageUrls: imageUrls
             };
@@ -462,7 +542,6 @@ const CreateReport = () => {
         { key: 'image', completed: hasValidImage, label: 'Hình ảnh' },
         { key: 'wasteType', completed: !!selectedWasteType, label: 'Loại rác' },
         { key: 'location', completed: !!selectedAreaId && !!location && location.trim() !== '', label: 'Vị trí' },
-        { key: 'coordinates', completed: isValidLatitude(latitude) && isValidLongitude(longitude), label: 'Tọa độ' },
         { key: 'weight', completed: isValidEstimatedWeightKg(estimatedWeightKg), label: 'Khối lượng' }
     ];
     const completedSteps = progressSteps.filter(step => step.completed).length;
@@ -758,55 +837,31 @@ const CreateReport = () => {
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleGetCurrentLocation}
+                                            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <span>Lấy vị trí của bạn</span>
+                                        </button>
 
-                                {/* Tọa độ + Khối lượng */}
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-semibold text-gray-900">
-                                        Tọa độ <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                            <label className="block text-xs font-medium text-gray-700">
-                                                Vĩ độ (Latitude)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                inputMode="decimal"
-                                                value={latitude}
-                                                onChange={(e) => setLatitude(e.target.value)}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
-                                                placeholder="Ví dụ: 10.8231"
-                                            />
-                                            <p className="text-xs text-gray-500">Giới hạn: -90 đến 90</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="block text-xs font-medium text-gray-700">
-                                                Kinh độ (Longitude)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                inputMode="decimal"
-                                                value={longitude}
-                                                onChange={(e) => setLongitude(e.target.value)}
-                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all bg-white"
-                                                placeholder="Ví dụ: 106.6297"
-                                            />
-                                            <p className="text-xs text-gray-500">Giới hạn: -180 đến 180</p>
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-medium text-gray-700">Bản đồ vị trí</p>
+                                            <div className="w-full h-72 rounded-lg overflow-hidden border border-gray-200">
+                                                <iframe
+                                                    title="Google Map Preview"
+                                                    src={mapEmbedUrl}
+                                                    className="w-full h-full"
+                                                    loading="lazy"
+                                                    referrerPolicy="no-referrer-when-downgrade"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleGetCurrentLocation}
-                                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        <span>Lấy tọa độ</span>
-                                    </button>
                                 </div>
 
                                 <div className="space-y-2">

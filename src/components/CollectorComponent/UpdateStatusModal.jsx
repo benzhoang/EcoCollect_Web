@@ -8,19 +8,6 @@ const STATUS_OPTIONS = [
   { value: "COLLECTED", label: "Đã thu gom" },
 ];
 
-const isValidLatitude = (value) => {
-  const v = String(value ?? "").trim();
-  if (!v) return false;
-  const n = Number(v);
-  return Number.isFinite(n) && n >= -90 && n <= 90;
-};
-const isValidLongitude = (value) => {
-  const v = String(value ?? "").trim();
-  if (!v) return false;
-  const n = Number(v);
-  return Number.isFinite(n) && n >= -180 && n <= 180;
-};
-
 /** Chuẩn hóa status từ API (COMPLETED -> COLLECTED) để khớp dropdown giống RequestDetailPage */
 const normalizeStatus = (s) =>
   s === "COMPLETED" ? "COLLECTED" : s || "ASSIGNED";
@@ -41,17 +28,9 @@ const UpdateStatusModal = ({
   statusId,
   onSuccess,
   onCollected,
-  latitude,
-  longitude,
 }) => {
   const [status, setStatus] = useState(() => normalizeStatus(initialStatus));
   const [note, setNote] = useState("");
-  const [latitudeInput, setLatitudeInput] = useState(
-    latitude != null ? String(latitude) : "",
-  );
-  const [longitudeInput, setLongitudeInput] = useState(
-    longitude != null ? String(longitude) : "",
-  );
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -60,27 +39,9 @@ const UpdateStatusModal = ({
       toast.error("Thiếu thông tin phân công.");
       return;
     }
-    const hasLat = latitudeInput.trim() !== "";
-    const hasLng = longitudeInput.trim() !== "";
-    if (hasLat && !isValidLatitude(latitudeInput)) {
-      toast.error("Vui lòng nhập vĩ độ hợp lệ (-90 đến 90).", {
-        duration: 4000,
-      });
-      return;
-    }
-    if (hasLng && !isValidLongitude(longitudeInput)) {
-      toast.error("Vui lòng nhập kinh độ hợp lệ (-180 đến 180).", {
-        duration: 4000,
-      });
-      return;
-    }
-    const lastKnownLatitude = hasLat ? Number(latitudeInput) : 0;
-    const lastKnownLongitude = hasLng ? Number(longitudeInput) : 0;
     const payload = {
       status,
       note: note.trim() || "",
-      lastKnownLatitude,
-      lastKnownLongitude,
     };
 
     setSubmitting(true);
@@ -93,8 +54,6 @@ const UpdateStatusModal = ({
         onCollected?.();
       }
       setNote("");
-      setLatitudeInput(latitude != null ? String(latitude) : "");
-      setLongitudeInput(longitude != null ? String(longitude) : "");
     } catch {
       toast.error("Không thể cập nhật trạng thái.");
     } finally {
@@ -165,41 +124,6 @@ const UpdateStatusModal = ({
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none bg-white"
               placeholder="Nhập ghi chú..."
             />
-          </div>
-
-          {/* Tọa độ vị trí: 2 ô nhập + Lấy vị trí hiện tại bên dưới */}
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Tọa độ vị trí
-            </label>
-            <div className="grid grid-cols-1 gap-3 mb-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700">
-                  Vĩ độ
-                </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={latitudeInput}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700 cursor-not-allowed"
-                  placeholder="Ví dụ: 10.8231"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700">
-                  Kinh độ
-                </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={longitudeInput}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700 cursor-not-allowed"
-                  placeholder="Ví dụ: 106.6297"
-                />
-              </div>
-            </div>
           </div>
 
           <div className="flex gap-3 pt-2">
