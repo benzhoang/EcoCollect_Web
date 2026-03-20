@@ -339,12 +339,6 @@ const HistoryPage = () => {
                       Loại rác
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                      Vĩ độ
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                      Kinh độ
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
                       Trạng thái xử lý
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
@@ -359,7 +353,7 @@ const HistoryPage = () => {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={6}
                         className="px-4 py-12 text-center text-gray-500"
                       >
                         Đang tải...
@@ -368,7 +362,7 @@ const HistoryPage = () => {
                   ) : error ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={6}
                         className="px-4 py-12 text-center text-red-600"
                       >
                         {error}
@@ -377,7 +371,7 @@ const HistoryPage = () => {
                   ) : displayList.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={6}
                         className="px-4 py-4 text-sm text-center text-gray-500"
                       >
                         Chưa có lịch sử công việc (yêu cầu đã thu gom)
@@ -399,12 +393,6 @@ const HistoryPage = () => {
                           <span className="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
                             {item.wasteType}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.latitude}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.longitude}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span
