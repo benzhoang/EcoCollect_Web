@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { createEnterpriseVoucher } from '../../service/api';
+import { uploadImage } from '../../service/uploadImage';
 
 const VoucherModal = ({
     show,
@@ -10,13 +11,45 @@ const VoucherModal = ({
     onInputChange
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [submitError, setSubmitError] = useState('');
 
     if (!show) return null;
 
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('Ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 10MB.');
+            return;
+        }
+
+        try {
+            setIsUploadingImage(true);
+            const uploadedUrl = await uploadImage(file);
+
+            onInputChange({
+                target: {
+                    name: 'imageUrl',
+                    value: uploadedUrl,
+                    type: 'text',
+                },
+            });
+
+            toast.success('Tải ảnh voucher lên thành công!', { duration: 2200 });
+        } catch (error) {
+            console.error('Upload ảnh voucher thất bại:', error);
+            toast.error('Không thể tải ảnh lên Cloudinary. Vui lòng thử lại.');
+        } finally {
+            setIsUploadingImage(false);
+            e.target.value = '';
+        }
+    };
+
     const handleCreateVoucher = async (e) => {
         e.preventDefault();
-        if (isSubmitting) return;
+        if (isSubmitting || isUploadingImage) return;
 
         setIsSubmitting(true);
         setSubmitError('');
@@ -188,9 +221,13 @@ const VoucherModal = ({
                                         <input
                                             type="file"
                                             accept="image/*"
-                                            className="w-full block text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploadingImage}
+                                            className="w-full block text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
-                                        <span className="text-xs text-gray-500">Chọn ảnh từ máy</span>
+                                        <span className="text-xs text-gray-500">
+                                            {isUploadingImage ? 'Đang tải ảnh lên Cloudinary...' : 'Chọn ảnh từ máy'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -230,10 +267,10 @@ const VoucherModal = ({
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isUploadingImage}
                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? 'Đang tạo...' : 'Tạo voucher'}
+                            {isUploadingImage ? 'Đang tải ảnh...' : isSubmitting ? 'Đang tạo...' : 'Tạo voucher'}
                         </button>
                     </div>
                 </form>
