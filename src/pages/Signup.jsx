@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { register } from '../service/api';
+import { getAreaTree, register } from '../service/api';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -15,6 +15,51 @@ const Signup = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const [areaOptions, setAreaOptions] = useState([]);
+    const [isLoadingAreas, setIsLoadingAreas] = useState(false);
+
+    const buildAreaOptions = (nodes, parentName = '') => {
+        if (!nodes) return [];
+
+        const result = [];
+
+        nodes.forEach((node) => {
+            if (!node) return;
+
+            const currentName = parentName ? `${parentName} - ${node.name}` : node.name;
+
+            if (Array.isArray(node.children) && node.children.length > 0 && typeof node.children[0] === 'object') {
+                result.push(...buildAreaOptions(node.children, currentName));
+            } else {
+                result.push({
+                    id: node.id,
+                    name: currentName,
+                });
+            }
+        });
+
+        return result;
+    };
+
+    useEffect(() => {
+        const fetchAreaTree = async () => {
+            try {
+                setIsLoadingAreas(true);
+                const response = await getAreaTree();
+                const rawData = response?.data ?? response;
+                const rootNodes = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+                const options = buildAreaOptions(rootNodes);
+                setAreaOptions(options);
+            } catch (error) {
+                console.error('Lỗi khi tải danh sách khu vực:', error);
+                setAreaOptions([]);
+            } finally {
+                setIsLoadingAreas(false);
+            }
+        };
+
+        fetchAreaTree();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -72,7 +117,7 @@ const Signup = () => {
         }
 
         if (!formData.areaId.trim()) {
-            newErrors.areaId = 'Vui lòng nhập hoặc chọn khu vực';
+            newErrors.areaId = 'Vui lòng chọn khu vực';
         }
 
         setErrors(newErrors);
@@ -248,21 +293,28 @@ const Signup = () => {
                                 <p className="mt-1 text-xs text-gray-500">Vui lòng nhập email hoặc số điện thoại</p>
                             </div>
 
-                            {/* Area ID Field */}
+                            {/* Area Field */}
                             <div>
                                 <label htmlFor="areaId" className="block text-sm font-medium text-gray-700 mb-2">
                                     Khu vực <span className="text-red-500">*</span>
                                 </label>
-                                <input
+                                <select
                                     id="areaId"
                                     name="areaId"
-                                    type="text"
                                     value={formData.areaId}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.areaId ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
-                                        }`}
-                                    placeholder="Nhập ID khu vực"
-                                />
+                                    disabled={isLoadingAreas}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${errors.areaId ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'} ${isLoadingAreas ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                >
+                                    <option value="">
+                                        {isLoadingAreas ? 'Đang tải khu vực...' : 'Chọn khu vực'}
+                                    </option>
+                                    {areaOptions.map((area) => (
+                                        <option key={area.id} value={area.id}>
+                                            {area.name}
+                                        </option>
+                                    ))}
+                                </select>
                                 {errors.areaId && (
                                     <p className="mt-1.5 text-sm text-red-600">{errors.areaId}</p>
                                 )}
