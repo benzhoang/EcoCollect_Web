@@ -173,17 +173,17 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">
-                        {account.fullName ?? "—"}
+                        {account.fullName ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-700">
-                        {account.email ?? "—"}
+                        {account.email ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-700">
-                        {account.phone ?? "—"}
+                        {account.phone ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">
@@ -200,7 +200,7 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
                           ? "Hoạt động"
                           : account.status === "SUSPENDED"
                             ? "Đã đình chỉ"
-                            : "—"}
+                            : "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

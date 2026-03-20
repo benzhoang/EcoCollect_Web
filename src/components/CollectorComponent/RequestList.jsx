@@ -292,12 +292,6 @@ const RequestList = ({ requests: requestsProp }) => {
                     Loại rác
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                    Vĩ độ
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
-                    Kinh độ
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
                     Trạng thái
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold tracking-wider text-gray-600 uppercase">
@@ -312,7 +306,7 @@ const RequestList = ({ requests: requestsProp }) => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={6}
                       className="px-4 py-12 text-center text-gray-500"
                     >
                       Đang tải...
@@ -321,7 +315,7 @@ const RequestList = ({ requests: requestsProp }) => {
                 ) : error ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={6}
                       className="px-4 py-12 text-center text-red-600"
                     >
                       {error}
@@ -330,7 +324,7 @@ const RequestList = ({ requests: requestsProp }) => {
                 ) : !loading && !error && displayList.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={6}
                       className="px-4 py-4 text-sm text-center text-gray-500"
                     >
                       Chưa có yêu cầu thu gom nào
@@ -352,12 +346,6 @@ const RequestList = ({ requests: requestsProp }) => {
                         <span className="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
                           {request.wasteType}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {request.latitude}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {request.longitude}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span

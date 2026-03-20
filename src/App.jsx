@@ -31,7 +31,6 @@ import CollectorListPage from "./pages/Admin/CollectorListPage";
 import RecyclingEnterpriseListPage from "./pages/Admin/RecyclingEnterpriseListPage";
 import ComplaintListPage from "./pages/Admin/ComplaintListPage";
 import AccountDetailPage from "./pages/Admin/AccountDetailPage";
-import ComplaintDetailPage from "./pages/Admin/ComplaintDetailPage";
 import RequestListPage from "./pages/Collector/RequestListPage";
 import CollectorLayout from "./layouts/CollectorLayout";
 import HistoryPage from "./pages/Collector/HistoryPage";
@@ -261,12 +260,6 @@ function App() {
         return (
           <AdminLayout>
             <ComplaintListPage />
-          </AdminLayout>
-        );
-      case "/admin/complaints/detail":
-        return (
-          <AdminLayout>
-            <ComplaintDetailPage />
           </AdminLayout>
         );
       case "/admin/config/waste-categories":

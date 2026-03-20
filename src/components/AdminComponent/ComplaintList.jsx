@@ -17,7 +17,6 @@ const CATEGORY_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
-  { value: "OPEN", label: "Đang mở" },
   { value: "IN_REVIEW", label: "Đang xem xét" },
   { value: "RESOLVED", label: "Đã giải quyết" },
   { value: "REJECTED", label: "Từ chối" },
@@ -41,14 +40,11 @@ const formatDate = (iso) => {
   });
 };
 
-const ComplaintList = ({
-  filterType = "",
-  filterStatus = "",
-  searchTerm = "",
-  // onViewDetail,
-  complaintTypes = {},
-  statusMap = {},
-}) => {
+const ComplaintList = ({ searchTerm = "" }) => {
+  // Filters (theo params Swagger: category + status)
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
   const [complaintsRaw, setComplaintsRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -132,156 +128,202 @@ const ComplaintList = ({
     ["RESOLVED", "REJECTED"].includes(String(status || "").toUpperCase());
 
   // Chỉ hiện cột THAO TÁC nếu trong trang hiện tại còn dòng có thể cập nhật
-  const showActionsColumn = complaints.some((c) => !isResolvedOrRejected(c.status));
+  const showActionsColumn = complaints.some(
+    (c) => !isResolvedOrRejected(c.status),
+  );
   const tableColCount = showActionsColumn ? 8 : 7;
 
   return (
-    <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-gray-200 bg-gray-50">
-            <tr>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                STT
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                LOẠI KHIẾU NẠI
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                MÔ TẢ
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                TRẠNG THÁI
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                NGÀY TẠO
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                NGÀY XỬ LÝ
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
-                GHI CHÚ XỬ LÝ
-              </th>
-              {showActionsColumn && (
-                <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
-                  THAO TÁC
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
-              <tr>
-                <td colSpan={tableColCount} className="px-6 py-12 text-center text-gray-500">
-                  Đang tải...
-                </td>
-              </tr>
-            ) : loadError ? (
-              <tr>
-                <td colSpan={tableColCount} className="px-6 py-12 text-center text-red-600">
-                  {loadError}
-                </td>
-              </tr>
-            ) : complaints.length === 0 ? (
-              <tr>
-                <td colSpan={tableColCount} className="px-6 py-12 text-center text-gray-500">
-                  Không có khiếu nại nào phù hợp.
-                </td>
-              </tr>
-            ) : (
-              complaints.map((c, i) => (
-                <tr key={c.id} className="transition-colors hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">
-                      {page * PAGE_SIZE + i + 1}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {complaintTypes[c.category] ??
-                        CATEGORY_OPTIONS.find((o) => o.value === c.category)
-                          ?.label ??
-                        c.category ??
-                        "—"}
-                    </span>
-                  </td>
-                  <td className="max-w-xs px-6 py-4">
-                    <span className="text-sm text-gray-700 line-clamp-2">
-                      {c.description ?? "—"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                        statusMap[c.status]?.color ||
-                        STATUS_STYLES[c.status] ||
-                        "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {statusMap[c.status]?.label ??
-                        STATUS_OPTIONS.find((o) => o.value === c.status)
-                          ?.label ??
-                        c.status ??
-                        "—"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {formatDate(c.createdAt)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">
-                      {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
-                    </span>
-                  </td>
-                  <td className="max-w-xs px-6 py-4">
-                    <span
-                      className="text-sm text-gray-700 line-clamp-2"
-                      title={c.resolutionNote ?? ""}
-                    >
-                      {c.resolutionNote ?? "—"}
-                    </span>
-                  </td>
-                  {showActionsColumn && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
-                        {!isResolvedOrRejected(c.status) && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenUpdate(c)}
-                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
-                            title="Cập nhật trạng thái"
-                          >
-                            <FaEdit className="text-sm text-yellow-600" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+    <div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Loại khiếu nại
+          </label>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Trạng thái
+          </label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="py-2 pl-3 pr-8 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      {!loading && !loadError && (
-        <AdminPagination
-          pageInfo={pageInfo}
-          currentPage={page + 1}
-          onPageChange={handlePageChange}
-          itemCount={complaints.length}
-          itemLabel="khiếu nại"
+
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-gray-200 bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  STT
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  LOẠI KHIẾU NẠI
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  MÔ TẢ
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  TRẠNG THÁI
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  NGÀY TẠO
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  NGÀY XỬ LÝ
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-gray-700 uppercase whitespace-nowrap">
+                  GHI CHÚ XỬ LÝ
+                </th>
+                {showActionsColumn && (
+                  <th className="w-40 px-6 py-4 text-xs font-semibold tracking-wider text-center text-gray-700 uppercase whitespace-nowrap">
+                    THAO TÁC
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={tableColCount}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
+                    Đang tải...
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td
+                    colSpan={tableColCount}
+                    className="px-6 py-12 text-center text-red-600"
+                  >
+                    {loadError}
+                  </td>
+                </tr>
+              ) : complaints.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={tableColCount}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
+                    Không có khiếu nại nào phù hợp.
+                  </td>
+                </tr>
+              ) : (
+                complaints.map((c, i) => (
+                  <tr key={c.id} className="transition-colors hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {page * PAGE_SIZE + i + 1}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {CATEGORY_OPTIONS.find((o) => o.value === c.category)
+                          ?.label ??
+                          c.category ??
+                          "—"}
+                      </span>
+                    </td>
+                    <td className="max-w-xs px-6 py-4">
+                      <span className="text-sm text-gray-700 line-clamp-2">
+                        {c.description ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                          STATUS_STYLES[c.status] || "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {STATUS_OPTIONS.find((o) => o.value === c.status)
+                          ?.label ??
+                          c.status ??
+                          "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {formatDate(c.createdAt)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-700">
+                        {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
+                      </span>
+                    </td>
+                    <td className="max-w-xs px-6 py-4">
+                      <span
+                        className="text-sm text-gray-700 line-clamp-2"
+                        title={c.resolutionNote ?? ""}
+                      >
+                        {c.resolutionNote ?? "—"}
+                      </span>
+                    </td>
+                    {showActionsColumn && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          {!isResolvedOrRejected(c.status) && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenUpdate(c)}
+                              className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-yellow-50 shrink-0"
+                              title="Cập nhật trạng thái"
+                            >
+                              <FaEdit className="text-sm text-yellow-600" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {!loading && !loadError && (
+          <AdminPagination
+            pageInfo={pageInfo}
+            currentPage={page + 1}
+            onPageChange={handlePageChange}
+            itemCount={complaints.length}
+            itemLabel="khiếu nại"
+          />
+        )}
+        <UpdateComplaintStatusModal
+          isOpen={isUpdateModalOpen}
+          onClose={handleCloseUpdate}
+          complaintId={selectedComplaint?.id}
+          initialStatus={selectedComplaint?.status}
+          initialResolutionNote={selectedComplaint?.resolutionNote}
+          onSuccess={() => load(page)}
         />
-      )}
-      <UpdateComplaintStatusModal
-        isOpen={isUpdateModalOpen}
-        onClose={handleCloseUpdate}
-        complaintId={selectedComplaint?.id}
-        initialStatus={selectedComplaint?.status}
-        initialResolutionNote={selectedComplaint?.resolutionNote}
-        onSuccess={() => load(page)}
-      />
+      </div>
     </div>
   );
 };
