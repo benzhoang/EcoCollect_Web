@@ -502,7 +502,7 @@ const Report = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-3 flex-shrink-0">
-                                                    {report.rawStatus === 'PENDING' && (
+                                                    {(report.rawStatus === 'PENDING' || report.rawStatus === 'ACCEPTED') && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
