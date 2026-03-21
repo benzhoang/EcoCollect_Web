@@ -363,7 +363,7 @@ export const deactivateArea = async (id) => {
  */
 export const getWasteCategories = async (options = {}) => {
   try {
-    const { includeInactive = false } = options;
+    const { includeInactive = true } = options;
     const { data } = await api.get("/waste-categories", {
       params: { includeInactive },
     });

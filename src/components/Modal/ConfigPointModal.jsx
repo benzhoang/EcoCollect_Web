@@ -32,11 +32,13 @@ const ConfigPointModal = ({
                     categories = response.content;
                 }
 
-                const mapped = categories.map((cat) => ({
-                    value: cat?.id || cat?.value,
-                    label: cat?.name || cat?.label || 'Unknown',
-                    color: 'bg-blue-100 text-blue-700',
-                }));
+                const mapped = categories
+                    .filter((cat) => cat?.active === true)
+                    .map((cat) => ({
+                        value: cat?.id || cat?.value,
+                        label: cat?.name || cat?.label || 'Unknown',
+                        color: 'bg-blue-100 text-blue-700',
+                    }));
 
                 if (!cancelled) {
                     setWasteTypes(mapped);
