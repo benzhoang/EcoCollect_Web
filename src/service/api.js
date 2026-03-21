@@ -437,6 +437,26 @@ export const deactivateWasteCategory = async (id) => {
 };
 
 /**
+ * Kích hoạt danh mục loại rác (Admin) - Activate waste category
+ * PATCH /admin/waste-categories/{id}/activate
+ * @param {string} id - UUID danh mục (path parameter, bắt buộc)
+ * @returns {Promise} Response từ API
+ */
+export const activateWasteCategory = async (id) => {
+  try {
+    const { data } = await api.patch(
+      `/admin/waste-categories/${id}/activate`,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi kích hoạt danh mục loại rác. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Xử lý khiếu nại (Admin) - Processing complaint
  * PATCH /admin/complaint/{id}/processing
  * @param {string} id - UUID khiếu nại (path parameter, bắt buộc)

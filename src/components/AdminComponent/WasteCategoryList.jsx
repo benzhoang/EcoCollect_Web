@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FaEdit, FaPause } from "react-icons/fa";
+import { FaArrowsRotate } from "react-icons/fa6";
 import toast from "react-hot-toast";
 import UpdateWasteCategoryModal from "./Modal/UpdateWasteCategoryModal";
 import ModalConfirm from "./Modal/ModalConfirm";
 import AdminPagination from "./AdminPagination";
-import { getWasteCategories, deactivateWasteCategory } from "../../service/api";
+import {
+  getWasteCategories,
+  deactivateWasteCategory,
+  activateWasteCategory,
+} from "../../service/api";
 
 const PAGE_SIZE = 5;
 
 const WasteCategoryList = ({ refreshTrigger = 0 }) => {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("deactivate"); // "deactivate" | "activate"
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
@@ -41,7 +47,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await getWasteCategories();
+        const response = await getWasteCategories({ includeInactive: true });
         const list = Array.isArray(response)
           ? response
           : Array.isArray(response?.data)
@@ -63,8 +69,10 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
     setIsModalUpdateOpen(true);
   };
 
-  const handleDelete = (category) => {
+  /** Mở modal vô hiệu hóa (danh mục đang hoạt động) hoặc kích hoạt (danh mục đã tắt) */
+  const handleToggleActive = (category) => {
     setSelectedCategory(category);
+    setModalMode(category.active === false ? "activate" : "deactivate");
     setIsModalDeleteOpen(true);
   };
 
@@ -75,20 +83,34 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmToggle = async () => {
     if (!selectedCategory?.id) return;
     setDeleteLoading(true);
     try {
-      await deactivateWasteCategory(selectedCategory.id);
-      setCategories((prev) =>
-        prev.map((c) =>
-          c.id === selectedCategory.id ? { ...c, active: false } : c,
-        ),
-      );
+      if (modalMode === "activate") {
+        await activateWasteCategory(selectedCategory.id);
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === selectedCategory.id ? { ...c, active: true } : c,
+          ),
+        );
+        toast.success("Đã kích hoạt danh mục loại rác.");
+      } else {
+        await deactivateWasteCategory(selectedCategory.id);
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === selectedCategory.id ? { ...c, active: false } : c,
+          ),
+        );
+        toast.success("Đã vô hiệu hóa danh mục loại rác.");
+      }
       handleCloseDeleteModal();
-      toast.success("Đã vô hiệu hóa  danh mục loại rác.");
     } catch {
-      toast.error("Không thể vô hiệu hóa danh mục. Vui lòng thử lại.");
+      toast.error(
+        modalMode === "activate"
+          ? "Không thể kích hoạt danh mục. Vui lòng thử lại."
+          : "Không thể vô hiệu hóa danh mục. Vui lòng thử lại.",
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -181,7 +203,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {category.active ? "Hoạt động" : "Vô hiệu hóa"}
+                        {category.active ? "Hoạt động" : "Không hoạt động"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -193,13 +215,25 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                         >
                           <FaEdit className="text-sm text-yellow-600" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(category)}
-                          className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-100 shrink-0"
-                          title="Vô hiệu hóa"
-                        >
-                          <FaPause className="text-sm text-gray-500" />
-                        </button>
+                        {category.active === false ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleActive(category)}
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-green-100 shrink-0"
+                            title="Khôi phục"
+                          >
+                            <FaArrowsRotate className="text-sm text-green-600" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleActive(category)}
+                            className="flex items-center justify-center transition-colors border border-gray-300 rounded-lg w-9 h-9 hover:bg-gray-100 shrink-0"
+                            title="Vô hiệu hóa"
+                          >
+                            <FaPause className="text-sm text-gray-500" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -222,14 +256,22 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
       <ModalConfirm
         isOpen={isModalDeleteOpen}
         onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        title="Xác nhận vô hiệu hóa"
+        onConfirm={handleConfirmToggle}
+        title={
+          modalMode === "activate"
+            ? "Xác nhận kích hoạt lại"
+            : "Xác nhận vô hiệu hóa"
+        }
         message={
           selectedCategory
-            ? `Bạn có chắc muốn vô hiệu hóa danh mục "${selectedCategory.name}"?`
-            : "Bạn có chắc chắn muốn vô hiệu hóa danh mục này?"
+            ? modalMode === "activate"
+              ? `Bạn có chắc muốn kích hoạt lại danh mục "${selectedCategory.name}"?`
+              : `Bạn có chắc muốn vô hiệu hóa danh mục "${selectedCategory.name}"?`
+            : modalMode === "activate"
+              ? "Bạn có chắc muốn kích hoạt lại danh mục này?"
+              : "Bạn có chắc chắn muốn vô hiệu hóa danh mục này?"
         }
-        confirmText="Vô hiệu hóa"
+        confirmText={modalMode === "activate" ? "Kích hoạt" : "Vô hiệu hóa"}
         isLoading={deleteLoading}
       />
 
