@@ -78,7 +78,7 @@ const CreateReport = () => {
                         : [];
 
                 const mapped = items
-                    .filter((c) => c && c.id)
+                    .filter((c) => c && c.id && c.active === true)
                     .map((c) => ({
                         id: c.id,
                         name: c.name || c.displayName || c.code || 'Rác thải',
