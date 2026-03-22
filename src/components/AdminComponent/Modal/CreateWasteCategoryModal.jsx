@@ -22,7 +22,7 @@ const CreateWasteCategoryModal = ({ isOpen, onClose, onSuccess }) => {
     const trimmedCode = formData.code?.trim();
     const trimmedName = formData.name?.trim();
     if (!trimmedCode || !trimmedName) {
-      toast.error("Vui lòng nhập đầy đủ mã và tên loại rác.", {
+      toast.error("Vui lòng nhập đầy đủ mã và tên loại rác", {
         duration: 3000,
       });
       return;
@@ -31,19 +31,18 @@ const CreateWasteCategoryModal = ({ isOpen, onClose, onSuccess }) => {
     setError(null);
     try {
       await createWasteCategory({ code: trimmedCode, name: trimmedName });
-      toast.success("Tạo danh mục loại rác thành công!", { duration: 2500 });
+      toast.success("Tạo danh mục loại rác thành công", { duration: 2500 });
       onSuccess?.();
       handleClose();
-    } catch (err) {
-      const message =
-        err?.message || "Không thể tạo danh mục loại rác. Vui lòng thử lại.";
-      toast.error(message, { duration: 3500 });
+    } catch {
+      toast.error("Không thể tạo danh mục loại rác. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
+    if (loading) return;
     setFormData({ code: "", name: "" });
     setError(null);
     onClose?.();
@@ -57,59 +56,65 @@ const CreateWasteCategoryModal = ({ isOpen, onClose, onSuccess }) => {
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-lg p-8 mx-4 bg-white rounded-lg shadow-xl"
+        className="relative w-full max-w-lg mx-4 bg-white shadow-xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={handleClose}
-          className="absolute text-gray-500 transition-colors top-4 right-4 hover:text-gray-700"
-          type="button"
-        >
-          <FaTimes className="text-2xl" />
-        </button>
-        <h2 className="mb-6 text-xl font-medium text-center text-gray-700">
-          Thêm danh mục loại rác
-        </h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">
+            Thêm danh mục loại rác
+          </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+            disabled={loading}
+          >
+            <span className="sr-only">Đóng</span>
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Mã loại rác (in hoa)
-            </label>
-            <input
-              type="text"
-              name="code"
-              value={formData.code}
-              onChange={handleChange}
-              placeholder="Nhập mã loại rác"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={loading}
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Mã loại rác (in hoa)
+              </label>
+              <input
+                type="text"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                placeholder="Nhập mã loại rác"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Tên loại rác
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Nhập tên loại rác"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                disabled={loading}
+              />
+            </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
           </div>
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Tên loại rác
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Nhập tên loại rác"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              disabled={loading}
-            />
-          </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-end px-6 py-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={loading}
-              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors"
+              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
             >
-              {loading ? "Đang xử lý..." : "Thêm"}
+              {loading ? "Đang thêm..." : "Thêm"}
             </button>
           </div>
         </form>

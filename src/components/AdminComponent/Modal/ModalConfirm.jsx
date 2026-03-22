@@ -1,5 +1,10 @@
 import { FaTimes } from "react-icons/fa";
 
+const confirmButtonVariants = {
+  danger: "bg-red-600 hover:bg-red-700",
+  success: "bg-green-600 hover:bg-green-700",
+};
+
 const ModalConfirm = ({
   isOpen,
   onClose,
@@ -8,8 +13,13 @@ const ModalConfirm = ({
   message = "Bạn có chắc chắn muốn xóa?",
   confirmText = "Xóa",
   isLoading = false,
+  /** danger: đỏ (mặc định). success: xanh lá — vd. kích hoạt / bật lại */
+  variant = "danger",
 }) => {
   if (!isOpen) return null;
+
+  const confirmBtnClass =
+    confirmButtonVariants[variant] ?? confirmButtonVariants.danger;
 
   return (
     <div
@@ -42,9 +52,9 @@ const ModalConfirm = ({
             onClick={onConfirm}
             disabled={isLoading}
             type="button"
-            className="px-12 py-2.5 font-medium text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-12 py-2.5 font-medium text-white transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${confirmBtnClass}`}
           >
-            {isLoading ? "Đang xử lý..." : confirmText}
+            {isLoading ? "Đang xác nhận..." : confirmText}
           </button>
         </div>
       </div>

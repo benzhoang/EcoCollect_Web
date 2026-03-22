@@ -273,6 +273,7 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
         }
         confirmText={modalMode === "activate" ? "Kích hoạt" : "Vô hiệu hóa"}
         isLoading={deleteLoading}
+        variant={modalMode === "activate" ? "success" : "danger"}
       />
 
       <UpdateWasteCategoryModal

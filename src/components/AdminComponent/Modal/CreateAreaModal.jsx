@@ -81,7 +81,8 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
       onClose?.();
     } catch (err) {
       console.error("[CreateAreaModal] createArea error:", err);
-      const message = err?.message ?? "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.";
+      const message =
+        err?.message ?? "Đã xảy ra lỗi khi tạo khu vực. Vui lòng thử lại.";
       setError(message);
       toast.error(message);
     } finally {
@@ -104,66 +105,72 @@ const CreateAreaModal = ({ isOpen, onClose, onSuccess }) => {
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-lg p-8 mx-4 bg-white rounded-lg shadow-xl"
+        className="relative w-full max-w-lg mx-4 bg-white shadow-xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={handleClose}
-          className="absolute text-gray-500 transition-colors top-4 right-4 hover:text-gray-700"
-          type="button"
-        >
-          <FaTimes className="text-2xl" />
-        </button>
-        <h2 className="mb-6 text-xl font-medium text-center text-gray-700">
-          Thêm khu vực
-        </h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">Thêm khu vực</h2>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+            type="button"
+            disabled={submitting}
+          >
+            <span className="sr-only">Đóng</span>
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Khu vực cha
-            </label>
-            <select
-              name="parentId"
-              value={formData.parentId}
-              onChange={handleChange}
-              disabled={loadingAreas}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">— Không chọn (tạo cấp gốc) —</option>
-              {areaOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-            {loadingAreas && (
-              <p className="mt-1 text-xs text-gray-500">Đang tải danh sách khu vực...</p>
-            )}
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Khu vực cha
+              </label>
+              <select
+                name="parentId"
+                value={formData.parentId}
+                onChange={handleChange}
+                disabled={loadingAreas}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">— Không chọn (tạo cấp gốc) —</option>
+                {areaOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
+              </select>
+              {loadingAreas && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Đang tải danh sách khu vực...
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Tên khu vực <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Nhập tên khu vực"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
           </div>
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Tên khu vực <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Nhập tên khu vực"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-end px-6 py-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={submitting}
-              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors"
+              className="px-12 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
             >
-              {submitting ? "Đang tạo..." : "Thêm"}
+              {submitting ? "Đang thêm..." : "Thêm"}
             </button>
           </div>
         </form>

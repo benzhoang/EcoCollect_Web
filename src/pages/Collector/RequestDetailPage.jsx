@@ -6,6 +6,7 @@ import {
 } from "../../service/api";
 import UpdateStatusModal from "../../components/CollectorComponent/UpdateStatusModal";
 import UploadProofModal from "../../components/CollectorComponent/UploadProofModal";
+import CancelRequestModal from "../../components/CollectorComponent/CancelRequestModal";
 
 /** Trạng thái cho Collector: ASSIGNED, ON_THE_WAY, COLLECTED (hiển thị Đã thu gom) - đồng bộ với RequestList */
 const mapStatusToLabel = (status) => {
@@ -94,6 +95,12 @@ const mapDetailToRequest = (raw, categoryMap = {}) => {
 
   return {
     id: report?.id ?? data?.reportId ?? data?.id,
+    /** UUID phân công (dùng cho hủy / cập nhật trạng thái) */
+    assignmentId:
+      data?.assignmentId ??
+      data?.assignment?.id ??
+      report?.assignmentId ??
+      null,
     code: report?.code ?? data?.code ?? report?.id ?? data?.id ?? "-",
     image: firstImage,
     images: Array.isArray(imageUrls)
@@ -138,6 +145,7 @@ const RequestDetailPage = () => {
   const [error, setError] = useState(null);
   const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
   const [showUploadProofModal, setShowUploadProofModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [updateStatusInitial, setUpdateStatusInitial] = useState("ASSIGNED");
 
   const fetchDetail = useCallback(async () => {
@@ -259,6 +267,10 @@ const RequestDetailPage = () => {
 
   const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
   const googleMapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}`;
+
+  const statusUpper = String(request.status || "").toUpperCase();
+  const canCancelAssignment =
+    statusUpper === "ASSIGNED" || statusUpper === "ON_THE_WAY";
 
   return (
     <div className="flex flex-col w-full h-full min-h-0">
@@ -517,39 +529,12 @@ const RequestDetailPage = () => {
             </h2>
             <p className="mb-4 text-gray-600">
               {String(request.status).toUpperCase() === "ON_THE_WAY"
-                ? "Khi hoàn thành hãy xác nhận thu gom hoặc báo cáo sự cố nếu cần."
+                ? "Khi hoàn thành hãy xác nhận thu gom."
                 : "Bắt đầu di chuyển tới điểm tập kết ngay bây giờ."}
             </p>
             <div className="flex flex-wrap justify-end gap-3">
               {String(request.status).toUpperCase() === "ON_THE_WAY" ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.history.pushState(
-                        {},
-                        "",
-                        "/collector/incident-report",
-                      );
-                      window.dispatchEvent(new PopStateEvent("popstate"));
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-800 font-medium rounded-lg hover:bg-gray-200"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    Báo cáo sự cố
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -573,37 +558,57 @@ const RequestDetailPage = () => {
                     </svg>
                     Xác nhận thu gom
                   </button>
+                  {canCancelAssignment && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5  text-white bg-red-600 font-medium rounded-lg hover:bg-red-700"
+                    >
+                      Hủy yêu cầu
+                    </button>
+                  )}
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUpdateStatusInitial(request?.status || "ASSIGNED");
-                    setShowUpdateStatusModal(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUpdateStatusInitial(request?.status || "ASSIGNED");
+                      setShowUpdateStatusModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Bắt đầu di chuyển
-                </button>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Bắt đầu di chuyển
+                  </button>
+                  {canCancelAssignment && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5  text-white bg-red-600 font-medium rounded-lg hover:bg-red-700"
+                    >
+                      Hủy yêu cầu
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -617,7 +622,7 @@ const RequestDetailPage = () => {
           }
           show={showUpdateStatusModal}
           onClose={() => setShowUpdateStatusModal(false)}
-          statusId={assignmentId || reportId}
+          statusId={assignmentId}
           onSuccess={fetchDetail}
           onCollected={() => setShowUploadProofModal(true)}
           latitude={request?.latitude}
@@ -634,7 +639,12 @@ const RequestDetailPage = () => {
             setShowUploadProofModal(false);
           }}
           assignmentId={assignmentId}
-          onSuccess={fetchDetail}
+        />
+
+        <CancelRequestModal
+          show={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          assignmentId={assignmentId || request?.assignmentId}
         />
       </div>
     </div>

@@ -444,9 +444,7 @@ export const deactivateWasteCategory = async (id) => {
  */
 export const activateWasteCategory = async (id) => {
   try {
-    const { data } = await api.patch(
-      `/admin/waste-categories/${id}/activate`,
-    );
+    const { data } = await api.patch(`/admin/waste-categories/${id}/activate`);
     return data;
   } catch (error) {
     handleApiError(
@@ -470,10 +468,7 @@ export const patchAdminComplaintProcessing = async (id, body) => {
     if (!id) {
       throw new Error("Thiếu id khiếu nại để xử lý.");
     }
-    const { data } = await api.patch(
-      `/admin/complaint/${id}/processing`,
-      body,
-    );
+    const { data } = await api.patch(`/admin/complaint/${id}/processing`, body);
     return data;
   } catch (error) {
     handleApiError(
@@ -1376,6 +1371,28 @@ export const updateCollectorAssignmentStatus = async (
       error,
       "Đã xảy ra lỗi khi cập nhật trạng thái phân công. Vui lòng thử lại.",
     );
+  }
+};
+
+/**
+ * Collector hủy assignment (chỉ khi ASSIGNED hoặc ON_THE_WAY; report về ACCEPTED)
+ * POST /collector/assignments/{id}/cancel
+ * @param {string} id - ID assignment (path, bắt buộc)
+ * @param {Object} body - Request body
+ * @param {string} body.reason - Lý do hủy
+ * @returns {Promise} Response từ API
+ */
+export const cancelCollectorAssignment = async (id, { reason = "" }) => {
+  try {
+    if (!id) {
+      throw new Error("Thiếu id assignment để hủy.");
+    }
+    const { data } = await api.post(`/collector/assignments/${id}/cancel`, {
+      reason,
+    });
+    return data;
+  } catch (error) {
+    handleApiError(error, "Đã xảy ra lỗi khi hủy phân công. Vui lòng thử lại.");
   }
 };
 

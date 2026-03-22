@@ -269,18 +269,11 @@ const CreateRewardRuleModal = ({
 
           <div className="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-gray-200">
             <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Hủy
-            </button>
-            <button
               type="submit"
               disabled={submitting}
               className="px-4 py-2 text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? "Đang lưu..." : "Tạo quy tắc"}
+              {submitting ? "Đang tạo..." : "Tạo quy tắc"}
             </button>
           </div>
         </form>
