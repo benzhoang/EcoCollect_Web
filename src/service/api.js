@@ -649,6 +649,23 @@ export const getCitizenStatisticsOverview = async (month) => {
 };
 
 /**
+ * Lấy thông tin hồ sơ của citizen hiện tại
+ * GET /citizen/profile
+ * @returns {Promise} Response từ API
+ */
+export const getCitizenProfile = async () => {
+  try {
+    const { data } = await api.get("/citizen/profile");
+    return data;
+  } catch (error) {
+    handleApiError(
+      error,
+      "Đã xảy ra lỗi khi lấy thông tin hồ sơ công dân. Vui lòng thử lại.",
+    );
+  }
+};
+
+/**
  * Cập nhật trạng thái đã đọc cho thông báo của công dân
  * PUT /citizen/notification?ids=<id>&ids=<id>
  * @param {string[]} ids - Danh sách notification user id cần đánh dấu đã đọc

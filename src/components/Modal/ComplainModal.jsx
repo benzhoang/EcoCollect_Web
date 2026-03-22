@@ -7,8 +7,6 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
         reportId: '',
         category: 'MISSED_PICKUP',
         description: '',
-        latitude: '',
-        longitude: '',
         status: 'OPEN',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,8 +17,6 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
             reportId: defaultData.reportId || '',
             category: defaultData.category || 'MISSED_PICKUP',
             description: defaultData.description || '',
-            latitude: defaultData.latitude ?? '',
-            longitude: defaultData.longitude ?? '',
             status: defaultData.status || 'OPEN',
         });
     }, [isOpen, defaultData]);
@@ -46,8 +42,6 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
                 reportId: formData.reportId,
                 category: formData.category,
                 description: formData.description,
-                latitude: formData.latitude === '' ? null : Number(formData.latitude),
-                longitude: formData.longitude === '' ? null : Number(formData.longitude),
                 status: formData.status,
             };
 
@@ -122,32 +116,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
                             placeholder="Mô tả chi tiết khiếu nại"
                         />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Vĩ độ</label>
-                            <input
-                                name="latitude"
-                                value={formData.latitude}
-                                onChange={handleChange}
-                                type="number"
-                                step="any"
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                                placeholder="Vĩ độ"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Kinh độ</label>
-                            <input
-                                name="longitude"
-                                value={formData.longitude}
-                                onChange={handleChange}
-                                type="number"
-                                step="any"
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                                placeholder="Kinh độ"
-                            />
-                        </div>
-                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                         <select
