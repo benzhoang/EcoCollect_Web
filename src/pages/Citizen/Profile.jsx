@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCitizenPointsBalance } from '../../service/api';
+import { getCitizenPointsBalance, getCitizenProfile } from '../../service/api';
 
 const Profile = () => {
     const [userData, setUserData] = useState({
@@ -9,9 +9,10 @@ const Profile = () => {
         address: '',
         username: '',
         joinDate: '',
-        avatar: null
+        avatar: null,
+        totalCollectedKg: 0,
     });
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing] = useState(false);
     const [currentPoints, setCurrentPoints] = useState(0);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -21,31 +22,67 @@ const Profile = () => {
     });
 
     useEffect(() => {
-        // Lấy thông tin user từ localStorage
-        const userDataFromStorage = localStorage.getItem('user');
-        if (userDataFromStorage) {
+        const fetchCitizenProfile = async () => {
+            const userDataFromStorage = localStorage.getItem('user');
+            let userFromStorage = null;
+
+            if (userDataFromStorage) {
+                try {
+                    userFromStorage = JSON.parse(userDataFromStorage);
+                } catch (error) {
+                    console.error('Error parsing user data:', error);
+                }
+            }
+
+            const fallbackJoinDate = userFromStorage?.createdAt || new Date().toLocaleDateString('vi-VN');
+            const fallbackUsername = userFromStorage?.username || userFromStorage?.email?.split('@')[0] || 'User';
+            const fallbackAvatar = userFromStorage?.avatar || null;
+
             try {
-                const user = JSON.parse(userDataFromStorage);
-                const joinDate = user.createdAt || new Date().toLocaleDateString('vi-VN');
+                const response = await getCitizenProfile();
+                const profile = response?.data ?? response;
+
                 setUserData({
-                    fullName: user.fullName || user.username || 'Chưa cập nhật',
-                    email: user.email || 'Chưa cập nhật',
-                    phone: user.phone || 'Chưa cập nhật',
-                    address: user.address || 'Chưa cập nhật',
-                    username: user.username || user.email?.split('@')[0] || 'User',
-                    joinDate: joinDate,
-                    avatar: user.avatar || null
+                    fullName: profile?.fullName || fallbackUsername || 'Chưa cập nhật',
+                    email: profile?.email || 'Chưa cập nhật',
+                    phone: profile?.phone || 'Chưa cập nhật',
+                    address: profile?.area || 'Chưa cập nhật',
+                    username: fallbackUsername,
+                    joinDate: fallbackJoinDate,
+                    avatar: fallbackAvatar,
+                    totalCollectedKg: Number(profile?.totalCollectedKg ?? 0),
                 });
+
                 setFormData({
-                    fullName: user.fullName || user.username || '',
-                    email: user.email || '',
-                    phone: user.phone || '',
-                    address: user.address || ''
+                    fullName: profile?.fullName || '',
+                    email: profile?.email || '',
+                    phone: profile?.phone || '',
+                    address: profile?.area || '',
                 });
             } catch (error) {
-                console.error('Error parsing user data:', error);
+                console.error('Lỗi khi lấy thông tin citizen profile:', error);
+
+                setUserData({
+                    fullName: userFromStorage?.fullName || fallbackUsername || 'Chưa cập nhật',
+                    email: userFromStorage?.email || 'Chưa cập nhật',
+                    phone: userFromStorage?.phone || 'Chưa cập nhật',
+                    address: userFromStorage?.address || 'Chưa cập nhật',
+                    username: fallbackUsername,
+                    joinDate: fallbackJoinDate,
+                    avatar: fallbackAvatar,
+                    totalCollectedKg: Number(userFromStorage?.totalCollectedKg ?? 0),
+                });
+
+                setFormData({
+                    fullName: userFromStorage?.fullName || '',
+                    email: userFromStorage?.email || '',
+                    phone: userFromStorage?.phone || '',
+                    address: userFromStorage?.address || '',
+                });
             }
-        }
+        };
+
+        fetchCitizenProfile();
     }, []);
 
     useEffect(() => {
@@ -72,46 +109,6 @@ const Profile = () => {
         }));
     };
 
-    const handleSave = () => {
-        // Lưu thông tin cập nhật vào localStorage
-        const userDataFromStorage = localStorage.getItem('user');
-        if (userDataFromStorage) {
-            try {
-                const user = JSON.parse(userDataFromStorage);
-                const updatedUser = {
-                    ...user,
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    phone: formData.phone,
-                    address: formData.address
-                };
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-                setUserData(prev => ({
-                    ...prev,
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    phone: formData.phone,
-                    address: formData.address
-                }));
-                setIsEditing(false);
-                alert('Cập nhật thông tin thành công!');
-            } catch (error) {
-                console.error('Error updating user data:', error);
-                alert('Có lỗi xảy ra khi cập nhật thông tin!');
-            }
-        }
-    };
-
-    const handleCancel = () => {
-        // Khôi phục dữ liệu ban đầu
-        setFormData({
-            fullName: userData.fullName,
-            email: userData.email,
-            phone: userData.phone,
-            address: userData.address
-        });
-        setIsEditing(false);
-    };
 
     const getInitials = (name) => {
         if (!name || name === 'Chưa cập nhật') return 'U';
@@ -138,7 +135,7 @@ const Profile = () => {
         {
             id: 2,
             label: 'Rác đã thu gom',
-            value: '124 kg',
+            value: `${new Intl.NumberFormat('vi-VN').format(userData.totalCollectedKg)} kg`,
             icon: (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -235,7 +232,7 @@ const Profile = () => {
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-gray-900">Thông tin cá nhân</h3>
-                                {!isEditing ? (
+                                {/* {!isEditing ? (
                                     <button
                                         onClick={() => setIsEditing(true)}
                                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-200 text-sm"
@@ -260,7 +257,7 @@ const Profile = () => {
                                             Lưu
                                         </button>
                                     </div>
-                                )}
+                                )} */}
                             </div>
 
                             <div className="space-y-4">
