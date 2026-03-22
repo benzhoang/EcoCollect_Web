@@ -38,7 +38,7 @@ const UpdateComplaintStatusModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!status || !complaintId) {
-      toast.error("Thiếu thông tin khiếu nại hoặc trạng thái.");
+      toast.error("Thiếu thông tin khiếu nại hoặc trạng thái");
       return;
     }
     try {
@@ -48,14 +48,11 @@ const UpdateComplaintStatusModal = ({
         resolutionNote: resolutionNote?.trim() || "",
       };
       await patchAdminComplaintProcessing(complaintId, payload);
-      toast.success("Cập nhật trạng thái khiếu nại thành công.");
+      toast.success("Cập nhật trạng thái khiếu nại thành công");
       onSuccess?.();
       onClose?.();
-    } catch (err) {
-      const message =
-        err?.message ??
-        "Không thể cập nhật trạng thái khiếu nại. Vui lòng thử lại.";
-      toast.error(message);
+    } catch {
+      toast.error("Không thể cập nhật trạng thái khiếu nại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -67,73 +64,65 @@ const UpdateComplaintStatusModal = ({
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-xl p-6 mx-4 bg-white rounded-lg shadow-xl md:p-8"
+        className="relative w-full max-w-xl mx-4 bg-white shadow-xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={submitting}
-          className="absolute text-gray-500 transition-colors top-4 right-4 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaTimes className="text-xl" />
-        </button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">
+            Cập nhật trạng thái khiếu nại
+          </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+          >
+            <span className="sr-only">Đóng</span>
+            <FaTimes className="text-xl" />
+          </button>
+        </div>
 
-        <h2 className="mb-4 text-xl font-semibold text-gray-900">
-          Cập nhật trạng thái khiếu nại
-        </h2>
-        <p className="mb-6 text-sm text-gray-600">
-          Chọn trạng thái mới cho khiếu nại và ghi chú lại cách xử lý để tiện
-          theo dõi sau này.
-        </p>
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Trạng thái xử lý <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={submitting}
+                required
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Trạng thái xử lý <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              disabled={submitting}
-              required
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Ghi chú xử lý
+              </label>
+              <textarea
+                rows={5}
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+                placeholder="Mô tả cách bạn đã xử lý khiếu nại này, ví dụ: đã liên hệ với công dân, đã điều chỉnh điểm, lý do từ chối..."
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={submitting}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Ghi chú xử lý
-            </label>
-            <textarea
-              rows={5}
-              value={resolutionNote}
-              onChange={(e) => setResolutionNote(e.target.value)}
-              placeholder="Mô tả cách bạn đã xử lý khiếu nại này, ví dụ: đã liên hệ với công dân, đã điều chỉnh điểm, lý do từ chối..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              Hủy
-            </button>
+          <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={submitting || !status}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? "Đang lưu..." : "Lưu trạng thái"}
             </button>

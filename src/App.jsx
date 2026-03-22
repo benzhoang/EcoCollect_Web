@@ -34,7 +34,6 @@ import AccountDetailPage from "./pages/Admin/AccountDetailPage";
 import RequestListPage from "./pages/Collector/RequestListPage";
 import CollectorLayout from "./layouts/CollectorLayout";
 import HistoryPage from "./pages/Collector/HistoryPage";
-import CreateIncidentReportPage from "./pages/Collector/CreateIncidentReportPage";
 import RequestDetailPage from "./pages/Collector/RequestDetailPage";
 import AreaListPage from "./pages/Admin/AreaListPage";
 import WasteCategoryListPage from "./pages/Admin/WasteCategoryListPage";
@@ -296,12 +295,6 @@ function App() {
         return (
           <CollectorLayout>
             <HistoryPage />
-          </CollectorLayout>
-        );
-      case "/collector/incident-report":
-        return (
-          <CollectorLayout>
-            <CreateIncidentReportPage />
           </CollectorLayout>
         );
       case "/enterprise":

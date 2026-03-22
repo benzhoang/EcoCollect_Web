@@ -29,6 +29,11 @@ const UpdateStatusModal = ({
 
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    if (submitting) return;
+    onClose?.();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userId) return;
@@ -37,11 +42,11 @@ const UpdateStatusModal = ({
     const trimmedReason = reason.trim();
 
     if (!trimmedStatus) {
-      toast.error("Vui lòng chọn trạng thái.");
+      toast.error("Vui lòng chọn trạng thái");
       return;
     }
     if (!trimmedReason) {
-      toast.error("Vui lòng nhập lý do.");
+      toast.error("Vui lòng nhập lý do");
       return;
     }
 
@@ -52,10 +57,10 @@ const UpdateStatusModal = ({
         reason: trimmedReason,
       });
       onClose?.();
-      toast.success("Đã cập nhật trạng thái.");
+      toast.success("Cập nhật trạng thái thành công");
       onSuccess?.();
-    } catch (err) {
-      toast.error(err?.message || "Thao tác thất bại.");
+    } catch {
+      toast.error("Không thể cập nhật trạng thái. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -64,28 +69,29 @@ const UpdateStatusModal = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
+        className="relative w-full max-w-md mx-4 bg-white shadow-xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute text-gray-500 transition-colors top-6 right-6 hover:text-gray-700"
-          type="button"
-        >
-          <FaTimes className="text-xl" />
-        </button>
-
-        <div className="px-5 pt-6 pb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">
             Cập nhật trạng thái người dùng
           </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+          >
+            <span className="sr-only">Đóng</span>
+            <FaTimes className="text-xl" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 pb-4">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
             <div>
               <label
                 htmlFor="update-status-select"
@@ -97,7 +103,8 @@ const UpdateStatusModal = ({
                 id="update-status-select"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={submitting}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -119,26 +126,20 @@ const UpdateStatusModal = ({
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="Nhập lý do (bắt buộc)"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={submitting}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 aria-required="true"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Hủy
-            </button>
+          <div className="flex justify-end px-6 py-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-12 py-2.5 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Đang xử lý..." : "Cập nhật"}
+              {submitting ? "Đang cập nhật..." : "Cập nhật"}
             </button>
           </div>
         </form>

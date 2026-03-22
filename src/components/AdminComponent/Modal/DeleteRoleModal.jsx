@@ -13,11 +13,22 @@ import { removeAdminUserRole } from "../../../service/api";
  * @param {string[]} roles - danh sách mã vai trò hiện tại (vd: ["ROLE_CITIZEN", "ROLE_COLLECTOR"])
  * @param {() => void} [onSuccess] - callback sau khi xóa thành công (vd. refetch user)
  */
-const DeleteRoleModal = ({ isOpen, onClose, userId, roles = [], onSuccess }) => {
+const DeleteRoleModal = ({
+  isOpen,
+  onClose,
+  userId,
+  roles = [],
+  onSuccess,
+}) => {
   const [roleCode, setRoleCode] = useState(roles[0] || "");
   const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    if (submitting) return;
+    onClose?.();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,10 +43,10 @@ const DeleteRoleModal = ({ isOpen, onClose, userId, roles = [], onSuccess }) => 
     try {
       await removeAdminUserRole(userId, trimmedRole);
       onClose?.();
-      toast.success("Đã xóa vai trò.");
+      toast.success("Xóa vai trò thành công");
       onSuccess?.();
-    } catch (err) {
-      toast.error(err?.message || "Thao tác thất bại.");
+    } catch {
+      toast.error("Không thể xóa vai trò. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -44,31 +55,29 @@ const DeleteRoleModal = ({ isOpen, onClose, userId, roles = [], onSuccess }) => 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl"
+        className="relative w-full max-w-md mx-4 bg-white shadow-xl rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Nút đóng */}
-        <button
-          onClick={onClose}
-          className="absolute text-gray-500 transition-colors top-6 right-6 hover:text-gray-700"
-          type="button"
-        >
-          <FaTimes className="text-xl" />
-        </button>
-
-        {/* Header */}
-        <div className="px-5 pt-6 pb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">
             Xóa vai trò khỏi tài khoản
           </h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+          >
+            <span className="sr-only">Đóng</span>
+            <FaTimes className="text-xl" />
+          </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-5 pb-4">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit}>
+          <div className="px-6 py-4 space-y-4">
             <div>
               <label
                 htmlFor="delete-role-select"
@@ -81,7 +90,8 @@ const DeleteRoleModal = ({ isOpen, onClose, userId, roles = [], onSuccess }) => 
                   id="delete-role-select"
                   value={roleCode}
                   onChange={(e) => setRoleCode(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  disabled={submitting}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">-- Chọn vai trò --</option>
                   {roles.map((role) => (
@@ -97,27 +107,20 @@ const DeleteRoleModal = ({ isOpen, onClose, userId, roles = [], onSuccess }) => 
                   value={roleCode}
                   onChange={(e) => setRoleCode(e.target.value)}
                   placeholder="Nhập mã vai trò (vd: ROLE_COLLECTOR)"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  disabled={submitting}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               )}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-3 mt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Hủy
-            </button>
+          <div className="flex justify-end px-6 py-4 border-t border-gray-200">
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-12 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Đang xử lý..." : "Xóa vai trò"}
+              {submitting ? "Đang xóa..." : "Xóa vai trò"}
             </button>
           </div>
         </form>

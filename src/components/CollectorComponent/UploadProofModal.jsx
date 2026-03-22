@@ -6,6 +6,7 @@ import { uploadImage } from "../../service/uploadImage";
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
+const COLLECTOR_REQUEST_LIST_PATH = "/collector/request-list";
 
 /** Format datetime-local value từ Date */
 const toDatetimeLocal = (date) => {
@@ -27,7 +28,10 @@ const validateProofUrl = (value) => {
   try {
     const u = new URL(raw);
     if (u.protocol !== "http:" && u.protocol !== "https:") {
-      return { ok: false, message: "URL ảnh phải bắt đầu bằng http:// hoặc https://." };
+      return {
+        ok: false,
+        message: "URL ảnh phải bắt đầu bằng http:// hoặc https://.",
+      };
     }
     return { ok: true };
   } catch {
@@ -39,9 +43,8 @@ const validateProofUrl = (value) => {
  * @param {boolean} show
  * @param {() => void} onClose
  * @param {string} [assignmentId] - ID phân công để gọi API tải bằng chứng
- * @param {() => void | Promise<void>} [onSuccess] - gọi sau khi tải bằng chứng thành công (vd. refetch)
  */
-const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
+const UploadProofModal = ({ show, onClose, assignmentId }) => {
   const [proofMode, setProofMode] = useState("upload"); // 'upload' | 'url'
   /** Preview hiển thị (base64) khi chế độ upload */
   const [proofPreviewUrls, setProofPreviewUrls] = useState([]);
@@ -111,7 +114,9 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
           const dataUrl = await readFileAsDataURL(file);
           const secureUrl = await uploadImage(file);
           if (!secureUrl) {
-            toast.error(`Upload "${file.name}" không trả về URL. Vui lòng thử lại.`);
+            toast.error(
+              `Upload "${file.name}" không trả về URL. Vui lòng thử lại.`,
+            );
             continue;
           }
           setProofPreviewUrls((prev) => [...prev, dataUrl]);
@@ -189,10 +194,12 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
         proofUrls: payloadProofUrls,
         takenAt: new Date(takenAt).toISOString(),
       };
+      console.log("[UploadProofModal] submit payload:", payload);
       await uploadCollectorAssignmentProof(assignmentId, payload);
       toast.success("Tải bằng chứng thu gom thành công");
       onClose?.();
-      await onSuccess?.();
+      window.history.pushState({}, "", COLLECTOR_REQUEST_LIST_PATH);
+      window.dispatchEvent(new PopStateEvent("popstate"));
     } catch (err) {
       const msg = err?.message ?? "";
       if (msg.toLowerCase().includes("conflict") || msg === "Conflict") {
@@ -200,7 +207,7 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
           "Công việc đã có bằng chứng hoặc trạng thái không cho phép tải bằng chứng. Vui lòng kiểm tra lại.",
         );
       } else {
-        toast.error(msg || "Gửi bằng chứng thất bại. Vui lòng thử lại.");
+        toast.error("Không thể tải bằng chứng. Vui lòng thử lại.");
       }
     } finally {
       setSubmitting(false);
@@ -210,16 +217,16 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h2 className="text-xl font-bold text-gray-900">
             Tải bằng chứng thu gom
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 transition-colors rounded-lg hover:bg-gray-100"
           >
             <svg
               className="w-5 h-5 text-gray-600"
@@ -239,11 +246,11 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
 
         <form
           onSubmit={handleSubmit}
-          className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0"
+          className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto"
         >
           {/* Ảnh bằng chứng (proofUrls) - logic giống imageUrls trong CreateReport */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Ảnh bằng chứng <span className="text-red-500">*</span>
             </label>
             {/* Chế độ: Tải file | Nhập URL */}
@@ -295,103 +302,100 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
             )}
             {/* Vùng kéo thả (chỉ khi chế độ Tải file) - giữ nguyên UI như hình */}
             {proofMode === "upload" && (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                if (!uploadingFiles) fileInputRef.current?.click();
-              }}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                !uploadingFiles &&
-                fileInputRef.current?.click()
-              }
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
-                uploadingFiles
-                  ? "cursor-wait border-blue-300 bg-blue-50"
-                  : proofPreviewUrls.length > 0
-                    ? "cursor-pointer border-blue-300 bg-blue-50 hover:border-blue-400"
-                    : isDragging
-                      ? "cursor-copy border-blue-400 bg-blue-50"
-                      : "cursor-pointer border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                  <svg
-                    className={`w-6 h-6 text-blue-600 ${uploadingFiles ? "animate-pulse" : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (!uploadingFiles) fileInputRef.current?.click();
+                }}
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  !uploadingFiles &&
+                  fileInputRef.current?.click()
+                }
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 ${
+                  uploadingFiles
+                    ? "cursor-wait border-blue-300 bg-blue-50"
+                    : proofPreviewUrls.length > 0
+                      ? "cursor-pointer border-blue-300 bg-blue-50 hover:border-blue-400"
+                      : isDragging
+                        ? "cursor-copy border-blue-400 bg-blue-50"
+                        : "cursor-pointer border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50"
+                }`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg shrink-0">
+                    <svg
+                      className={`w-6 h-6 text-blue-600 ${uploadingFiles ? "animate-pulse" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {uploadingFiles
+                        ? "Đang tải ảnh..."
+                        : "Tải lên hình ảnh rác thải"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Kéo thả hoặc nhấn để chọn file (PNG, JPG tối đa 10MB)
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {uploadingFiles
-                      ? "Đang tải ảnh..."
-                      : "Tải lên hình ảnh rác thải"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Kéo thả hoặc nhấn để chọn file (PNG, JPG tối đa 10MB)
-                  </p>
-                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg"
-                multiple
-                className="hidden"
-                onChange={handleImageChange}
-              />
-            </div>
             )}
             {displayUrlsForPreview.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {displayUrlsForPreview.map((url, index) => (
-                    <div
-                      key={index}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setPreviewIndex(index)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && setPreviewIndex(index)
-                      }
-                      className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 hover:opacity-90 transition-opacity"
+                  <div
+                    key={index}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setPreviewIndex(index)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && setPreviewIndex(index)
+                    }
+                    className="relative w-20 h-20 overflow-hidden transition-opacity bg-gray-100 border border-gray-200 rounded-lg cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 hover:opacity-90"
+                  >
+                    <img
+                      src={url}
+                      alt={`Bằng chứng ${index + 1}`}
+                      className="object-cover w-full h-full pointer-events-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (proofMode === "url") setProofUrlInput("");
+                        else removeProofImage(index);
+                        if (previewIndex === index) setPreviewIndex(null);
+                        else if (previewIndex !== null && previewIndex > index)
+                          setPreviewIndex(previewIndex - 1);
+                      }}
+                      className="absolute top-0.5 right-0.5 w-6 h-6 flex items-center justify-center text-white text-xs bg-red-500 rounded-full hover:bg-red-600 transition-colors z-10"
                     >
-                      <img
-                        src={url}
-                        alt={`Bằng chứng ${index + 1}`}
-                        className="object-cover w-full h-full pointer-events-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (proofMode === "url") setProofUrlInput("");
-                          else removeProofImage(index);
-                          if (previewIndex === index) setPreviewIndex(null);
-                          else if (
-                            previewIndex !== null &&
-                            previewIndex > index
-                          )
-                            setPreviewIndex(previewIndex - 1);
-                        }}
-                        className="absolute top-0.5 right-0.5 w-6 h-6 flex items-center justify-center text-white text-xs bg-red-500 rounded-full hover:bg-red-600 transition-colors z-10"
-                      >
-                        ×
-                      </button>
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -400,7 +404,7 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
 
           {/* Thời điểm chụp */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Thời điểm chụp
             </label>
             <input
@@ -425,9 +429,7 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={
-                submitting || uploadingFiles || !hasValidProof
-              }
+              disabled={submitting || uploadingFiles || !hasValidProof}
               className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Đang gửi..." : "Hoàn tất"}
@@ -448,7 +450,7 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
           <button
             type="button"
             onClick={() => setPreviewIndex(null)}
-            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute z-10 p-2 text-white transition-colors rounded-full top-4 right-4 bg-white/10 hover:bg-white/20"
             aria-label="Đóng"
           >
             <svg
@@ -471,8 +473,9 @@ const UploadProofModal = ({ show, onClose, assignmentId, onSuccess }) => {
             className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
-          <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
-            Ảnh {previewIndex + 1} / {displayUrlsForPreview.length} — Nhấn ra ngoài để đóng
+          <p className="absolute text-sm -translate-x-1/2 bottom-4 left-1/2 text-white/80">
+            Ảnh {previewIndex + 1} / {displayUrlsForPreview.length} — Nhấn ra
+            ngoài để đóng
           </p>
         </div>
       )}

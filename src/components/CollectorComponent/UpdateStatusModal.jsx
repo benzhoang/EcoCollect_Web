@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { updateCollectorAssignmentStatus } from "../../service/api";
 
+const COLLECTOR_REQUEST_LIST_PATH = "/collector/request-list";
+
 const STATUS_OPTIONS = [
   { value: "ASSIGNED", label: "Đã giao" },
   { value: "ON_THE_WAY", label: "Đang trên đường" },
@@ -18,7 +20,7 @@ const normalizeStatus = (s) =>
  * @param {() => void} onClose
  * @param {string} [initialStatus]
  * @param {string} [statusId] - assignmentId hoặc reportId để gọi API
- * @param {() => void | Promise<void>} [onSuccess] - sau khi cập nhật thành công (vd. refetch)
+ * @param {() => void | Promise<void>} [onSuccess] - sau khi cập nhật thành công (vd. refetch), không gọi nếu chuyển ASSIGNED → ON_THE_WAY (khi đó điều hướng về danh sách)
  * @param {() => void} [onCollected] - gọi khi chọn trạng thái COLLECTED thành công (vd. mở UploadProofModal)
  */
 const UpdateStatusModal = ({
@@ -46,12 +48,23 @@ const UpdateStatusModal = ({
 
     setSubmitting(true);
     try {
+      console.log("[UpdateStatusModal] submit payload:", payload);
       await updateCollectorAssignmentStatus(statusId, payload);
+      const fromNormalized = normalizeStatus(initialStatus);
+      const navigateToList =
+        fromNormalized === "ASSIGNED" && payload.status === "ON_THE_WAY";
+
       onClose?.();
-      toast.success("Cập nhật trạng thái thành công.");
-      await onSuccess?.();
-      if (payload.status === "COLLECTED") {
-        onCollected?.();
+      toast.success("Cập nhật trạng thái thành công");
+
+      if (navigateToList) {
+        window.history.pushState({}, "", COLLECTOR_REQUEST_LIST_PATH);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      } else {
+        await onSuccess?.();
+        if (payload.status === "COLLECTED") {
+          onCollected?.();
+        }
       }
       setNote("");
     } catch {
@@ -139,7 +152,7 @@ const UpdateStatusModal = ({
               disabled={submitting}
               className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Đang xử lý..." : "Cập nhật"}
+              {submitting ? "Đang cập nhật..." : "Cập nhật"}
             </button>
           </div>
         </form>
