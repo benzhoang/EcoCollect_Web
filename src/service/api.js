@@ -3,7 +3,7 @@
 // Trong production: sử dụng full URL
 const API_BASE_URL = import.meta.env.DEV
   ? ""
-  : "https://swpbe-production-b987.up.railway.app";
+  : "https://swpbe-production-11da.up.railway.app";
 
 import axios from "axios";
 
