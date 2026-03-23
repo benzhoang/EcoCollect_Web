@@ -54,7 +54,7 @@ const EnterpriseSidebar = ({ isOpen }) => {
         { id: 'rewards', label: 'Cấu hình điểm thưởng', icon: 'gift', path: '/enterprise/rewards' },
         { id: 'vouchers', label: 'Cấu hình voucher', icon: 'ticket', path: '/enterprise/voucher' },
         { id: 'statistic', label: 'Báo cáo thống kê', icon: 'chart', path: '/enterprise/statistic' },
-        { id: 'settings', label: 'Cài đặt doanh nghiệp', icon: 'building', path: '/enterprise/settings' }
+        // { id: 'settings', label: 'Cài đặt doanh nghiệp', icon: 'building', path: '/enterprise/settings' }
     ];
 
     const getIcon = (iconType) => {
