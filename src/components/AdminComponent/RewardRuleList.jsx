@@ -13,7 +13,7 @@ import ModalConfirm from "./Modal/ModalConfirm";
 const PAGE_SIZE = 5;
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return "—";
+  if (!dateStr) return "Không có";
   try {
     return new Date(dateStr).toLocaleDateString("vi-VN", {
       day: "2-digit",
@@ -58,8 +58,8 @@ const RewardRuleList = ({ searchTerm = "", refreshKey = 0 }) => {
           if (c?.id != null) map[c.id] = c.name ?? c.code ?? c.id;
         });
         setCategoryNameMap(map);
-      } catch (err) {
-        if (!cancelled) setLoadError(err?.message ?? "Không tải được dữ liệu.");
+      } catch {
+        if (!cancelled) setLoadError("Không tải được dữ liệu");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -71,7 +71,7 @@ const RewardRuleList = ({ searchTerm = "", refreshKey = 0 }) => {
   }, [refreshKey]);
 
   const getCategoryName = (wasteCategoryId) =>
-    categoryNameMap[wasteCategoryId] ?? wasteCategoryId ?? "—";
+    categoryNameMap[wasteCategoryId] ?? wasteCategoryId ?? "Không có";
 
   const filteredList = useMemo(() => {
     if (!searchTerm) return rules;
@@ -234,21 +234,21 @@ const RewardRuleList = ({ searchTerm = "", refreshKey = 0 }) => {
                       <span className="text-sm text-gray-700">
                         {typeof item.pointsPerKg === "number"
                           ? item.pointsPerKg
-                          : (item.pointsPerKg ?? "—")}
+                          : (item.pointsPerKg ?? "Không có")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.bonusQualityPoints === "number"
                           ? item.bonusQualityPoints
-                          : (item.bonusQualityPoints ?? "—")}
+                          : (item.bonusQualityPoints ?? "Không có")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {typeof item.bonusFastCompletePoints === "number"
                           ? item.bonusFastCompletePoints
-                          : (item.bonusFastCompletePoints ?? "—")}
+                          : (item.bonusFastCompletePoints ?? "Không có")}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -265,7 +265,7 @@ const RewardRuleList = ({ searchTerm = "", refreshKey = 0 }) => {
                       <span className="text-sm text-gray-700">
                         {typeof item.priority === "number"
                           ? item.priority
-                          : (item.priority ?? "—")}
+                          : (item.priority ?? "Không có")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">

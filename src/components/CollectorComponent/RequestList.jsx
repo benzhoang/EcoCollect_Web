@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaEye } from "react-icons/fa";
 import { getCollectorAssignments, getWasteCategories } from "../../service/api";
 import CollectorPagination from "./CollectorPagination";
+import toast from "react-hot-toast";
 
 const PAGE_SIZE = 5;
 
@@ -130,69 +131,70 @@ const RequestList = ({ requests: requestsProp }) => {
   });
   const [activeTab, setActiveTab] = useState("Tất cả");
 
-  const fetchAssignments = useCallback(async (pageIndex = 0) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const apiStatus = TAB_TO_STATUS[activeTab];
+  const fetchAssignments = useCallback(
+    async (pageIndex = 0) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const apiStatus = TAB_TO_STATUS[activeTab];
 
-      const loadCategoriesIfNeeded = async () => {
-        if (Object.keys(categoryMapRef.current).length > 0) {
-          return categoryMapRef.current;
-        }
-        try {
-          const response = await getWasteCategories();
-          const categories = response?.data ?? response ?? [];
-          const nextMap = {};
-          if (Array.isArray(categories)) {
-            categories.forEach((cat) => {
-              if (cat?.id) {
-                nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
-              }
-            });
+        const loadCategoriesIfNeeded = async () => {
+          if (Object.keys(categoryMapRef.current).length > 0) {
+            return categoryMapRef.current;
           }
-          categoryMapRef.current = nextMap;
-          setCategoryMap(nextMap);
-          return nextMap;
-        } catch (err) {
-          console.error("Không thể tải danh mục loại rác:", err);
-          return categoryMapRef.current;
-        }
-      };
+          try {
+            const response = await getWasteCategories();
+            const categories = response?.data ?? response ?? [];
+            const nextMap = {};
+            if (Array.isArray(categories)) {
+              categories.forEach((cat) => {
+                if (cat?.id) {
+                  nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+                }
+              });
+            }
+            categoryMapRef.current = nextMap;
+            setCategoryMap(nextMap);
+            return nextMap;
+          } catch {
+            toast.error("Không thể tải danh mục loại rác");
+            return categoryMapRef.current;
+          }
+        };
 
-      const [response, map] = await Promise.all([
-        getCollectorAssignments({
-          ...(apiStatus ? { status: apiStatus } : {}),
-          page: pageIndex,
-          size: PAGE_SIZE,
-          sort: ["assignedAt,desc"],
-        }),
-        loadCategoriesIfNeeded(),
-      ]);
+        const [response, map] = await Promise.all([
+          getCollectorAssignments({
+            ...(apiStatus ? { status: apiStatus } : {}),
+            page: pageIndex,
+            size: PAGE_SIZE,
+            sort: ["assignedAt,desc"],
+          }),
+          loadCategoriesIfNeeded(),
+        ]);
 
-      const pageData = response?.data ?? response;
-      const content =
-        pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
-      const filtered = apiStatus ? content : content.filter(isAllowedStatus);
-      const mapped = filtered.map((item) =>
-        mapAssignmentToRow(item, map),
-      );
+        const pageData = response?.data ?? response;
+        const content =
+          pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
+        const filtered = apiStatus ? content : content.filter(isAllowedStatus);
+        const mapped = filtered.map((item) => mapAssignmentToRow(item, map));
 
-      setList(mapped);
-      setPageInfo({
-        page: pageData?.number ?? pageData?.page ?? pageIndex,
-        size: pageData?.size ?? PAGE_SIZE,
-        totalElements: pageData?.totalElements ?? mapped.length,
-        totalPages: pageData?.totalPages ?? 1,
-      });
-    } catch (err) {
-      setError(err?.message ?? "Không thể tải danh sách phân công.");
-      setList([]);
-      setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
+        setList(mapped);
+        setPageInfo({
+          page: pageData?.number ?? pageData?.page ?? pageIndex,
+          size: pageData?.size ?? PAGE_SIZE,
+          totalElements: pageData?.totalElements ?? mapped.length,
+          totalPages: pageData?.totalPages ?? 1,
+        });
+      } catch {
+        setError("Không thể tải danh sách phân công");
+        setList([]);
+        setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeTab],
+  );
 
   /** Chế độ dữ liệu tĩnh: vẫn cần danh mục để map tên loại rác */
   useEffect(() => {
@@ -206,14 +208,14 @@ const RequestList = ({ requests: requestsProp }) => {
         if (Array.isArray(categories)) {
           categories.forEach((cat) => {
             if (cat?.id) {
-              nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+              nextMap[cat.id] = cat.name ?? cat.displayName ?? "Không có";
             }
           });
         }
         categoryMapRef.current = nextMap;
         setCategoryMap(nextMap);
-      } catch (err) {
-        console.error("Không thể tải danh mục loại rác:", err);
+      } catch {
+        toast.error("Không thể tải danh mục loại rác");
       }
     })();
   }, [useApi]);
@@ -344,7 +346,7 @@ const RequestList = ({ requests: requestsProp }) => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
-                          {request.wasteType}
+                          {request.wasteType || "Không có"}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -355,7 +357,7 @@ const RequestList = ({ requests: requestsProp }) => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 min-w-[180px] max-w-[320px] break-words">
-                        {request.address}
+                        {request.address || "Không có"}
                       </td>
                       <td className="px-4 py-3">
                         <a

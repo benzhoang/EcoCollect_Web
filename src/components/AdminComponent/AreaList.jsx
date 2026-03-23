@@ -34,6 +34,7 @@ const buildAreaOptions = (nodes, parentName = "") => {
 const AreaList = ({ userId = null }) => {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [page, setPage] = useState(0);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
@@ -59,6 +60,7 @@ const AreaList = ({ userId = null }) => {
     const fetchAreas = async () => {
       try {
         setLoading(true);
+        setError("");
         const response = await getAreas();
         const rawData = response?.data ?? response;
         if (!rawData) {
@@ -68,8 +70,8 @@ const AreaList = ({ userId = null }) => {
         const rootNodes = Array.isArray(rawData) ? rawData : [rawData];
         const options = buildAreaOptions(rootNodes);
         setAreas(options);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        setError("Không thể tải danh sách khu vực. Vui lòng thử lại.");
         setAreas([]);
       } finally {
         setLoading(false);
@@ -108,6 +110,7 @@ const AreaList = ({ userId = null }) => {
           : [rawData]
         : [];
       setAreas(buildAreaOptions(rootNodes));
+      setError("");
       handleCloseDeleteModal();
       toast.success("Đã vô hiệu hóa khu vực.");
     } catch {
@@ -129,8 +132,9 @@ const AreaList = ({ userId = null }) => {
           : [rawData]
         : [];
       setAreas(buildAreaOptions(rootNodes));
-    } catch (err) {
-      console.error(err);
+      setError("");
+    } catch {
+      toast.error("Không thể cập nhật khu vực. Vui lòng thử lại.");
     }
   };
 
@@ -172,6 +176,15 @@ const AreaList = ({ userId = null }) => {
                   Đang tải...
                 </td>
               </tr>
+            ) : error ? (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-6 py-8 text-sm text-center text-red-600"
+                >
+                  {error}
+                </td>
+              </tr>
             ) : areas.length === 0 ? (
               <tr>
                 <td
@@ -194,7 +207,7 @@ const AreaList = ({ userId = null }) => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-900" title={area.name}>
-                      {area.name ?? "-"}
+                      {area.name ?? "Không có"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

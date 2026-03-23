@@ -7,6 +7,7 @@ import {
 import UpdateStatusModal from "../../components/CollectorComponent/UpdateStatusModal";
 import UploadProofModal from "../../components/CollectorComponent/UploadProofModal";
 import CancelRequestModal from "../../components/CollectorComponent/CancelRequestModal";
+import toast from "react-hot-toast";
 
 /** Trạng thái cho Collector: ASSIGNED, ON_THE_WAY, COLLECTED (hiển thị Đã thu gom) - đồng bộ với RequestList */
 const mapStatusToLabel = (status) => {
@@ -174,8 +175,8 @@ const RequestDetailPage = () => {
           }
           categoryMapRef.current = nextMap;
           return nextMap;
-        } catch (err) {
-          console.error("Không thể tải danh mục loại rác:", err);
+        } catch {
+          toast.error("Không thể tải danh mục loại rác");
           return categoryMapRef.current;
         }
       };
@@ -185,8 +186,8 @@ const RequestDetailPage = () => {
         loadCategoriesIfNeeded(),
       ]);
       setRequest(mapDetailToRequest(data, map));
-    } catch (err) {
-      setError(err?.message ?? "Không thể tải chi tiết yêu cầu.");
+    } catch {
+      setError("Không thể tải chi tiết yêu cầu");
       setRequest(null);
     } finally {
       setLoading(false);
@@ -329,7 +330,7 @@ const RequestDetailPage = () => {
                   Loại rác
                 </p>
                 <span className="inline-block px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-100 rounded-full">
-                  {request.wasteType}
+                  {request.wasteType || "Không có"}
                 </span>
               </div>
               <div>
@@ -337,7 +338,7 @@ const RequestDetailPage = () => {
                   Khối lượng ước tính
                 </p>
                 <p className="font-medium text-gray-900">
-                  {request.estimatedWeight}
+                  {request.estimatedWeight || "Không có"}
                 </p>
               </div>
               <div>
@@ -345,7 +346,7 @@ const RequestDetailPage = () => {
                   Mô tả
                 </p>
                 <p className="font-medium text-gray-900 break-words">
-                  {request.description}
+                  {request.description || "Không có"}
                 </p>
               </div>
               <div>
@@ -372,7 +373,7 @@ const RequestDetailPage = () => {
                       d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  {request.address}
+                  {request.address || "Không có"}
                 </p>
               </div>
               <div>

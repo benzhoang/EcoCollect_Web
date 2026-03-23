@@ -13,11 +13,12 @@ import {
   getCollectorStatisticsOverview,
 } from "../../service/api";
 import CollectorPagination from "../../components/CollectorComponent/CollectorPagination";
+import toast from "react-hot-toast";
 
 const PAGE_SIZE = 5;
 
 const formatDate = (iso) => {
-  if (iso == null || iso === "" || iso === "-") return iso ?? "—";
+  if (iso == null || iso === "" || iso === "-") return iso ?? "Không có";
   try {
     const d = new Date(iso);
     return d.toLocaleDateString("vi-VN", {
@@ -136,14 +137,14 @@ const HistoryPage = () => {
           if (Array.isArray(categories)) {
             categories.forEach((cat) => {
               if (cat?.id) {
-                nextMap[cat.id] = cat.name ?? cat.displayName ?? "-";
+                nextMap[cat.id] = cat.name ?? cat.displayName ?? "Không có";
               }
             });
           }
           categoryMapRef.current = nextMap;
           return nextMap;
-        } catch (err) {
-          console.error("Không thể tải danh mục loại rác:", err);
+        } catch {
+          toast.error("Không thể tải danh mục loại rác");
           return categoryMapRef.current;
         }
       };
@@ -161,9 +162,7 @@ const HistoryPage = () => {
       const pageData = response?.data ?? response;
       const content =
         pageData?.content ?? (Array.isArray(pageData) ? pageData : []);
-      const mapped = content.map((item) =>
-        mapAssignmentToRow(item, map),
-      );
+      const mapped = content.map((item) => mapAssignmentToRow(item, map));
       setList(mapped);
       setPageInfo({
         page: pageData?.number ?? pageData?.page ?? pageIndex,
@@ -171,8 +170,8 @@ const HistoryPage = () => {
         totalElements: pageData?.totalElements ?? mapped.length,
         totalPages: pageData?.totalPages ?? 1,
       });
-    } catch (err) {
-      setError(err?.message ?? "Không thể tải lịch sử công việc.");
+    } catch {
+      setError("Không thể tải lịch sử công việc");
       setList([]);
       setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
     } finally {
@@ -197,8 +196,8 @@ const HistoryPage = () => {
           completionRate: Number(data.completionRate ?? 0),
           totalProofsUploaded: Number(data.totalProofsUploaded ?? 0),
         });
-      } catch (err) {
-        console.error("Không thể tải thống kê tổng quan collector:", err);
+      } catch {
+        toast.error("Không thể tải thống kê tổng quan collector");
       }
     };
     fetchStats();
@@ -391,7 +390,7 @@ const HistoryPage = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
-                            {item.wasteType}
+                            {item.wasteType || "Không có"}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -402,7 +401,7 @@ const HistoryPage = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 min-w-[180px] max-w-[320px] break-words">
-                          {item.address}
+                          {item.address || "Không có"}
                         </td>
                         <td className="px-4 py-3">
                           <a
