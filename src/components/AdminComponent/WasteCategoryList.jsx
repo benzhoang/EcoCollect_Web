@@ -54,8 +54,8 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
             ? response.data
             : [];
         setCategories(list);
-      } catch (err) {
-        setError(err?.message || "Không thể tải danh sách danh mục loại rác.");
+      } catch {
+        setError("Không thể tải danh sách danh mục loại rác");
         setCategories([]);
       } finally {
         setLoading(false);
@@ -187,12 +187,12 @@ const WasteCategoryList = ({ refreshTrigger = 0 }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {category.code ?? "—"}
+                        {category.code ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {category.name ?? "—"}
+                        {category.name ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">

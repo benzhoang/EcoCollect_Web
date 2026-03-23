@@ -33,8 +33,8 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
               ? response.data.content
               : [];
         setCapabilities(list);
-      } catch (err) {
-        setError(err?.message || "Không thể tải danh sách công suất.");
+      } catch {
+        setError("Không thể tải danh sách công suất.");
         setCapabilities([]);
       } finally {
         setLoading(false);
@@ -104,7 +104,7 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
       handleCloseToggleModal();
       const isRestore = selectedItem.accepting === false;
       toast.success(
-        isRestore ? "Đã khôi phục tiếp nhận." : "Đã tạm dừng tiếp nhận.",
+        isRestore ? "Đã khôi phục tiếp nhận" : "Đã tạm dừng tiếp nhận",
       );
     } catch {
       toast.error("Không thể thay đổi trạng thái tiếp nhận. Vui lòng thử lại.");
@@ -179,12 +179,14 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {item.wasteCategoryCode ?? item.wasteTypeId ?? "—"}
+                        {item.wasteCategoryCode ??
+                          item.wasteTypeId ??
+                          "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">
-                        {item.wasteCategoryName ?? item.wasteType ?? "—"}
+                        {item.wasteCategoryName ?? item.wasteType ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -194,7 +196,7 @@ const WasteCapabilityList = ({ searchTerm = "", refreshToken = 0 }) => {
                             item.dailyCapacityKg ?? item.capacityPerDay;
                           return typeof cap === "number"
                             ? `${cap} kg`
-                            : (cap ?? "—");
+                            : (cap ?? "Không có");
                         })()}
                       </span>
                     </td>

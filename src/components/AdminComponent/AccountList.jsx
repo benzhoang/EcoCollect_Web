@@ -57,8 +57,8 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
           totalElements: pageData?.totalElements ?? list.length,
           totalPages: pageData?.totalPages ?? 1,
         });
-      } catch (err) {
-        setError(err?.message || "Không thể tải danh sách tài khoản.");
+      } catch {
+        setError("Không thể tải danh sách tài khoản.");
         setAccounts([]);
         setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
       } finally {
@@ -87,12 +87,12 @@ const AccountList = ({ roleFilter = null, searchTerm = "" }) => {
   };
 
   const formatRoles = (roles) => {
-    if (!Array.isArray(roles)) return "—";
-    return roles.map((r) => ROLE_LABELS[r] || r).join(", ") || "—";
+    if (!Array.isArray(roles)) return "Không có";
+    return roles.map((r) => ROLE_LABELS[r] || r).join(", ") || "Không có";
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "—";
+    if (!dateStr) return "Không có";
     try {
       const d = new Date(dateStr);
       return d.toLocaleDateString("vi-VN");

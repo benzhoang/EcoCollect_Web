@@ -78,8 +78,8 @@ const ComplaintList = ({ searchTerm = "" }) => {
           totalElements: data?.totalElements ?? 0,
           totalPages: data?.totalPages ?? 1,
         });
-      } catch (err) {
-        setLoadError(err?.message ?? "Không tải được danh sách khiếu nại.");
+      } catch {
+        setLoadError("Không tải được danh sách khiếu nại");
         setComplaintsRaw([]);
         setPageInfo((prev) => ({ ...prev, totalElements: 0, totalPages: 1 }));
       } finally {
@@ -246,12 +246,12 @@ const ComplaintList = ({ searchTerm = "" }) => {
                         {CATEGORY_OPTIONS.find((o) => o.value === c.category)
                           ?.label ??
                           c.category ??
-                          "—"}
+                          "Không có"}
                       </span>
                     </td>
                     <td className="max-w-xs px-6 py-4">
                       <span className="text-sm text-gray-700 line-clamp-2">
-                        {c.description ?? "—"}
+                        {c.description ?? "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -263,7 +263,7 @@ const ComplaintList = ({ searchTerm = "" }) => {
                         {STATUS_OPTIONS.find((o) => o.value === c.status)
                           ?.label ??
                           c.status ??
-                          "—"}
+                          "Không có"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -273,7 +273,7 @@ const ComplaintList = ({ searchTerm = "" }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-700">
-                        {c.resolvedAt ? formatDate(c.resolvedAt) : "—"}
+                        {c.resolvedAt ? formatDate(c.resolvedAt) : "Không có"}
                       </span>
                     </td>
                     <td className="max-w-xs px-6 py-4">
@@ -281,7 +281,7 @@ const ComplaintList = ({ searchTerm = "" }) => {
                         className="text-sm text-gray-700 line-clamp-2"
                         title={c.resolutionNote ?? ""}
                       >
-                        {c.resolutionNote ?? "—"}
+                        {c.resolutionNote ?? "Không có"}
                       </span>
                     </td>
                     {showActionsColumn && (

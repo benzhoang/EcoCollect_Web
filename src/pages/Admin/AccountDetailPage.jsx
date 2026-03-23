@@ -135,18 +135,6 @@ const AccountDetailPage = () => {
     setShowUpdateStatusModal(true);
   };
 
-  // const handleClearWorkingArea = async () => {
-  //   if (!userId) return;
-  //   if (!window.confirm("Xóa khu vực làm việc của người dùng này?")) return;
-  //   try {
-  //     await clearAdminUserWorkingArea(userId);
-  //     toast.success("Đã xóa khu vực làm việc.");
-  //     refetchUser();
-  //   } catch (e) {
-  //     toast.error(e?.message || "Thao tác thất bại.");
-  //   }
-  // };
-
   const handleRemoveRole = () => {
     if (!userId) return;
     const roles = userDetail?.roles ?? [];
@@ -249,7 +237,7 @@ const AccountDetailPage = () => {
                         <span className="flex items-center gap-1 mt-3">
                           Lý do bị đình chỉ:{" "}
                           <span className="font-medium">
-                            {userDetail.suspendedReason || "—"}
+                            {userDetail.suspendedReason || "Không có"}
                           </span>
                         </span>
                       )}
