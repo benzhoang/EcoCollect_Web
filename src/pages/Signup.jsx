@@ -232,7 +232,7 @@ const Signup = () => {
                             {/* Full Name Field */}
                             <div>
                                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Họ và tên <span className="text-red-500">*</span>
+                                    Họ và tên
                                 </label>
                                 <input
                                     id="fullName"
@@ -253,7 +253,7 @@ const Signup = () => {
                             {/* Email Field */}
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email
+                                    Email <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     id="email"
@@ -323,7 +323,7 @@ const Signup = () => {
                             {/* Password Field */}
                             <div>
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Mật khẩu
+                                    Mật khẩu <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -366,7 +366,7 @@ const Signup = () => {
                             {/* Confirm Password Field */}
                             <div>
                                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Xác nhận mật khẩu
+                                    Xác nhận mật khẩu <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
