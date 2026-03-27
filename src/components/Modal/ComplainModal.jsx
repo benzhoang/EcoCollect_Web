@@ -7,7 +7,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
         reportId: '',
         category: 'MISSED_PICKUP',
         description: '',
-        status: 'OPEN',
+        // status: 'OPEN',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -17,7 +17,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
             reportId: defaultData.reportId || '',
             category: defaultData.category || 'MISSED_PICKUP',
             description: defaultData.description || '',
-            status: defaultData.status || 'OPEN',
+            // status: defaultData.status || 'OPEN',
         });
     }, [isOpen, defaultData]);
 
@@ -42,7 +42,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
                 reportId: formData.reportId,
                 category: formData.category,
                 description: formData.description,
-                status: formData.status,
+                // status: formData.status,
             };
 
             const response = await createCitizenComplaint(payload);
@@ -117,6 +117,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
                         />
                     </div>
 
+                    {/*
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                         <select
@@ -131,6 +132,7 @@ const ComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
                             <option value="REJECTED">Từ chối</option>
                         </select>
                     </div>
+                    */}
 
                     <div className="flex items-center justify-end gap-3 pt-2">
                         <button
