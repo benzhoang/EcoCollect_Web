@@ -10,12 +10,12 @@ const CATEGORY_OPTIONS = [
     { value: 'OTHER', label: 'Khác' },
 ];
 
-const STATUS_OPTIONS = [
-    { value: 'OPEN', label: 'Đang mở' },
-    { value: 'IN_REVIEW', label: 'Đang xem xét' },
-    { value: 'RESOLVED', label: 'Đã giải quyết' },
-    { value: 'REJECTED', label: 'Từ chối' },
-];
+// const STATUS_OPTIONS = [
+//     { value: 'OPEN', label: 'Đang mở' },
+//     { value: 'IN_REVIEW', label: 'Đang xem xét' },
+//     { value: 'RESOLVED', label: 'Đã giải quyết' },
+//     { value: 'REJECTED', label: 'Từ chối' },
+// ];
 
 const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) => {
     const [formData, setFormData] = useState({
@@ -23,9 +23,9 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
         reportId: '',
         category: 'MISSED_PICKUP',
         description: '',
-        latitude: '',
-        longitude: '',
-        status: 'OPEN',
+        // latitude: '',
+        // longitude: '',
+        // status: 'OPEN',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,9 +36,9 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
             reportId: defaultData.reportId || defaultData.report?.id || '',
             category: defaultData.category || 'MISSED_PICKUP',
             description: defaultData.description || '',
-            latitude: defaultData.latitude ?? '',
-            longitude: defaultData.longitude ?? '',
-            status: defaultData.status || 'OPEN',
+            // latitude: defaultData.latitude ?? '',
+            // longitude: defaultData.longitude ?? '',
+            // status: defaultData.status || 'OPEN',
         });
     }, [isOpen, defaultData]);
 
@@ -52,7 +52,7 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.id) {
             toast.error('Thiếu mã khiếu nại.');
             return;
@@ -64,17 +64,17 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
                 reportId: formData.reportId,
                 category: formData.category,
                 description: formData.description,
-                latitude: formData.latitude === '' ? null : Number(formData.latitude),
-                longitude: formData.longitude === '' ? null : Number(formData.longitude),
-                status: formData.status,
+                // latitude: formData.latitude === '' ? null : Number(formData.latitude),
+                // longitude: formData.longitude === '' ? null : Number(formData.longitude),
+                // status: formData.status,
             };
 
             const response = await updateCitizenComplaint(formData.id, payload);
-            
+
             if (typeof onSubmit === 'function') {
                 onSubmit(response);
             }
-            
+
             toast.success('Cập nhật khiếu nại thành công.');
             onClose();
         } catch (error) {
@@ -142,6 +142,7 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
                             placeholder="Mô tả chi tiết khiếu nại"
                         />
                     </div>
+                    {/*
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Vĩ độ</label>
@@ -183,6 +184,7 @@ const UpdateComplainModal = ({ isOpen, onClose, defaultData = {}, onSubmit }) =>
                             ))}
                         </select>
                     </div>
+                    */}
 
                     <div className="flex items-center justify-end gap-3 pt-2">
                         <button
