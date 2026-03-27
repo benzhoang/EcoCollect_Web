@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EnterpriseSidebar from '../../components/EnterpriseSidebar';
 import { getEnterpriseStatisticsOverview, getWasteCategories, getAreaTree, getEnterpriseReports } from '../../service/api';
+import { downloadEnterprisePdfReport, getEnterpriseFallbackRows } from '../../components/PDFReport';
 
 const EnterpriseReport = () => {
     const [isSidebarOpen] = useState(true);
@@ -37,6 +38,7 @@ const EnterpriseReport = () => {
     const [reportRows, setReportRows] = useState([]);
     const [isReportsLoading, setIsReportsLoading] = useState(false);
     const [reportsError, setReportsError] = useState(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         // Simulate data fetching for charts/tables
@@ -278,6 +280,45 @@ const EnterpriseReport = () => {
         return Math.max(...data.map(item => item[key]), 0);
     };
 
+    const handleExportReport = () => {
+        try {
+            setIsExporting(true);
+
+            const rowsForPdf = reportRows.length
+                ? reportRows.map((row) => ({
+                    wasteType: getWasteTypeLabel(row.wasteCategoryId),
+                    area: row.addressText || getAreaLabel(row.areaId),
+                    weightKg: row.weightKg,
+                    status: row.statusLabel,
+                    date: row.date
+                }))
+                : getEnterpriseFallbackRows();
+
+            downloadEnterprisePdfReport({
+                generatedAt: new Date(),
+                filters: {
+                    timeFilter,
+                    startDate: dateRange.start,
+                    endDate: dateRange.end,
+                    wasteType: wasteTypeFilter === 'all' ? 'Tat ca loai' : getWasteTypeLabel(wasteTypeFilter),
+                    area: areaFilter === 'all' ? 'Tat ca khu vuc' : getAreaLabel(areaFilter)
+                },
+                summary: {
+                    totalReportsReceived: reportData.totalReportsReceived,
+                    totalRecycled: reportData.totalRecycled,
+                    totalReportsCompleted: reportData.totalReportsCompleted,
+                    totalAcceptedWasteCategories: reportData.totalAcceptedWasteCategories || reportData.byType.length
+                },
+                rows: rowsForPdf
+            });
+        } catch (error) {
+            console.error('Khong the xuat bao cao PDF:', error);
+            window.alert('Khong the xuat bao cao PDF. Vui long thu lai.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
             {/* Sidebar */}
@@ -293,11 +334,15 @@ const EnterpriseReport = () => {
                             <p className="text-sm text-gray-600">Theo dõi khối lượng rác đã thu gom và tái chế</p>
                         </div>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <button
+                        onClick={handleExportReport}
+                        disabled={isExporting}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span>Xuất báo cáo</span>
+                        <span>{isExporting ? 'Đang xuất...' : 'Xuất báo cáo'}</span>
                     </button>
                 </header>
 

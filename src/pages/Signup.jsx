@@ -427,7 +427,7 @@ const Signup = () => {
                         </form>
 
                         {/* Divider */}
-                        <div className="mt-6">
+                        {/* <div className="mt-6">
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-gray-300"></div>
@@ -436,10 +436,10 @@ const Signup = () => {
                                     <span className="px-2 bg-white text-gray-500">Hoặc</span>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Google Sign Up Button */}
-                        <div className="mt-6">
+                        {/* <div className="mt-6">
                             <button
                                 type="button"
                                 onClick={handleGoogleSignUp}
@@ -465,7 +465,7 @@ const Signup = () => {
                                 </svg>
                                 <span>Đăng ký bằng Google</span>
                             </button>
-                        </div>
+                        </div> */}
 
                         {/* Sign In Link */}
                         <div className="mt-6 text-center">
