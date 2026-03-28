@@ -223,7 +223,7 @@ const AdminSidebar = ({ isOpen }) => {
               >
                 {getIcon("config")}
               </span>
-              <span className="flex-1 text-sm">Quản lý cấu hình</span>
+              <span className="flex-1 text-sm">Thiết lập hệ thống</span>
               <FaChevronDown
                 className={`w-4 h-4 transition-transform duration-200 ${
                   isConfigOpen ? "rotate-180" : ""
@@ -244,7 +244,7 @@ const AdminSidebar = ({ isOpen }) => {
                       : "text-gray-600 hover:bg-gray-50 hover:text-green-600"
                   }`}
                 >
-                  Danh mục loại rác
+                  Loại rác
                 </Link>
               </li>
               <li>
