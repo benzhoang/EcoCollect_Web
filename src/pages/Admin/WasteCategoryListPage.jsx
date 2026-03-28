@@ -22,9 +22,7 @@ const WasteCategoryListPage = () => {
       {/* Page Header */}
       <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-black">
-            Danh sách danh mục loại rác
-          </h1>
+          <h1 className="text-2xl font-bold text-black">Danh sách loại rác</h1>
           <p className="text-sm text-gray-600">
             Quản lý và theo dõi các loại rác thải thu gom.
           </p>
@@ -50,7 +48,7 @@ const WasteCategoryListPage = () => {
             className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 shrink-0"
           >
             <FaPlus className="text-white" />
-            <span>Thêm danh mục</span>
+            <span>Thêm loại rác</span>
           </button>
         </div>
       </header>

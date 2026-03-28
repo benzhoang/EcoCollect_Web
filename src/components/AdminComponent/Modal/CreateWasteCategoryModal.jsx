@@ -31,11 +31,11 @@ const CreateWasteCategoryModal = ({ isOpen, onClose, onSuccess }) => {
     setError(null);
     try {
       await createWasteCategory({ code: trimmedCode, name: trimmedName });
-      toast.success("Tạo danh mục loại rác thành công", { duration: 2500 });
+      toast.success("Tạo loại rác thành công", { duration: 2500 });
       onSuccess?.();
       handleClose();
     } catch {
-      toast.error("Không thể tạo danh mục loại rác. Vui lòng thử lại.");
+      toast.error("Không thể tạo loại rác. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -60,9 +60,7 @@ const CreateWasteCategoryModal = ({ isOpen, onClose, onSuccess }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">
-            Thêm danh mục loại rác
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900">Thêm loại rác</h2>
           <button
             type="button"
             onClick={handleClose}
