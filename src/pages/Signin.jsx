@@ -414,12 +414,12 @@ const Signin = () => {
                     Ghi nhớ đăng nhập
                   </label>
                 </div>
-                <a
+                {/* <a
                   href="#"
                   className="text-sm font-medium text-green-600 transition-colors hover:text-green-700"
                 >
                   Quên mật khẩu?
-                </a>
+                </a> */}
               </div>
 
               {/* Submit Button */}
