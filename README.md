@@ -1,16 +1,50 @@
-# React + Vite
+# EcoCollect - Waste Collection Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+EcoCollect is a waste collection management platform that connects residents, collectors, and administrators through a centralized system. The platform streamlines waste pickup requests, collection scheduling, recycling activities, and reward programs to encourage sustainable waste management practices.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Key Features
 
-## React Compiler
+1. **Waste Pickup Request Management**: Allows residents to submit and manage waste collection requests.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **Collection Scheduling & Tracking**: Enables collectors to manage pickup schedules and track collection activities.
 
-## Expanding the ESLint configuration
+3. **Reward Points & Redemption System**: Awards points for recycling activities and allows users to redeem rewards through the platform.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+4. **User Account Management**: Supports registration, authentication, and profile management for different user roles.
+
+5. **Request Status Monitoring**: Tracks the progress of collection requests from submission to completion.
+
+6. **Dashboard & Analytics**: Provides insights and statistics on waste collection operations, recycling performance, and user activities.
+
+7. **Role-based Authentication & Authorization**: Ensures secure access and permissions based on user roles.
+
+## Technology Stack
+
+### Frontend
+- React + Vite
+- JavaScript
+- TailwindCSS
+- Axios
+
+### Backend
+- Java Spring Boot
+- MySQL
+
+### Deploy & Tools
+- Railway
+- Vercel
+- Git & GitHub
+- Swagger
+
+## Contributing
+
+**Back End**: **Java Spring Boot** 
+- [Phan Đoàn Thế Quân](https://github.com/thequantq1) (Leader)
+- [Lê Minh Phương](https://github.com/Phuong307)
+  
+**Front End**: **React + Vite**
+- [Trần Nhật Hoàng](https://github.com/HoangTranNhat)
+- [Hoàng Lê Nhật Minh](https://github.com/benzhoang)
+
