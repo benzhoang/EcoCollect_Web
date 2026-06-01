@@ -31,12 +31,11 @@ EcoCollect is a waste collection management platform that connects residents, co
 ### Backend
 - Java Spring Boot
 - MySQL
+- Swagger
 
-### Deploy & Tools
+### Deployment
 - Railway
 - Vercel
-- Git & GitHub
-- Swagger
 
 ## Contributing
 
